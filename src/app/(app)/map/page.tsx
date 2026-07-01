@@ -7,12 +7,18 @@ import {
   getMapBounds,
   mapBlocksToGeoJSON,
 } from "@/domains/map/queries";
+import { getMapPumps, mapPumpsToGeoJSON } from "@/domains/pumps/queries";
+import {
+  getCurrentWeather,
+} from "@/domains/weather/queries";
 
 export default async function MapPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
-  const [blocks, equipment] = await Promise.all([
+  const [blocks, equipment, pumps, currentWeather] = await Promise.all([
     getMapBlocks(),
     getActiveEquipmentForSelect(),
+    getMapPumps(),
+    getCurrentWeather(),
   ]);
 
   return (
@@ -37,6 +43,8 @@ export default async function MapPage() {
             geoJson={mapBlocksToGeoJSON(blocks)}
             bounds={getMapBounds(blocks)}
             equipment={equipment}
+            pumpsGeoJson={mapPumpsToGeoJSON(pumps)}
+            weather={currentWeather}
             token={mapboxToken}
           />
         </Suspense>

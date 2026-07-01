@@ -6,20 +6,30 @@ import { BlockMapDrawer } from "@/components/map/block-map-drawer";
 import { MapLegend } from "@/components/map/map-legend";
 import { MapViewToggle } from "@/components/map/map-view-toggle";
 import { VineyardMap } from "@/components/map/vineyard-map";
+import { MapWeatherChip } from "@/components/weather/map-weather-chip";
 import type { MapViewMode } from "@/domains/map/constants";
 import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
+import type { CurrentWeather } from "@/domains/weather/types";
+
+type PumpFeatureCollection = ReturnType<
+  typeof import("@/domains/pumps/queries").mapPumpsToGeoJSON
+>;
 
 export function MapPageClient({
   blocks,
   geoJson,
   bounds,
   equipment,
+  pumpsGeoJson,
+  weather,
   token,
 }: {
   blocks: MapBlock[];
   geoJson: MapBlockFeatureCollection;
   bounds: [[number, number], [number, number]] | null;
   equipment: { id: string; name: string; type: string }[];
+  pumpsGeoJson: PumpFeatureCollection;
+  weather: CurrentWeather;
   token: string;
 }) {
   const router = useRouter();
@@ -51,12 +61,14 @@ export function MapPageClient({
         <VineyardMap
           blocks={blocks}
           geoJson={geoJson}
+          pumpsGeoJson={pumpsGeoJson}
           bounds={bounds}
           token={token}
           viewMode={viewMode}
           onBlockSelect={setSelectedBlockId}
         />
-        <MapViewToggle mode={viewMode} onChange={setViewMode} />
+        <MapWeatherChip weather={weather} />
+        <MapViewToggle mode={viewMode} onChange={setViewMode} className="top-14" />
         <MapLegend className={viewMode === "3d" ? "bottom-14" : undefined} />
       </div>
       <BlockMapDrawer

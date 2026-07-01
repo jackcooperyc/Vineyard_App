@@ -190,4 +190,42 @@ Activity log for data import, deployment, and security items requiring human rev
 
 ### Follow-up (Phase 2 UI)
 
-- Dashboard weather card, map corner chip, `EnvironmentalThreshold` model + frost hint
+- ~~Dashboard weather card, map corner chip, `EnvironmentalThreshold` model + frost hint~~ **Done** (2026-07-01)
+- Block detail terrain section, ViticultureMetrics schema — **Done** (2026-07-01)
+- IrrigationPump CRUD, `/reports` CSV export, map pump pins — **Done** (2026-07-01)
+- `middleware.ts` → `proxy.ts` migration — **Done** (2026-07-01)
+
+## 2026-07-01 — Sprint 8 Phase 2–4 (weather UI, terrain, pumps, reports)
+
+### Completed
+
+- **PR #6 merged:** Weather provider abstraction (`src/domains/weather/`, Open-Meteo, 15-min cache).
+- **Dashboard weather card:** Temp, wind, humidity, 5-day forecast, frost/heat hints from `EnvironmentalThreshold`.
+- **Map weather chip:** Estate conditions overlay (top-right); 2D/3D toggle shifted down to avoid overlap.
+- **`EnvironmentalThreshold` model:** Vineyard-level `frostWarningTempF` (32°F) and `heatStressTempF` (95°F); seeded defaults.
+- **Block detail terrain:** Acreage, area, perimeter, elevation trio, growth stage, `colorHex`; infrastructure type for non-vineyard blocks; plantings hidden for infrastructure.
+- **`ViticultureMetrics` model:** Schema + “Satellite metrics not connected” placeholder on block detail.
+- **IrrigationPump CRUD:** `/pumps` list, `/pumps/new`, `/pumps/[id]`; demo pump at estate centroid in seed.
+- **Map pump pins:** Blue circle layer for registered pumps (2D/3D).
+- **`/reports`:** Tasks completed + irrigation volume by block (last 30 days); client-side CSV export; nav in sidebar + More menu.
+- **Technical debt:** `equipment-select-field.tsx` lint fix (`<Link>`); `middleware.ts` → `proxy.ts` (Next.js 16).
+
+### Validation
+
+- `npx prisma validate` — pass
+- `npx tsc --noEmit` — pass
+- `npm run build` — pass (with `DATABASE_URL` from `.env`; `.env.production.local` empty locally)
+- `npm run lint` — pass
+- `npm run db:seed` — pass (environmental thresholds + demo pump idempotent)
+
+### Open items (human review)
+
+| Item | Status |
+|------|--------|
+| Blake's House polygon | Missing from KML — field verification needed |
+| Cowboy's Place polygon | Missing from KML — field verification needed |
+| KML "Untitled polygon" | Unmapped — field verification needed |
+| Mapbox token URL restrictions | Mapbox dashboard — restrict to `cev.cupr.app` |
+| GitHub branch protection / CI gates | GitHub admin |
+| Production seed on Neon | Re-run `./scripts/sync-production-db.sh` after deploy |
+| Seed password rotation | Defer — documented in seed output |

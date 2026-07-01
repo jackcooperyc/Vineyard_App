@@ -5,10 +5,12 @@ import {
 } from "@/domains/map/constants";
 
 export const MAP_SOURCE_ID = "blocks";
+export const PUMP_SOURCE_ID = "pumps";
 export const TERRAIN_SOURCE_ID = "mapbox-dem";
 export const FILL_LAYER_ID = "blocks-fill";
 export const EXTRUSION_LAYER_ID = "blocks-extrusion";
 export const OUTLINE_LAYER_ID = "blocks-outline";
+export const PUMP_LAYER_ID = "pumps-circle";
 
 export const BLOCK_LAYER_IDS = [
   FILL_LAYER_ID,

@@ -70,12 +70,13 @@ enum UserRole {
 // ─── Vineyard core ───────────────────────────────────────────────────────────
 
 model Vineyard {
-  id        String   @id @default(cuid())
-  name      String
-  location  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  blocks    Block[]
+  id                     String                  @id @default(cuid())
+  name                   String
+  location               String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  blocks                 Block[]
+  environmentalThreshold EnvironmentalThreshold?
 }
 
 model Block {
@@ -104,6 +105,7 @@ model Block {
   irrigationRecords   IrrigationRecord[]
   notes_records       Note[]
   mapFeature          MapFeature?
+  viticultureMetrics  ViticultureMetrics?
 
   @@unique([vineyardId, code])
   @@index([vineyardId])
@@ -266,6 +268,29 @@ model IrrigationPump {
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model EnvironmentalThreshold {
+  id                String   @id @default(cuid())
+  vineyardId        String   @unique
+  frostWarningTempF Float
+  heatStressTempF   Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  vineyard          Vineyard @relation(fields: [vineyardId], references: [id], onDelete: Cascade)
+}
+
+model ViticultureMetrics {
+  id                String    @id @default(cuid())
+  blockId           String    @unique
+  currentNdviScore  Float?
+  cumulativeGdd     Float?
+  lastSatellitePass DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  block             Block     @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([blockId])
 }
 
 // ─── Auth (Auth.js) ──────────────────────────────────────────────────────────

@@ -17,6 +17,8 @@ import {
   FILL_LAYER_ID,
   MAP_SOURCE_ID,
   OUTLINE_LAYER_ID,
+  PUMP_LAYER_ID,
+  PUMP_SOURCE_ID,
   TERRAIN_SOURCE_ID,
   blockExtrusionHeight,
   blockFillColor,
@@ -24,9 +26,20 @@ import {
   extrusionBaseHeight,
 } from "@/lib/maps/layers";
 
+type PumpFeatureCollection = {
+  type: "FeatureCollection";
+  features: Array<{
+    type: "Feature";
+    id: string;
+    geometry: { type: "Point"; coordinates: [number, number] };
+    properties: { pumpId: string; name: string };
+  }>;
+};
+
 type VineyardMapProps = {
   blocks: MapBlock[];
   geoJson: MapBlockFeatureCollection;
+  pumpsGeoJson: PumpFeatureCollection;
   bounds: [[number, number], [number, number]] | null;
   token: string;
   viewMode: MapViewMode;
@@ -99,6 +112,7 @@ function applyViewMode(map: mapboxgl.Map, viewMode: MapViewMode) {
 export function VineyardMap({
   blocks,
   geoJson,
+  pumpsGeoJson,
   bounds,
   token,
   viewMode,
@@ -179,6 +193,23 @@ export function VineyardMap({
         },
       });
 
+      map.addSource(PUMP_SOURCE_ID, {
+        type: "geojson",
+        data: pumpsGeoJson,
+      });
+
+      map.addLayer({
+        id: PUMP_LAYER_ID,
+        type: "circle",
+        source: PUMP_SOURCE_ID,
+        paint: {
+          "circle-radius": 8,
+          "circle-color": "#0ea5e9",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+
       registerBlockClicks(map, [...BLOCK_LAYER_IDS], (blockId) =>
         onBlockSelectRef.current(blockId),
       );
@@ -202,8 +233,7 @@ export function VineyardMap({
       mapRef.current = null;
     };
     // viewMode applied in separate effect after load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks, bounds, geoJson, token]);
+  }, [blocks, bounds, geoJson, pumpsGeoJson, token]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -228,6 +258,13 @@ export function VineyardMap({
     const source = map.getSource(MAP_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
     source?.setData(geoJson);
   }, [geoJson]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const source = map.getSource(PUMP_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    source?.setData(pumpsGeoJson);
+  }, [pumpsGeoJson]);
 
   return (
     <div

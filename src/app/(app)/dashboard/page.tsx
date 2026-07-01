@@ -11,18 +11,34 @@ import { Button } from "@/components/ui/button";
 import { EquipmentListCard } from "@/components/equipment/equipment-list-card";
 import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
 import { TaskListCard } from "@/components/tasks/task-list-card";
+import { DashboardWeatherCard } from "@/components/weather/dashboard-weather-card";
 import { getDashboardStats } from "@/domains/blocks/queries";
+import { getEnvironmentalThresholds } from "@/domains/environment/queries";
 import { getEquipmentNeedingService } from "@/domains/equipment/queries";
 import { getIrrigationAlerts } from "@/domains/irrigation/queries";
 import { getUpcomingTasks } from "@/domains/tasks/queries";
+import {
+  getCurrentWeather,
+  getWeatherForecast,
+} from "@/domains/weather/queries";
 
 export default async function DashboardPage() {
-  const [stats, upcomingTasks, equipmentNeedingService, irrigationAlerts] =
-    await Promise.all([
+  const [
+    stats,
+    upcomingTasks,
+    equipmentNeedingService,
+    irrigationAlerts,
+    currentWeather,
+    weatherForecast,
+    thresholds,
+  ] = await Promise.all([
     getDashboardStats(),
     getUpcomingTasks(3),
     getEquipmentNeedingService(3),
     getIrrigationAlerts(),
+    getCurrentWeather(),
+    getWeatherForecast(),
+    getEnvironmentalThresholds(),
   ]);
 
   const cards = [
@@ -109,6 +125,12 @@ export default async function DashboardPage() {
           );
         })}
       </div>
+
+      <DashboardWeatherCard
+        current={currentWeather}
+        forecast={weatherForecast}
+        thresholds={thresholds}
+      />
 
       <Card>
         <CardHeader>

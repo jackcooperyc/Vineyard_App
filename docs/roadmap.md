@@ -93,10 +93,13 @@ See [sprint-8-plan.md](./sprint-8-plan.md) for detailed implementation steps.
 - [x] 3D map toggle (Mapbox terrain + pitch)
 - [x] Elevation in map block drawer
 - [x] `colorHex` override in map paint expressions
-- [ ] Weather provider abstraction + dashboard card
-- [ ] Block terrain section on block detail pages
-- [ ] Irrigation pump map pins + `/reports` CSV export
+- [x] Weather provider abstraction + dashboard card
+- [x] Map weather chip + environmental thresholds
+- [x] Block terrain section on block detail pages
+- [x] ViticultureMetrics schema + satellite placeholder
+- [x] Irrigation pump CRUD + map pins
+- [x] `/reports` CSV export
 
 ## Current focus
 
-Operational UI polish (Op-1 through Op-4 complete) → Sprint 8 Phase 2 (weather).
+Sprint 8 intelligence layer complete (Phases 1–4). Remaining: field-verified polygons (Blake's House, Cowboy's Place), Mapbox token restrictions, GitHub admin CI/branch protection.

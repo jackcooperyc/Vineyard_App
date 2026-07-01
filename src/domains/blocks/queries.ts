@@ -86,6 +86,7 @@ export async function getBlockById(id: string) {
         },
       },
       mapFeature: true,
+      viticultureMetrics: true,
       irrigationRecords: {
         orderBy: { appliedAt: "desc" },
         take: 5,

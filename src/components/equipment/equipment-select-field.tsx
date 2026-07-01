@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type EquipmentOption = { id: string; name: string; type: string };
 
 export function EquipmentSelectField({
@@ -17,9 +19,12 @@ export function EquipmentSelectField({
     return (
       <p className="text-sm text-muted-foreground">
         No equipment on file.{" "}
-        <a href="/equipment/new" className="text-primary underline-offset-4 hover:underline">
+        <Link
+          href="/equipment/new"
+          className="text-primary underline-offset-4 hover:underline"
+        >
           Add equipment
-        </a>
+        </Link>
       </p>
     );
   }

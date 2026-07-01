@@ -479,6 +479,36 @@ async function main() {
     }
   }
 
+  await prisma.environmentalThreshold.upsert({
+    where: { vineyardId: vineyard.id },
+    update: {},
+    create: {
+      vineyardId: vineyard.id,
+      frostWarningTempF: 32,
+      heatStressTempF: 95,
+    },
+  });
+
+  const block1Id = estate.blockByCode["1"];
+  const block3Id = estate.blockByCode["3"];
+  const existingPump = await prisma.irrigationPump.findFirst({
+    where: { name: "Main station pump" },
+  });
+  if (!existingPump) {
+    await prisma.irrigationPump.create({
+      data: {
+        name: "Main station pump",
+        gpsPoint: {
+          type: "Point",
+          coordinates: [ESTATE_CENTER.lng, ESTATE_CENTER.lat],
+        },
+        flowCapacity: 150,
+        servicedBlockIds: [block1Id, block3Id].filter(Boolean) as string[],
+        notes: "Demo pump at estate GIS centroid for map overlay testing.",
+      },
+    });
+  }
+
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
   console.log(`  Estate center: ${ESTATE_CENTER.lat}, ${ESTATE_CENTER.lng}`);

@@ -11,6 +11,8 @@ import {
   Droplets,
   ClipboardPen,
   MoreHorizontal,
+  FileSpreadsheet,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -30,6 +32,7 @@ const mainNav = [
 
 const moreNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/reports", label: "Reports", icon: FileSpreadsheet },
   {
     href: "/equipment",
     label: "Equipment",
@@ -42,6 +45,7 @@ const moreNav = [
     icon: Droplets,
     badgeKey: "irrigation" as const,
   },
+  { href: "/pumps", label: "Pumps", icon: Gauge },
 ];
 
 const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];

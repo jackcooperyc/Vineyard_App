@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { getBlockById } from "@/domains/blocks/queries";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
+import { BlockTerrainSection } from "@/components/blocks/block-terrain-section";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
 import { QuickLogIrrigationSheet } from "@/components/irrigation/quick-log-irrigation-sheet";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
@@ -71,6 +72,8 @@ export default async function BlockDetailPage({
           <h2 className="text-2xl font-semibold tracking-tight">{block.name}</h2>
           <p className="text-sm text-muted-foreground">
             {block.vineyard.name}
+            {block.blockType === "INFRASTRUCTURE" && block.infrastructureType &&
+              ` · ${block.infrastructureType}`}
             {block.acreage != null && ` · ${block.acreage} acres`}
             {totalVines > 0 && ` · ${totalVines.toLocaleString()} vines`}
           </p>
@@ -108,6 +111,23 @@ export default async function BlockDetailPage({
         )}
       </div>
 
+      <BlockTerrainSection
+        block={{
+          blockType: block.blockType,
+          infrastructureType: block.infrastructureType,
+          acreage: block.acreage,
+          areaSqm: block.areaSqm,
+          perimeterM: block.perimeterM,
+          elevMin: block.elevMin,
+          elevMed: block.elevMed,
+          elevMax: block.elevMax,
+          growthStage: block.growthStage,
+          colorHex: block.colorHex,
+        }}
+        viticultureMetrics={block.viticultureMetrics}
+      />
+
+      {block.blockType === "VINEYARD" && (
       <Card>
         <CardHeader>
           <CardTitle>Plantings</CardTitle>
@@ -137,6 +157,7 @@ export default async function BlockDetailPage({
           ))}
         </CardContent>
       </Card>
+      )}
 
       {block.notes && (
         <Card>
