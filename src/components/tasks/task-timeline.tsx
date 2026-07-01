@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { TaskListCard } from "@/components/tasks/task-list-card";
+import { TaskEmptyState } from "@/components/tasks/task-empty-state";
 import type { TaskListItem } from "@/domains/tasks/queries";
 
 function formatGroupLabel(date: Date | null): string {
@@ -8,7 +8,9 @@ function formatGroupLabel(date: Date | null): string {
   today.setHours(0, 0, 0, 0);
   const due = new Date(date);
   due.setHours(0, 0, 0, 0);
-  const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.round(
+    (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (diff < 0) return "Overdue";
   if (diff === 0) return "Due today";
@@ -45,19 +47,32 @@ function groupTasks(tasks: TaskListItem[]) {
   return sorted;
 }
 
-export function TaskTimeline({ tasks }: { tasks: TaskListItem[] }) {
-  const groups = groupTasks(tasks);
-
+export function TaskTimeline({
+  tasks,
+  emptyContext,
+}: {
+  tasks: TaskListItem[];
+  emptyContext?: {
+    hasFilters: boolean;
+    blockId?: string;
+    blockCode?: string;
+    search?: string;
+  };
+}) {
   if (tasks.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No tasks match this filter.{" "}
-        <Link href="/tasks/new" className="text-primary underline-offset-4 hover:underline">
-          Create one
-        </Link>
-      </p>
+      <TaskEmptyState
+        context={{
+          hasFilters: emptyContext?.hasFilters ?? false,
+          blockId: emptyContext?.blockId,
+          blockCode: emptyContext?.blockCode,
+          search: emptyContext?.search,
+        }}
+      />
     );
   }
+
+  const groups = groupTasks(tasks);
 
   return (
     <div className="space-y-6">
@@ -65,6 +80,9 @@ export function TaskTimeline({ tasks }: { tasks: TaskListItem[] }) {
         <section key={group.label}>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {group.label}
+            <span className="ml-2 font-normal normal-case tracking-normal">
+              ({group.tasks.length})
+            </span>
           </h3>
           <div className="space-y-3">
             {group.tasks.map((task) => (

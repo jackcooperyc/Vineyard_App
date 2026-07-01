@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TaskSearchInput, buildHref } from "@/components/tasks/task-search-input";
 import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
+import type { TaskSortOption, TaskDueFilter } from "@/domains/tasks/queries";
 import type { TaskStatus, TaskType } from "@/generated/prisma/client";
 
 const statusFilters = [
@@ -15,49 +25,105 @@ const statusFilters = [
   { value: "COMPLETED", label: "Completed" },
 ] as const;
 
-type BlockFilter = { id: string; code: string; name: string };
+type BlockOption = { id: string; code: string; name: string };
 
-function buildHref(
-  pathname: string,
-  searchParams: URLSearchParams,
-  updates: Record<string, string | null>,
-) {
-  const params = new URLSearchParams(searchParams.toString());
-  for (const [key, value] of Object.entries(updates)) {
-    if (value === null) {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-  }
-  return params.toString() ? `${pathname}?${params}` : pathname;
+function hasActiveFilters(searchParams: URLSearchParams) {
+  return (
+    searchParams.has("status") ||
+    searchParams.has("blockId") ||
+    searchParams.has("type") ||
+    searchParams.has("q") ||
+    searchParams.has("sort") ||
+    searchParams.has("due") ||
+    searchParams.has("view")
+  );
 }
 
-export function TaskFilterBar({ blockFilter }: { blockFilter?: BlockFilter }) {
+export function TaskFilterBar({
+  blocks = [],
+}: {
+  blocks?: BlockOption[];
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get("status") ?? "OPEN";
   const currentType = searchParams.get("type");
+  const currentSort = (searchParams.get("sort") as TaskSortOption) ?? "dueDate";
+  const currentBlockId = searchParams.get("blockId");
+  const currentQuery = searchParams.get("q") ?? "";
+
+  const sortedBlocks = useMemo(
+    () =>
+      [...blocks].sort((a, b) => {
+        const aNum = Number.parseInt(a.code, 10);
+        const bNum = Number.parseInt(b.code, 10);
+        if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+        return a.code.localeCompare(b.code);
+      }),
+    [blocks],
+  );
+
+  function handleBlockChange(value: string | null) {
+    const href = buildHref(pathname, searchParams, {
+      blockId: value && value !== "all" ? value : null,
+    });
+    router.push(href);
+  }
+
+  function handleSortChange(value: string | null) {
+    const href = buildHref(pathname, searchParams, {
+      sort: value && value !== "dueDate" ? value : null,
+    });
+    router.push(href);
+  }
 
   return (
-    <div className="space-y-2">
-      {blockFilter && (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex min-h-9 items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 text-sm">
-            <span className="font-mono text-xs text-muted-foreground">
-              {blockFilter.code}
-            </span>
-            <span className="font-medium">{blockFilter.name}</span>
-            <Link
-              href={buildHref(pathname, searchParams, { blockId: null })}
-              className="ml-1 flex size-6 items-center justify-center rounded-full hover:bg-muted"
-              aria-label="Clear block filter"
-            >
-              <X className="size-3.5" />
-            </Link>
-          </span>
-        </div>
-      )}
+    <div className="space-y-3">
+      <TaskSearchInput key={currentQuery} initialQuery={currentQuery} />
+
+      <div className="flex flex-wrap items-center gap-2">
+        {blocks.length > 0 && (
+          <Select
+            value={currentBlockId ?? "all"}
+            onValueChange={handleBlockChange}
+          >
+            <SelectTrigger className="min-h-11 w-full sm:w-auto sm:min-w-[180px]">
+              <SelectValue placeholder="All blocks" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All blocks</SelectItem>
+              {sortedBlocks.map((block) => (
+                <SelectItem key={block.id} value={block.id}>
+                  {block.code} · {block.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select value={currentSort} onValueChange={handleSortChange}>
+          <SelectTrigger className="min-h-11 w-full sm:w-auto sm:min-w-[140px]">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="dueDate">Due date</SelectItem>
+            <SelectItem value="createdAt">Recently added</SelectItem>
+            <SelectItem value="title">Title A–Z</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters(searchParams) && (
+          <Link
+            href="/tasks"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <RotateCcw className="size-3.5" />
+            Clear all
+          </Link>
+        )}
+      </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {statusFilters.map((filter) => {
@@ -140,4 +206,42 @@ export function parseTaskTypeFilter(
     return value as TaskType;
   }
   return undefined;
+}
+
+export function parseTaskSortFilter(
+  value: string | undefined,
+): TaskSortOption {
+  if (value === "createdAt" || value === "title" || value === "status") {
+    return value;
+  }
+  return "dueDate";
+}
+
+export function parseTaskDueFilter(
+  value: string | undefined,
+): TaskDueFilter | undefined {
+  if (value === "overdue" || value === "today" || value === "week") {
+    return value;
+  }
+  return undefined;
+}
+
+export function taskFiltersAreActive(params: {
+  status?: string;
+  blockId?: string;
+  type?: string;
+  q?: string;
+  sort?: string;
+  due?: string;
+  view?: string;
+}) {
+  return Boolean(
+    params.status ||
+      params.blockId ||
+      params.type ||
+      params.q ||
+      (params.sort && params.sort !== "dueDate") ||
+      params.due ||
+      (params.view && params.view !== "timeline"),
+  );
 }

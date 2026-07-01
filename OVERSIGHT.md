@@ -2,6 +2,29 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-01 — Tasks hub comprehensive rebuild
+
+### Completed
+
+- Rebuilt `/tasks` as a production-quality hub aligned with irrigation hub patterns (Op-2).
+- **Header:** summary stat chips (open, overdue, due this week, completed in last 7 days) with deep-link filters.
+- **Filters:** status, block picker, task type chips, debounced title search, sort (due date / recently added / title / status), clear-all.
+- **Views:** timeline (grouped by due urgency) and flat list toggle via `?view=`.
+- **Cards:** type icons, overdue/today urgency styling, assignee and due date on cards.
+- **Empty states:** contextual CTAs (new task, field log, clear filters) per active filter set.
+- **Quick actions:** desktop Quick log sheet + New task; mobile Add dropdown + floating quick-log FAB.
+- **Domain:** extended `getTasks` (search, sort, due-range) and added `getTaskHubStats`.
+- **Detail polish:** task detail page shows type icon, urgency badge, created date.
+- Preserved existing create, edit, and status workflow routes.
+
+### Verification
+
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+- `npm run build` — compile + TypeScript pass; page data collection requires `DATABASE_URL` in local env (pre-existing)
+
+---
+
 ## 2026-07-01 — Production DB sync (Sprint 8 schema)
 
 ### Completed
