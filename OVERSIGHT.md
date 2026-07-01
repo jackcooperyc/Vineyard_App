@@ -78,3 +78,11 @@ Activity log for data import, deployment, and security items requiring human rev
 - Block 17 (`17-SG17`): no elevation in export.
 - `Vineard RV Park`: typo preserved from source.
 - Block numbering gap 35–39 preserved.
+
+## 2026-07-01 — Next development plan (operational UI audit)
+
+### Completed
+
+- Audited tasks, equipment, and irrigation modules (app routes, domains, components, dashboard/block/field/map integration).
+- Wrote `docs/next-development-plan.md`: current-state gap analysis, why UI feels empty, Op-1–4 operational track vs Sprint 8 Phase 2+, quick wins, and sequencing.
+- Finding: Sprints 2–4 v1 CRUD is shipped; gaps are edit flows, block-scoped navigation, schedule admin UI, thin seed data, and mobile nav burying Equipment/Irrigation.
