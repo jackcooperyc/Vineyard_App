@@ -112,14 +112,19 @@ See [PROJECT_START.md](./PROJECT_START.md) for the full product brief and [docs/
 
 ```bash
 npx vercel link
-npx vercel env pull .env.production.local --environment=production
-# Add any missing vars: npx vercel env add VARIABLE_NAME production
-
-export $(grep -v '^#' .env.production.local | xargs)
-npx prisma db push
-npm run db:seed
 npx vercel deploy --prod
+
+# Schema + seed (copy DATABASE_URL from Vercel dashboard — not available via env pull)
+DATABASE_URL='postgres://...' ./scripts/sync-production-db.sh
 ```
+
+Add or update env vars with:
+
+```bash
+printf '%s' 'your-value' | npx vercel env add VARIABLE_NAME production --force
+```
+
+Redeploy after changing `NEXT_PUBLIC_*` variables so they are included at build time.
 
 ## Documentation
 
