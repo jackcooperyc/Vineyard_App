@@ -50,7 +50,10 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
       const block = feature.block;
       const openTasks = taskCountByBlock.get(block.id) ?? 0;
       const irrigationOverdue = alertBlockIds.has(block.id);
-      const totalVines = block.plantings.reduce((sum, p) => sum + p.vineCount, 0);
+      const totalVines = block.plantings.reduce(
+        (sum, p) => sum + (p.vineCount ?? 0),
+        0,
+      );
 
       return {
         id: block.id,

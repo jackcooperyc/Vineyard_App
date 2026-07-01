@@ -137,6 +137,7 @@ export async function getRecentIrrigationByBlock(blockId: string, limit = 5) {
 
 export async function getBlocksForIrrigationForm() {
   return db.block.findMany({
+    where: { blockType: "VINEYARD" },
     select: { id: true, code: true, name: true },
     orderBy: { code: "asc" },
   });

@@ -33,7 +33,10 @@ export async function getBlocks(): Promise<BlockListItem[]> {
       acreage: block.acreage,
       status: block.status,
       primaryVariety: primary?.variety.name ?? null,
-      totalVines: block.plantings.reduce((sum, p) => sum + p.vineCount, 0),
+      totalVines: block.plantings.reduce(
+        (sum, p) => sum + (p.vineCount ?? 0),
+        0,
+      ),
       yearPlanted: primary?.yearPlanted ?? null,
     };
   });

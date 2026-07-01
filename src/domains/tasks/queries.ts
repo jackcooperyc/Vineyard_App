@@ -58,6 +58,7 @@ export async function getTaskById(id: string) {
 
 export async function getBlocksForTaskForm() {
   return db.block.findMany({
+    where: { blockType: "VINEYARD" },
     select: { id: true, code: true, name: true },
     orderBy: { code: "asc" },
   });

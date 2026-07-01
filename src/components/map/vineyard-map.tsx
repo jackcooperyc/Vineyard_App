@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { ESTATE_CENTER } from "@/domains/map/constants";
 import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
 
 const SOURCE_ID = "blocks";
@@ -40,7 +41,7 @@ export function VineyardMap({
     const defaultCenter: [number, number] =
       blocks[0] != null
         ? [blocks[0].centerLng, blocks[0].centerLat]
-        : [-119.328, 46.214];
+        : [ESTATE_CENTER.lng, ESTATE_CENTER.lat];
 
     const map = new mapboxgl.Map({
       container: containerRef.current,

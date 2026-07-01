@@ -17,6 +17,15 @@ enum BlockStatus {
   REPLANTING
 }
 
+enum BlockType {
+  VINEYARD
+  INFRASTRUCTURE
+}
+
+enum GrowthStage {
+  DORMANT
+}
+
 enum VarietyColor {
   RED
   WHITE
@@ -76,6 +85,15 @@ model Block {
   name                String
   acreage             Float?
   status              BlockStatus          @default(ACTIVE)
+  blockType           BlockType            @default(VINEYARD)
+  infrastructureType  String?
+  perimeterM          Float?
+  areaSqm             Float?
+  elevMin             Float?
+  elevMed             Float?
+  elevMax             Float?
+  growthStage         GrowthStage?
+  colorHex            String?
   notes               String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -90,6 +108,7 @@ model Block {
   @@unique([vineyardId, code])
   @@index([vineyardId])
   @@index([status])
+  @@index([blockType])
 }
 
 model Variety {
@@ -105,8 +124,8 @@ model Planting {
   id          String   @id @default(cuid())
   blockId     String
   varietyId   String
-  vineCount   Int
-  yearPlanted Int
+  vineCount   Int?
+  yearPlanted Int?
   rootstock   String?
   rowSpacing  Float?
   vineSpacing Float?
@@ -236,6 +255,17 @@ model MapFeature {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+}
+
+model IrrigationPump {
+  id               String   @id @default(cuid())
+  name             String?
+  gpsPoint         Json
+  flowCapacity     Float?
+  servicedBlockIds String[]
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // ─── Auth (Auth.js) ──────────────────────────────────────────────────────────

@@ -73,9 +73,14 @@
 
 ### Sprint 7 — Real data import
 
-- CSV templates and validation
-- Cooper Estate block data load
-- Geometry linkage
+- [x] Extract GPS polygons from Cooper Estate KML → `prisma/data/geometry.json`
+- [x] Fix estate centroid to audited GIS value (46.26513, -119.45518)
+- [x] Schema extensions: BlockType, terrain/elevation, GrowthStage, IrrigationPump
+- [x] Load 35 vineyard blocks + 12 infrastructure areas from `cooper-estate-blocks.v1.json`
+- [x] Seed real MapFeature polygons (no fabricated rectangles)
+- [x] Import 3 irrigation records (blocks 3, 31, 32 — 2026-04-14)
+- [ ] Base44 full entity dump (optional if KML source is sufficient)
+- [ ] Blake's House / Cowboy's Place polygons (missing from KML — 2/47)
 
 ### Sprint 8 — Intelligence
 

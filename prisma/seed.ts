@@ -2,34 +2,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
+import { ESTATE_CENTER, seedEstateBlocks } from "./seed-estate";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
-
-const RED_MOUNTAIN_CENTER = { lat: 46.214, lng: -119.328 };
-
-function blockPolygon(
-  blockIndex: number,
-  latOffset: number,
-  lngOffset: number,
-): object {
-  const baseLat = RED_MOUNTAIN_CENTER.lat + latOffset;
-  const baseLng = RED_MOUNTAIN_CENTER.lng + lngOffset;
-  const size = 0.0012;
-
-  return {
-    type: "Polygon",
-    coordinates: [
-      [
-        [baseLng, baseLat],
-        [baseLng + size, baseLat],
-        [baseLng + size, baseLat + size * 0.7],
-        [baseLng, baseLat + size * 0.7],
-        [baseLng, baseLat],
-      ],
-    ],
-  };
-}
 
 async function main() {
   const passwordHash = await bcrypt.hash("cooper2026", 12);
@@ -47,180 +23,18 @@ async function main() {
 
   const vineyard = await prisma.vineyard.upsert({
     where: { id: "cooper-estate-vineyards" },
-    update: {},
+    update: {
+      name: "Cooper Estate Vineyards",
+      location: "Red Mountain AVA, Benton County, Washington, US",
+    },
     create: {
       id: "cooper-estate-vineyards",
       name: "Cooper Estate Vineyards",
-      location: "Red Mountain, Washington",
+      location: "Red Mountain AVA, Benton County, Washington, US",
     },
   });
 
-  const varieties = await Promise.all(
-    [
-      { name: "Cabernet Sauvignon", color: "RED" as const },
-      { name: "Merlot", color: "RED" as const },
-      { name: "Syrah", color: "RED" as const },
-      { name: "Cabernet Franc", color: "RED" as const },
-      { name: "Malbec", color: "RED" as const },
-      { name: "Chardonnay", color: "WHITE" as const },
-      { name: "Sauvignon Blanc", color: "WHITE" as const },
-    ].map((v) =>
-      prisma.variety.upsert({
-        where: { name: v.name },
-        update: {},
-        create: v,
-      }),
-    ),
-  );
-
-  const varietyByName = Object.fromEntries(varieties.map((v) => [v.name, v]));
-
-  const blocksData = [
-    {
-      code: "CEV-01",
-      name: "North Ridge Cabernet",
-      acreage: 4.2,
-      variety: "Cabernet Sauvignon",
-      vineCount: 3360,
-      yearPlanted: 2015,
-      rootstock: "110R",
-      latOffset: 0.002,
-      lngOffset: -0.003,
-    },
-    {
-      code: "CEV-02",
-      name: "East Slope Merlot",
-      acreage: 3.8,
-      variety: "Merlot",
-      vineCount: 3040,
-      yearPlanted: 2016,
-      rootstock: "3309C",
-      latOffset: 0.001,
-      lngOffset: -0.001,
-    },
-    {
-      code: "CEV-03",
-      name: "Sunset Syrah",
-      acreage: 2.5,
-      variety: "Syrah",
-      vineCount: 2000,
-      yearPlanted: 2018,
-      rootstock: "110R",
-      latOffset: 0.0,
-      lngOffset: 0.001,
-    },
-    {
-      code: "CEV-04",
-      name: "Valley Floor Cab Franc",
-      acreage: 3.1,
-      variety: "Cabernet Franc",
-      vineCount: 2480,
-      yearPlanted: 2017,
-      rootstock: "101-14",
-      latOffset: -0.001,
-      lngOffset: -0.002,
-    },
-    {
-      code: "CEV-05",
-      name: "South Bench Malbec",
-      acreage: 2.9,
-      variety: "Malbec",
-      vineCount: 2320,
-      yearPlanted: 2019,
-      rootstock: "110R",
-      latOffset: -0.002,
-      lngOffset: 0.0,
-    },
-    {
-      code: "CEV-06",
-      name: "Ridge Top Chardonnay",
-      acreage: 2.2,
-      variety: "Chardonnay",
-      vineCount: 1760,
-      yearPlanted: 2020,
-      rootstock: "3309C",
-      latOffset: 0.0015,
-      lngOffset: 0.002,
-    },
-    {
-      code: "CEV-07",
-      name: "Creek Side Sauvignon",
-      acreage: 1.8,
-      variety: "Sauvignon Blanc",
-      vineCount: 1440,
-      yearPlanted: 2021,
-      rootstock: "101-14",
-      latOffset: -0.0015,
-      lngOffset: 0.0015,
-    },
-    {
-      code: "CEV-08",
-      name: "Heritage Block Cabernet",
-      acreage: 5.0,
-      variety: "Cabernet Sauvignon",
-      vineCount: 4000,
-      yearPlanted: 2012,
-      rootstock: "110R",
-      latOffset: 0.003,
-      lngOffset: 0.0,
-      status: "ACTIVE" as const,
-      notes: "Original estate planting. Premium tier fruit.",
-    },
-  ];
-
-  const blockByCode: Record<string, string> = {};
-
-  for (const [index, blockData] of blocksData.entries()) {
-    const variety = varietyByName[blockData.variety];
-    const geometry = blockPolygon(index, blockData.latOffset, blockData.lngOffset);
-    const centerLat = RED_MOUNTAIN_CENTER.lat + blockData.latOffset + 0.00042;
-    const centerLng = RED_MOUNTAIN_CENTER.lng + blockData.lngOffset + 0.0006;
-
-    const block = await prisma.block.upsert({
-      where: {
-        vineyardId_code: {
-          vineyardId: vineyard.id,
-          code: blockData.code,
-        },
-      },
-      update: {},
-      create: {
-        vineyardId: vineyard.id,
-        code: blockData.code,
-        name: blockData.name,
-        acreage: blockData.acreage,
-        status: blockData.status ?? "ACTIVE",
-        notes: blockData.notes,
-        plantings: {
-          create: {
-            varietyId: variety.id,
-            vineCount: blockData.vineCount,
-            yearPlanted: blockData.yearPlanted,
-            rootstock: blockData.rootstock,
-            rowSpacing: 8,
-            vineSpacing: 4,
-          },
-        },
-        mapFeature: {
-          create: {
-            geometry,
-            centerLat,
-            centerLng,
-          },
-        },
-      },
-    });
-
-    blockByCode[blockData.code] = block.id;
-
-    await prisma.note.create({
-      data: {
-        blockId: block.id,
-        authorId: admin.id,
-        content: `Seed note for ${blockData.name} — ${blockData.variety}, planted ${blockData.yearPlanted}.`,
-      },
-    });
-  }
+  const estate = await seedEstateBlocks(prisma, vineyard.id, admin.id);
 
   const now = new Date();
   const daysFromNow = (days: number) => {
@@ -320,47 +134,40 @@ async function main() {
 
   const sampleTasks = [
     {
-      blockCode: "CEV-01",
+      blockCode: "1",
       type: "PRUNING" as const,
       status: "IN_PROGRESS" as const,
-      title: "Winter cane pruning — North Ridge",
+      title: "Winter cane pruning — 1-CS1",
       dueDate: daysFromNow(3),
       equipmentName: "Kubota M5-111",
     },
     {
-      blockCode: "CEV-02",
+      blockCode: "13",
       type: "SPRAYING" as const,
       status: "PENDING" as const,
-      title: "Early season fungicide application",
+      title: "Early season fungicide — 13-MR13",
       dueDate: daysFromNow(1),
       equipmentName: "Gregoire G65 Sprayer",
     },
     {
-      blockCode: "CEV-03",
+      blockCode: "3",
       type: "INSPECTION" as const,
       status: "PENDING" as const,
-      title: "Bud break inspection",
+      title: "Bud break inspection — 3-MR3",
       dueDate: daysFromNow(5),
     },
     {
-      blockCode: "CEV-04",
-      type: "HARVESTING" as const,
-      status: "PENDING" as const,
-      title: "Harvest prep walkthrough",
-      dueDate: daysFromNow(14),
-    },
-    {
-      blockCode: "CEV-08",
+      blockCode: "40",
       type: "INSPECTION" as const,
       status: "COMPLETED" as const,
-      title: "Canopy health check — Heritage Block",
+      title: "Canopy health check — 40-CM40",
       dueDate: daysAgo(2),
       completedAt: daysAgo(1),
     },
   ];
 
   for (const taskData of sampleTasks) {
-    const blockId = blockByCode[taskData.blockCode];
+    const blockId = estate.blockByCode[taskData.blockCode];
     if (!blockId) continue;
 
     const existing = await prisma.task.findFirst({
@@ -388,37 +195,30 @@ async function main() {
 
   const sampleSchedules = [
     {
-      blockCode: "CEV-01",
+      blockCode: "1",
       frequency: "weekly",
       method: "Drip",
       volume: 450,
       startDate: daysAgo(60),
     },
     {
-      blockCode: "CEV-02",
+      blockCode: "3",
       frequency: "weekly",
       method: "Drip",
       volume: 380,
       startDate: daysAgo(45),
     },
     {
-      blockCode: "CEV-03",
+      blockCode: "13",
       frequency: "biweekly",
       method: "Drip",
       volume: 320,
       startDate: daysAgo(30),
     },
-    {
-      blockCode: "CEV-08",
-      frequency: "weekly",
-      method: "Drip",
-      volume: 520,
-      startDate: daysAgo(90),
-    },
   ];
 
   for (const sched of sampleSchedules) {
-    const blockId = blockByCode[sched.blockCode];
+    const blockId = estate.blockByCode[sched.blockCode];
     if (!blockId) continue;
 
     const existing = await prisma.irrigationSchedule.findFirst({
@@ -439,85 +239,22 @@ async function main() {
     }
   }
 
-  const sampleRecords = [
-    {
-      blockCode: "CEV-01",
-      appliedAt: daysAgo(5),
-      volume: 440,
-      duration: 120,
-      method: "Drip",
-      status: "APPLIED" as const,
-    },
-    {
-      blockCode: "CEV-02",
-      appliedAt: daysAgo(10),
-      volume: 375,
-      duration: 100,
-      method: "Drip",
-      status: "APPLIED" as const,
-    },
-    {
-      blockCode: "CEV-03",
-      appliedAt: daysAgo(20),
-      volume: 310,
-      duration: 90,
-      method: "Drip",
-      status: "APPLIED" as const,
-      notes: "Slightly under target volume — check pressure.",
-    },
-    {
-      blockCode: "CEV-08",
-      appliedAt: daysAgo(12),
-      volume: 500,
-      duration: 140,
-      method: "Drip",
-      status: "APPLIED" as const,
-    },
-    {
-      blockCode: "CEV-04",
-      appliedAt: daysAgo(3),
-      volume: 200,
-      duration: 60,
-      method: "Drip",
-      status: "MISSED" as const,
-      notes: "Valve stuck — irrigation did not run as scheduled.",
-    },
-  ];
-
-  for (const rec of sampleRecords) {
-    const blockId = blockByCode[rec.blockCode];
-    if (!blockId) continue;
-
-    const existing = await prisma.irrigationRecord.findFirst({
-      where: {
-        blockId,
-        appliedAt: rec.appliedAt,
-        status: rec.status,
-      },
-    });
-
-    if (!existing) {
-      await prisma.irrigationRecord.create({
-        data: {
-          blockId,
-          appliedAt: rec.appliedAt,
-          volume: rec.volume,
-          duration: rec.duration,
-          method: rec.method,
-          status: rec.status,
-          notes: rec.notes,
-        },
-      });
-    }
-  }
-
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
-  console.log(`  Blocks: ${blocksData.length}`);
+  console.log(`  Estate center: ${ESTATE_CENTER.lat}, ${ESTATE_CENTER.lng}`);
+  console.log(`  Vineyard blocks: ${estate.vineyardBlockCount}`);
+  console.log(`  Infrastructure areas: ${estate.infrastructureCount}`);
+  console.log(`  GPS polygons extracted: ${estate.geometryCount}`);
+  if (estate.missingGeometry.length > 0) {
+    console.log(`  Missing geometry (${estate.missingGeometry.length}):`);
+    for (const name of estate.missingGeometry) {
+      console.log(`    - ${name}`);
+    }
+  }
+  console.log(`  Varieties: ${estate.source.varieties.length}`);
   console.log(`  Equipment: ${sampleEquipment.length}`);
-  console.log(`  Tasks: ${sampleTasks.length}`);
-  console.log(`  Irrigation schedules: ${sampleSchedules.length}`);
-  console.log(`  Irrigation records: ${sampleRecords.length}`);
+  console.log(`  Demo tasks: ${sampleTasks.length}`);
+  console.log(`  Imported irrigation records: 3 (blocks 3, 31, 32)`);
   console.log(`  Admin login: admin@cooperestate.com / cooper2026`);
 }
 

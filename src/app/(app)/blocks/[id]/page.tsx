@@ -34,7 +34,10 @@ export default async function BlockDetailPage({
     notFound();
   }
 
-  const totalVines = block.plantings.reduce((sum, p) => sum + p.vineCount, 0);
+  const totalVines = block.plantings.reduce(
+    (sum, p) => sum + (p.vineCount ?? 0),
+    0,
+  );
 
   const taskItems: TaskListItem[] = block.tasks.map((task) => ({
     id: task.id,
@@ -119,12 +122,16 @@ export default async function BlockDetailPage({
               <div>
                 <p className="font-medium">{planting.variety.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  Planted {planting.yearPlanted}
+                  {planting.yearPlanted != null
+                    ? `Planted ${planting.yearPlanted}`
+                    : "Year planted not recorded"}
                   {planting.rootstock && ` · ${planting.rootstock}`}
                 </p>
               </div>
               <p className="text-sm font-medium">
-                {planting.vineCount.toLocaleString()} vines
+                {planting.vineCount != null
+                  ? `${planting.vineCount.toLocaleString()} vines`
+                  : "Vine count not recorded"}
               </p>
             </div>
           ))}
