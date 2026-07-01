@@ -24,7 +24,7 @@ export function MapPageClient({
 
   return (
     <>
-      <div className="relative h-[calc(100dvh-11rem)] min-h-[400px] overflow-hidden rounded-lg border">
+      <div className="relative h-[calc(100dvh-12rem)] min-h-[400px] overflow-hidden rounded-lg border">
         <VineyardMap
           blocks={blocks}
           geoJson={geoJson}

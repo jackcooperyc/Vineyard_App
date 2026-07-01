@@ -1,23 +1,28 @@
 import { getBlocks } from "@/domains/blocks/queries";
-import { BlockListCard } from "@/components/blocks/block-list-card";
+import { BlockListWithFilter } from "@/components/blocks/block-list-with-filter";
 
 export default async function BlocksPage() {
   const blocks = await getBlocks();
+  const vineyardCount = blocks.filter((b) => b.blockType === "VINEYARD").length;
+  const infrastructureCount = blocks.filter(
+    (b) => b.blockType === "INFRASTRUCTURE",
+  ).length;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="field-readable mx-auto max-w-3xl space-y-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Blocks</h2>
         <p className="text-muted-foreground">
-          {blocks.length} vineyard blocks · tap for details
+          {vineyardCount} vineyard blocks · {infrastructureCount} infrastructure
+          areas
         </p>
       </div>
 
-      <div className="space-y-3">
-        {blocks.map((block) => (
-          <BlockListCard key={block.id} block={block} />
-        ))}
-      </div>
+      <BlockListWithFilter
+        blocks={blocks}
+        vineyardCount={vineyardCount}
+        infrastructureCount={infrastructureCount}
+      />
     </div>
   );
 }

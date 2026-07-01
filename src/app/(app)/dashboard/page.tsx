@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Grape, ListTodo, Droplets, Tractor } from "lucide-react";
+import { Grape, ListTodo, Droplets, Tractor, Map, ClipboardPen } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,8 +28,8 @@ export default async function DashboardPage() {
   const cards = [
     {
       title: "Vineyard blocks",
-      value: stats.blockCount,
-      description: "Active blocks in the estate",
+      value: stats.vineyardBlockCount,
+      description: `${stats.blockCount} total areas incl. infrastructure`,
       href: "/blocks",
       icon: Grape,
     },
@@ -57,12 +57,28 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="field-readable mx-auto max-w-5xl space-y-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
           Operational overview for Cooper Estate Vineyards
         </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 md:hidden">
+        <Button size="touch" className="h-auto flex-col gap-2 py-4" render={<Link href="/field" />}>
+          <ClipboardPen className="size-6" />
+          Field log
+        </Button>
+        <Button
+          size="touch"
+          variant="outline"
+          className="h-auto flex-col gap-2 py-4"
+          render={<Link href="/map" />}
+        >
+          <Map className="size-6" />
+          Open map
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -100,15 +116,17 @@ export default async function DashboardPage() {
           <CardDescription>Jump to common field workflows</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button render={<Link href="/blocks" />}>Browse blocks</Button>
-          <Button variant="outline" render={<Link href="/map" />}>
+          <Button size="touch" render={<Link href="/field" />}>
+            Field log
+          </Button>
+          <Button size="touch" variant="outline" render={<Link href="/blocks" />}>
+            Browse blocks
+          </Button>
+          <Button size="touch" variant="outline" render={<Link href="/map" />}>
             Open map
           </Button>
-          <Button variant="outline" render={<Link href="/tasks/new" />}>
-            Log task
-          </Button>
-          <Button variant="outline" render={<Link href="/equipment" />}>
-            Equipment
+          <Button size="touch" variant="outline" render={<Link href="/tasks/new" />}>
+            Full task form
           </Button>
         </CardContent>
       </Card>

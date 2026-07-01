@@ -9,6 +9,7 @@ import {
   ListTodo,
   Tractor,
   Droplets,
+  ClipboardPen,
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,18 +22,19 @@ import {
 import { Button } from "@/components/ui/button";
 
 const mainNav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/blocks", label: "Blocks", icon: Grape },
   { href: "/map", label: "Map", icon: Map },
+  { href: "/field", label: "Field", icon: ClipboardPen },
   { href: "/tasks", label: "Tasks", icon: ListTodo },
+  { href: "/blocks", label: "Blocks", icon: Grape },
 ];
 
 const moreNav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/equipment", label: "Equipment", icon: Tractor },
   { href: "/irrigation", label: "Irrigation", icon: Droplets },
 ];
 
-const allNav = [...mainNav, ...moreNav];
+const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -76,23 +78,35 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       <ul className="grid grid-cols-5">
         {mainNav.map((item) => {
           const Icon = item.icon;
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isField = item.href === "/field";
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium",
+                  "flex min-h-16 flex-col items-center justify-center gap-1 px-1 touch-manipulation",
                   active ? "text-primary" : "text-muted-foreground",
+                  isField && !active && "text-foreground",
                 )}
               >
-                <Icon className="size-5" />
-                <span>{item.label}</span>
+                <span
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-full",
+                    isField &&
+                      (active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary"),
+                  )}
+                >
+                  <Icon className="size-5" />
+                </span>
+                <span className="text-[11px] font-semibold">{item.label}</span>
               </Link>
             </li>
           );
@@ -103,22 +117,24 @@ export function BottomNav() {
               render={
                 <Button
                   variant="ghost"
-                  className="flex min-h-14 w-full flex-col items-center justify-center gap-0.5 rounded-none px-1 text-[10px] font-medium text-muted-foreground"
+                  className="flex min-h-16 w-full flex-col items-center justify-center gap-1 rounded-none px-1 text-[11px] font-semibold text-muted-foreground touch-manipulation"
                 />
               }
             >
-              <MoreHorizontal className="size-5" />
+              <span className="flex size-10 items-center justify-center">
+                <MoreHorizontal className="size-5" />
+              </span>
               <span>More</span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="mb-2">
+            <DropdownMenuContent align="end" side="top" className="mb-2 min-w-44">
               {moreNav.map((item) => {
                 const Icon = item.icon;
                 return (
                   <DropdownMenuItem
                     key={item.href}
-                    render={<Link href={item.href} />}
+                    render={<Link href={item.href} className="min-h-11" />}
                   >
-                    <Icon className="size-4" />
+                    <Icon className="size-5" />
                     {item.label}
                   </DropdownMenuItem>
                 );

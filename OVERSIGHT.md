@@ -28,6 +28,17 @@ Activity log for data import, deployment, and security items requiring human rev
 
 - Run before merge: `npx prisma validate`, `npx prisma db push`, `npm run build`, `npm run db:seed`
 
+## 2026-07-01 — Sprint 6 mobile polish
+
+### Completed
+
+- `/field` page for one-handed task and irrigation logging
+- Bottom nav reordered for thumb reach (Map, Field, Tasks, Blocks, More)
+- Task type chips replace dropdowns in quick-log flows
+- Irrigation quick-log defaults to “applied today” with optional details
+- Block list filters (vineyard / infrastructure / all) with numeric sort
+- Touch-sized controls and safe-area padding for mobile field use
+
 ### Data quality flags preserved
 
 - Block 6 (`6-CF6`): code implies Cab Franc; source varietal is Cab Sauv — note on block.

@@ -34,7 +34,7 @@ export default async function AppLayout({
             </div>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 pb-24 md:px-6 md:pb-6">
+        <main className="field-readable flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
           {children}
         </main>
         <BottomNav />

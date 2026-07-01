@@ -43,11 +43,12 @@
 
 ## v2 modules (Sprint 6–8)
 
-### Mobile polish — Sprint 6
+### Mobile polish — Sprint 6 ✓
 
-- Touch-optimized forms
-- One-handed navigation patterns
-- Offline-tolerant UX planning
+- Touch-optimized controls and field-readable mobile typography
+- `/field` hub for one-tap task and irrigation logging
+- One-handed bottom navigation (Map · Field · Tasks · Blocks)
+- Collapsible quick-log details on block pages
 
 ### Data import — Sprint 7
 

@@ -30,6 +30,8 @@ function parseIntOrNull(value?: string): number | null {
 function revalidateIrrigationPaths(blockId?: string) {
   revalidatePath("/irrigation");
   revalidatePath("/dashboard");
+  revalidatePath("/field");
+  revalidatePath("/map");
   if (blockId) {
     revalidatePath(`/blocks/${blockId}`);
   }

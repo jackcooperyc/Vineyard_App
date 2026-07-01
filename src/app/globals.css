@@ -128,3 +128,24 @@
     @apply font-sans;
   }
 }
+
+/* Sprint 6 — field / outdoor mobile readability */
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .field-tap {
+    @apply min-h-12 touch-manipulation;
+  }
+
+  @media (max-width: 767px) {
+    .field-readable {
+      @apply text-base leading-relaxed;
+    }
+
+    .field-readable .text-muted-foreground {
+      @apply text-[0.95rem];
+    }
+  }
+}

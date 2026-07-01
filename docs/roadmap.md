@@ -67,9 +67,11 @@
 
 ### Sprint 6 — Mobile polish
 
-- Touch targets and outdoor readability
-- Reduced form depth for field logging
-- One-handed navigation
+- [x] Touch targets (`touch` button size, 48px+ field controls)
+- [x] Outdoor readability utilities (`field-readable`, safe-area padding)
+- [x] Field log hub (`/field`) — one-tap task and irrigation logging
+- [x] Reduced quick-log form depth (type chips, collapsible details)
+- [x] One-handed bottom nav (Map · Field · Tasks · Blocks · More)
 
 ### Sprint 7 — Real data import
 
@@ -90,4 +92,4 @@
 
 ## Current focus
 
-Sprint 5: Mapbox 2D map with block polygons, tap-to-open drawer, and quick actions.
+Sprint 8: 3D map prototype, sensor/API abstraction, and reporting.

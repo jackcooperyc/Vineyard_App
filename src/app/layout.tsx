@@ -19,6 +19,12 @@ export const metadata: Metadata = {
     "Operational command center for Cooper Estate Vineyards — blocks, tasks, irrigation, equipment, and map.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

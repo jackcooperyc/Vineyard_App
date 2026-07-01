@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { BlockStatus } from "@/generated/prisma/client";
+import type { BlockStatus, BlockType } from "@/generated/prisma/client";
 import { countIrrigationAlerts } from "@/domains/irrigation/queries";
 
 export type BlockListItem = {
@@ -8,38 +8,61 @@ export type BlockListItem = {
   name: string;
   acreage: number | null;
   status: BlockStatus;
+  blockType: BlockType;
+  infrastructureType: string | null;
   primaryVariety: string | null;
   totalVines: number;
   yearPlanted: number | null;
 };
 
-export async function getBlocks(): Promise<BlockListItem[]> {
+function compareBlockCodes(a: BlockListItem, b: BlockListItem): number {
+  if (a.blockType !== b.blockType) {
+    return a.blockType === "VINEYARD" ? -1 : 1;
+  }
+  const aNum = Number.parseInt(a.code, 10);
+  const bNum = Number.parseInt(b.code, 10);
+  if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) return aNum - bNum;
+  return a.code.localeCompare(b.code);
+}
+
+export async function getBlocks(filters?: {
+  blockType?: BlockType;
+}): Promise<BlockListItem[]> {
   const blocks = await db.block.findMany({
+    where: filters?.blockType ? { blockType: filters.blockType } : undefined,
     include: {
       plantings: {
         include: { variety: true },
         orderBy: { vineCount: "desc" },
       },
     },
-    orderBy: { code: "asc" },
   });
 
-  return blocks.map((block) => {
-    const primary = block.plantings[0];
-    return {
-      id: block.id,
-      code: block.code,
-      name: block.name,
-      acreage: block.acreage,
-      status: block.status,
-      primaryVariety: primary?.variety.name ?? null,
-      totalVines: block.plantings.reduce(
-        (sum, p) => sum + (p.vineCount ?? 0),
-        0,
-      ),
-      yearPlanted: primary?.yearPlanted ?? null,
-    };
-  });
+  return blocks
+    .map((block) => {
+      const primary = block.plantings[0];
+      return {
+        id: block.id,
+        code: block.code,
+        name: block.name,
+        acreage: block.acreage,
+        status: block.status,
+        blockType: block.blockType,
+        infrastructureType: block.infrastructureType,
+        primaryVariety: primary?.variety.name ?? null,
+        totalVines: block.plantings.reduce(
+          (sum, p) => sum + (p.vineCount ?? 0),
+          0,
+        ),
+        yearPlanted: primary?.yearPlanted ?? null,
+      };
+    })
+    .sort(compareBlockCodes);
+}
+
+export async function getVineyardBlocksForField() {
+  const blocks = await getBlocks({ blockType: "VINEYARD" });
+  return blocks.map((b) => ({ id: b.id, code: b.code, name: b.name }));
 }
 
 export async function getBlockById(id: string) {
@@ -82,9 +105,16 @@ export async function getBlockById(id: string) {
 }
 
 export async function getDashboardStats() {
-  const [blockCount, pendingTasks, upcomingIrrigation, equipmentNeedingService, irrigationAlerts] =
-    await Promise.all([
+  const [
+    blockCount,
+    vineyardBlockCount,
+    pendingTasks,
+    upcomingIrrigation,
+    equipmentNeedingService,
+    irrigationAlerts,
+  ] = await Promise.all([
     db.block.count(),
+    db.block.count({ where: { blockType: "VINEYARD" } }),
     db.task.count({
       where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
     }),
@@ -102,6 +132,7 @@ export async function getDashboardStats() {
 
   return {
     blockCount,
+    vineyardBlockCount,
     pendingTasks,
     upcomingIrrigation,
     equipmentNeedingService,

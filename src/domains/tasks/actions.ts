@@ -20,6 +20,8 @@ function parseDueDate(value?: string): Date | undefined {
 function revalidateTaskPaths(blockId?: string) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+  revalidatePath("/field");
+  revalidatePath("/map");
   if (blockId) {
     revalidatePath(`/blocks/${blockId}`);
   }
