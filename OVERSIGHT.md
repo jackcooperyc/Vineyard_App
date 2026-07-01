@@ -2,6 +2,16 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-01 — Production DB sync (Sprint 8 schema)
+
+### Completed
+
+- Ran `./scripts/sync-production-db.sh` against Neon production after Sprint 8 schema changes (weather thresholds, irrigation pumps, viticulture metrics, etc.).
+- Prisma schema pushed; seed completed idempotently (35 blocks, 12 infrastructure, environmental thresholds, demo pump, admin user).
+- Login smoke test: **https://cev.cupr.app/login** → HTTP 200.
+
+---
+
 ## 2026-07-01 — Production seed (Neon, manual sync)
 
 ### Completed
@@ -227,5 +237,5 @@ Activity log for data import, deployment, and security items requiring human rev
 | KML "Untitled polygon" | Unmapped — field verification needed |
 | Mapbox token URL restrictions | Mapbox dashboard — restrict to `cev.cupr.app` |
 | GitHub branch protection / CI gates | GitHub admin |
-| Production seed on Neon | Re-run `./scripts/sync-production-db.sh` after deploy |
+| Production seed on Neon | **Done** (2026-07-01) — Sprint 8 schema sync; see entry above |
 | Seed password rotation | Defer — documented in seed output |
