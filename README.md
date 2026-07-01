@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cooper Estate Vineyard Management
 
-## Getting Started
+Operational command center for Cooper Estate Vineyards — a block-centered vineyard operations platform built with Next.js, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Features (Sprint 0–1)
+
+- Authenticated app shell with mobile bottom nav and desktop sidebar
+- Vineyard block directory with varietal and planting details
+- Block detail pages with notes and task preview
+- Dashboard summary cards
+- Placeholder pages for tasks, equipment, irrigation, and map
+- Prisma schema for full domain model (tasks, equipment, irrigation ready for later sprints)
+- Seed data for 8 Cooper Estate sample blocks on Red Mountain, WA
+
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **PostgreSQL** via [Neon](https://neon.tech) (production) or Prisma local dev (development)
+- **Prisma 7** ORM with `@prisma/adapter-pg`
+- **Auth.js v5** (credentials login)
+- **Tailwind CSS** + **shadcn/ui**
+- **Mapbox GL JS** (planned Sprint 5)
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL database (Neon recommended for production)
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Fill in:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon pooled URL for app) |
+| `DIRECT_URL` | Direct connection for Prisma migrations (Neon) |
+| `AUTH_SECRET` | Random secret — `openssl rand -base64 32` |
+| `AUTH_URL` | App URL — `http://localhost:3000` locally |
+
+**Local development with Prisma dev:**
+
+```bash
+npx prisma dev          # starts local Postgres
+npx prisma db push      # apply schema
+npm run db:seed         # seed sample data
+```
+
+Use the Postgres URL printed by `prisma dev` (typically `postgres://postgres:postgres@localhost:51214/template1`).
+
+### 3. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Seed login:** `admin@cooperestate.com` / `cooper2026`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run db:push` | Push schema to database |
+| `npm run db:seed` | Seed Cooper Estate sample data |
+| `npm run db:studio` | Open Prisma Studio |
 
-To learn more about Next.js, take a look at the following resources:
+## Project structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+docs/           Product and architecture documentation
+prisma/         Schema and seed data
+src/app/        Next.js routes
+src/components/ UI components by domain
+src/domains/    Business logic and queries
+src/lib/        Auth, database, utilities
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See [PROJECT_START.md](./PROJECT_START.md) for the full product brief and [docs/roadmap.md](./docs/roadmap.md) for the sprint plan.
 
-## Deploy on Vercel
+## Deployment (Vercel + Neon)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push repo to GitHub
+2. Create a [Neon](https://neon.tech) project and copy connection strings
+3. Import repo in [Vercel](https://vercel.com)
+4. Set environment variables:
+   - `DATABASE_URL` — Neon **pooled** connection string
+   - `DIRECT_URL` — Neon **direct** connection string
+   - `AUTH_SECRET` — production secret
+   - `AUTH_URL` — your Vercel production URL
+5. Deploy — `postinstall` runs `prisma generate` automatically
+6. Run migrations against production: `npx prisma db push` (or `migrate deploy`)
+7. Seed production once: `npm run db:seed`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Documentation
+
+- [Product vision](./docs/product-vision.md)
+- [Architecture](./docs/architecture.md)
+- [Domain model](./docs/domain-model.md)
+- [Roadmap](./docs/roadmap.md)
+
+## License
+
+Private — Cooper Wine Company

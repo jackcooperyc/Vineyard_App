@@ -1,0 +1,294 @@
+// Cooper Estate Vineyard Management — Prisma Schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum BlockStatus {
+  ACTIVE
+  FALLOW
+  REPLANTING
+}
+
+enum VarietyColor {
+  RED
+  WHITE
+  ROSE
+}
+
+enum TaskType {
+  PRUNING
+  SPRAYING
+  HARVESTING
+  INSPECTION
+  OTHER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  IN_MAINTENANCE
+  RETIRED
+}
+
+enum IrrigationStatus {
+  SCHEDULED
+  APPLIED
+  MISSED
+  SKIPPED
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  FIELD_WORKER
+  READ_ONLY
+}
+
+// ─── Vineyard core ───────────────────────────────────────────────────────────
+
+model Vineyard {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  blocks    Block[]
+}
+
+model Block {
+  id                  String               @id @default(cuid())
+  vineyardId          String
+  code                String
+  name                String
+  acreage             Float?
+  status              BlockStatus          @default(ACTIVE)
+  notes               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  vineyard            Vineyard             @relation(fields: [vineyardId], references: [id], onDelete: Cascade)
+  plantings           Planting[]
+  tasks               Task[]
+  irrigationSchedules IrrigationSchedule[]
+  irrigationRecords   IrrigationRecord[]
+  notes_records       Note[]
+  mapFeature          MapFeature?
+
+  @@unique([vineyardId, code])
+  @@index([vineyardId])
+  @@index([status])
+}
+
+model Variety {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  color     VarietyColor?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  plantings Planting[]
+}
+
+model Planting {
+  id          String   @id @default(cuid())
+  blockId     String
+  varietyId   String
+  vineCount   Int
+  yearPlanted Int
+  rootstock   String?
+  rowSpacing  Float?
+  vineSpacing Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  block       Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  variety     Variety  @relation(fields: [varietyId], references: [id])
+
+  @@index([blockId])
+  @@index([varietyId])
+}
+
+// ─── Operations ──────────────────────────────────────────────────────────────
+
+model Task {
+  id           String     @id @default(cuid())
+  blockId      String
+  type         TaskType
+  status       TaskStatus @default(PENDING)
+  title        String
+  description  String?
+  dueDate      DateTime?
+  completedAt  DateTime?
+  assignedToId String?
+  equipmentId  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  assignedTo   User?      @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  equipment    Equipment? @relation(fields: [equipmentId], references: [id])
+
+  @@index([blockId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([assignedToId])
+}
+
+model Equipment {
+  id                 String              @id @default(cuid())
+  name               String
+  type               String
+  status             EquipmentStatus     @default(ACTIVE)
+  serialNumber       String?
+  lastServicedAt     DateTime?
+  nextServiceAt      DateTime?
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tasks              Task[]
+  maintenanceRecords MaintenanceRecord[]
+
+  @@index([status])
+}
+
+model MaintenanceRecord {
+  id           String    @id @default(cuid())
+  equipmentId  String
+  performedAt  DateTime
+  description  String?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  equipment    Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId])
+  @@index([performedAt])
+}
+
+model IrrigationSchedule {
+  id        String   @id @default(cuid())
+  blockId   String
+  frequency String
+  startDate DateTime
+  volume    Float?
+  method    String?
+  active    Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([blockId])
+  @@index([active])
+}
+
+model IrrigationRecord {
+  id          String           @id @default(cuid())
+  blockId     String
+  scheduledAt DateTime?
+  appliedAt   DateTime
+  volume      Float?
+  duration    Int?
+  method      String?
+  status      IrrigationStatus @default(APPLIED)
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  block       Block            @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([blockId])
+  @@index([appliedAt])
+  @@index([status])
+}
+
+// ─── Shared ──────────────────────────────────────────────────────────────────
+
+model Note {
+  id        String   @id @default(cuid())
+  blockId   String?
+  content   String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  block     Block?   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([blockId])
+  @@index([authorId])
+}
+
+model MapFeature {
+  id        String   @id @default(cuid())
+  blockId   String   @unique
+  geometry  Json
+  centerLat Float
+  centerLng Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+}
+
+// ─── Auth (Auth.js) ──────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          UserRole  @default(MANAGER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  tasks         Task[]    @relation("TaskAssignee")
+  notes         Note[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
