@@ -171,5 +171,23 @@ Activity log for data import, deployment, and security items requiring human rev
 
 ### Next
 
-- Sprint 8 Phase 2 — weather provider abstraction, dashboard weather card, environmental thresholds
-- Production seed: run `./scripts/sync-production-db.sh` with Neon `DATABASE_URL` after deploy (not run automatically from CI)
+- Sprint 8 Phase 2 — dashboard weather card, map weather chip, environmental thresholds
+
+## 2026-07-01 — Sprint 8 Phase 2 #2 (weather provider abstraction)
+
+### Completed
+
+- Added `src/domains/weather/` domain module: `WeatherProvider` interface, `getCurrentWeather()` / `getWeatherForecast()` server queries.
+- Open-Meteo adapter (keyless) for estate centroid `46.26513, -119.45518`; WMO `weather_code` → condition label + icon name.
+- 15-minute `unstable_cache` scoped to provider + estate coordinates; `WEATHER_PROVIDER=open-meteo` (default) in `.env.example`.
+- No UI in this ticket — queries ready for dashboard/map cards.
+
+### Validation
+
+- `npx prisma validate` — pass
+- `npm run build` — pass (no `NEXT_PUBLIC_` weather leakage)
+- `npm run lint` — pass
+
+### Follow-up (Phase 2 UI)
+
+- Dashboard weather card, map corner chip, `EnvironmentalThreshold` model + frost hint
