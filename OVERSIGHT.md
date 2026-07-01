@@ -4,6 +4,8 @@ Activity log for data import, deployment, and security items requiring human rev
 
 ## 2026-07-01 — Tasks hub comprehensive rebuild
 
+**Merged:** [PR #13](https://github.com/jackcooperyc/Vineyard_App/pull/13) → `main` @ `09367b8`
+
 ### Completed
 
 - Rebuilt `/tasks` as a production-quality hub aligned with irrigation hub patterns (Op-2).
@@ -266,6 +268,8 @@ Activity log for data import, deployment, and security items requiring human rev
 ---
 
 ## 2026-07-01 — Irrigation & equipment hub rebuild
+
+**Merged:** [PR #14](https://github.com/jackcooperyc/Vineyard_App/pull/14) → `main` @ `48d306a`
 
 ### Completed
 
