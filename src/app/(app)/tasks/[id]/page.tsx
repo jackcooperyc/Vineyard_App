@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Pencil, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Pencil, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,10 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TaskStatusBadge } from "@/components/tasks/task-status-badge";
+import { TaskTypeIcon } from "@/components/tasks/task-type-icon";
 import { TaskTypeLabel } from "@/components/tasks/task-type-label";
 import { TaskStatusActions } from "@/components/tasks/task-status-actions";
+import {
+  dueUrgencyStyles,
+  formatDueLabel,
+  getDueUrgency,
+} from "@/domains/tasks/due-date";
 import { getTaskById } from "@/domains/tasks/queries";
 import type { TaskType } from "@/generated/prisma/client";
+import { cn } from "@/lib/utils";
 
 export default async function TaskDetailPage({
   params,
@@ -27,8 +35,13 @@ export default async function TaskDetailPage({
     notFound();
   }
 
+  const isOpen = task.status === "PENDING" || task.status === "IN_PROGRESS";
+  const urgency = getDueUrgency(task.dueDate);
+  const dueLabel = formatDueLabel(task.dueDate);
+  const urgencyStyle = dueUrgencyStyles[urgency];
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="field-readable mx-auto max-w-3xl space-y-6">
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -38,14 +51,26 @@ export default async function TaskDetailPage({
         >
           <ArrowLeft className="size-5" />
         </Button>
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              <TaskTypeLabel type={task.type as TaskType} />
-            </span>
-            <TaskStatusBadge status={task.status} />
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
+              <TaskTypeIcon type={task.type as TaskType} className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  <TaskTypeLabel type={task.type as TaskType} />
+                </span>
+                <TaskStatusBadge status={task.status} />
+                {urgency === "overdue" && isOpen && (
+                  <Badge variant="outline" className={cn("text-xs", urgencyStyle.badge)}>
+                    Overdue
+                  </Badge>
+                )}
+              </div>
+              <h2 className="text-2xl font-semibold tracking-tight">{task.title}</h2>
+            </div>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight">{task.title}</h2>
           <p className="text-sm text-muted-foreground">
             <Link
               href={`/blocks/${task.block.id}`}
@@ -85,12 +110,21 @@ export default async function TaskDetailPage({
                 <Calendar className="size-4 text-muted-foreground" />
                 <div>
                   <dt className="text-muted-foreground">Due date</dt>
-                  <dd className="font-medium">
-                    {task.dueDate.toLocaleDateString()}
+                  <dd className={cn("font-medium", isOpen && urgencyStyle.text)}>
+                    {dueLabel ?? task.dueDate.toLocaleDateString()}
                   </dd>
                 </div>
               </div>
             )}
+            <div className="flex items-center gap-2">
+              <Clock className="size-4 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Created</dt>
+                <dd className="font-medium">
+                  {task.createdAt.toLocaleDateString()}
+                </dd>
+              </div>
+            </div>
             {task.assignedTo && (
               <div className="flex items-center gap-2">
                 <User className="size-4 text-muted-foreground" />
