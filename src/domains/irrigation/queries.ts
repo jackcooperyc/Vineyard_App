@@ -36,14 +36,154 @@ export type IrrigationAlert = {
 
 export type IrrigationView = "schedules" | "records" | "alerts";
 
+export type IrrigationHubStats = {
+  activeSchedules: number;
+  overdueAlerts: number;
+  recordsThisWeek: number;
+  totalVolumeThisWeek: number | null;
+};
+
+export type ScheduleWithDueHint = ScheduleListItem & {
+  lastAppliedAt: Date | null;
+  daysSinceLast: number | null;
+  isOverdue: boolean;
+};
+
+export type IrrigationRecordRange = "week" | "month";
+
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function startOfWeek() {
+  const d = startOfToday();
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function startOfMonth() {
+  const d = startOfToday();
+  d.setDate(1);
+  return d;
+}
+
+function recordRangeStart(range?: IrrigationRecordRange) {
+  if (range === "month") return startOfMonth();
+  if (range === "week") return startOfWeek();
+  return undefined;
+}
+
+export async function getIrrigationHubStats(
+  blockId?: string,
+): Promise<IrrigationHubStats> {
+  const weekStart = startOfWeek();
+  const blockWhere = blockId ? { blockId } : {};
+
+  const [activeSchedules, alerts, recordsThisWeek, volumeAgg] = await Promise.all([
+    db.irrigationSchedule.count({
+      where: { ...blockWhere, active: true },
+    }),
+    getIrrigationAlerts(),
+    db.irrigationRecord.count({
+      where: {
+        ...blockWhere,
+        appliedAt: { gte: weekStart },
+      },
+    }),
+    db.irrigationRecord.aggregate({
+      where: {
+        ...blockWhere,
+        appliedAt: { gte: weekStart },
+        volume: { not: null },
+      },
+      _sum: { volume: true },
+    }),
+  ]);
+
+  const overdueAlerts = blockId
+    ? alerts.filter((alert) => alert.block.id === blockId).length
+    : alerts.length;
+
+  return {
+    activeSchedules,
+    overdueAlerts,
+    recordsThisWeek,
+    totalVolumeThisWeek: volumeAgg._sum.volume,
+  };
+}
+
+export async function getSchedulesWithDueHints(filters?: {
+  blockId?: string;
+  activeOnly?: boolean;
+  inactiveOnly?: boolean;
+}): Promise<ScheduleWithDueHint[]> {
+  const schedules = await db.irrigationSchedule.findMany({
+    where: {
+      ...(filters?.blockId ? { blockId: filters.blockId } : {}),
+      ...(filters?.activeOnly ? { active: true } : {}),
+      ...(filters?.inactiveOnly ? { active: false } : {}),
+    },
+    include: {
+      block: { select: { id: true, code: true, name: true } },
+    },
+    orderBy: [{ active: "desc" }, { startDate: "desc" }],
+  });
+
+  if (schedules.length === 0) return [];
+
+  const blockIds = [...new Set(schedules.map((schedule) => schedule.blockId))];
+  const lastAppliedRows = await db.irrigationRecord.groupBy({
+    by: ["blockId"],
+    where: {
+      blockId: { in: blockIds },
+      status: "APPLIED",
+    },
+    _max: { appliedAt: true },
+  });
+
+  const lastAppliedByBlock = new Map(
+    lastAppliedRows.map((row) => [row.blockId, row._max.appliedAt]),
+  );
+
+  const now = new Date();
+
+  return schedules.map((schedule) => {
+    const expectedDays = frequencyToDays(schedule.frequency);
+    const lastAppliedAt = lastAppliedByBlock.get(schedule.blockId) ?? null;
+    const daysSinceLast = lastAppliedAt
+      ? Math.floor(
+          (now.getTime() - lastAppliedAt.getTime()) / (1000 * 60 * 60 * 24),
+        )
+      : null;
+
+    const isOverdue =
+      schedule.active &&
+      (daysSinceLast === null
+        ? now.getTime() - schedule.startDate.getTime() > expectedDays * 86400000
+        : daysSinceLast > expectedDays);
+
+    return {
+      ...schedule,
+      lastAppliedAt,
+      daysSinceLast,
+      isOverdue,
+    };
+  });
+}
+
 export async function getIrrigationSchedules(filters?: {
   blockId?: string;
   activeOnly?: boolean;
+  inactiveOnly?: boolean;
 }) {
   return db.irrigationSchedule.findMany({
     where: {
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.activeOnly ? { active: true } : {}),
+      ...(filters?.inactiveOnly ? { active: false } : {}),
     },
     include: {
       block: { select: { id: true, code: true, name: true } },
@@ -71,11 +211,15 @@ export async function getIrrigationScheduleById(id: string) {
 export async function getIrrigationRecords(filters?: {
   blockId?: string;
   status?: IrrigationStatus;
+  range?: IrrigationRecordRange;
 }) {
+  const rangeStart = recordRangeStart(filters?.range);
+
   return db.irrigationRecord.findMany({
     where: {
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
+      ...(rangeStart ? { appliedAt: { gte: rangeStart } } : {}),
     },
     include: {
       block: { select: { id: true, code: true, name: true } },

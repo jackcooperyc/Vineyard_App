@@ -14,6 +14,15 @@ export type EquipmentListItem = {
 
 export type EquipmentFilters = {
   status?: EquipmentStatus | "ALL" | "NEEDS_SERVICE";
+  type?: string;
+  search?: string;
+};
+
+export type EquipmentHubStats = {
+  operational: number;
+  needsService: number;
+  inMaintenance: number;
+  retired: number;
 };
 
 function needsServiceWhere() {
@@ -27,6 +36,24 @@ function needsServiceWhere() {
   };
 }
 
+export async function getEquipmentHubStats(): Promise<EquipmentHubStats> {
+  const now = new Date();
+
+  const [operational, inMaintenance, retired, needsService] = await Promise.all([
+    db.equipment.count({ where: { status: "ACTIVE" } }),
+    db.equipment.count({ where: { status: "IN_MAINTENANCE" } }),
+    db.equipment.count({ where: { status: "RETIRED" } }),
+    db.equipment.count({
+      where: {
+        status: { not: "RETIRED" },
+        nextServiceAt: { lte: now },
+      },
+    }),
+  ]);
+
+  return { operational, needsService, inMaintenance, retired };
+}
+
 export async function getEquipment(
   filters: EquipmentFilters = {},
 ): Promise<EquipmentListItem[]> {
@@ -38,10 +65,26 @@ export async function getEquipment(
     where.status = filters.status;
   }
 
+  if (filters.type) {
+    where.type = filters.type;
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    where.name = { contains: search, mode: "insensitive" };
+  }
+
   return db.equipment.findMany({
     where,
     include: {
-      _count: { select: { tasks: true, maintenanceRecords: true } },
+      _count: {
+        select: {
+          tasks: {
+            where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+          },
+          maintenanceRecords: true,
+        },
+      },
     },
     orderBy: [{ status: "asc" }, { name: "asc" }],
   });

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { AlertTriangle, CalendarClock, Droplets } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const views = [
-  { value: "schedules", label: "Schedules" },
-  { value: "records", label: "Records" },
-  { value: "alerts", label: "Alerts" },
+  { value: "schedules", label: "Schedules", icon: CalendarClock },
+  { value: "records", label: "Records", icon: Droplets },
+  { value: "alerts", label: "Alerts", icon: AlertTriangle },
 ] as const;
 
 export function IrrigationViewBar() {
@@ -16,7 +17,7 @@ export function IrrigationViewBar() {
   const current = searchParams.get("view") ?? "schedules";
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="flex gap-2">
       {views.map((view) => {
         const params = new URLSearchParams(searchParams.toString());
         if (view.value === "schedules") {
@@ -28,18 +29,23 @@ export function IrrigationViewBar() {
         const active =
           current === view.value ||
           (view.value === "schedules" && !searchParams.get("view"));
+        const Icon = view.icon;
 
         return (
           <Link
             key={view.value}
             href={href}
             className={cn(
-              "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors",
+              "inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors sm:flex-none",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background text-muted-foreground hover:bg-muted",
+              view.value === "alerts" &&
+                !active &&
+                "border-red-200 text-red-700 dark:border-red-900/50 dark:text-red-300",
             )}
           >
+            <Icon className="size-4" />
             {view.label}
           </Link>
         );
