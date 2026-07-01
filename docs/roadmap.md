@@ -88,9 +88,11 @@
 
 See [sprint-8-plan.md](./sprint-8-plan.md) for detailed implementation steps.
 
-- [ ] 3D map toggle (Mapbox terrain + pitch)
+- [x] 3D map toggle (Mapbox terrain + pitch)
+- [x] Elevation in map block drawer
+- [x] `colorHex` override in map paint expressions
 - [ ] Weather provider abstraction + dashboard card
-- [ ] Block terrain / viticulture metrics on detail pages
+- [ ] Block terrain section on block detail pages
 - [ ] Irrigation pump map pins + `/reports` CSV export
 
 ## Current focus

@@ -50,9 +50,9 @@ These are **not** Sprint 8 blockers but close open Sprint 7 items if time allows
 
 ### Acceptance
 
-- [ ] 47 blocks render in both modes at correct Red Mountain location
-- [ ] Toggle works on mobile without breaking tap-to-drawer
-- [ ] No new env vars beyond existing `NEXT_PUBLIC_MAPBOX_TOKEN`
+- [x] 47 blocks render in both modes at correct Red Mountain location
+- [x] Toggle works on mobile without breaking tap-to-drawer
+- [x] No new env vars beyond existing `NEXT_PUBLIC_MAPBOX_TOKEN`
 
 ---
 

@@ -39,6 +39,16 @@ Activity log for data import, deployment, and security items requiring human rev
 - Block list filters (vineyard / infrastructure / all) with numeric sort
 - Touch-sized controls and safe-area padding for mobile field use
 
+## 2026-07-01 — Sprint 8 Phase 1 (3D map)
+
+### Completed
+
+- 2D / 3D toggle on `/map` with shareable `?view=3d` URL
+- Mapbox terrain DEM + pitched camera (60° pitch, -20° bearing)
+- Vineyard block extrusion from `elevMed`; infrastructure polygons stay flat
+- Elevation min–max + median in block map drawer
+- `colorHex` per-block map color override support in paint expressions
+
 ### Data quality flags preserved
 
 - Block 6 (`6-CF6`): code implies Cab Franc; source varietal is Cab Sauv — note on block.

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Droplets, ListTodo } from "lucide-react";
+import { ArrowRight, Droplets, ListTodo, Mountain } from "lucide-react";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
 import { QuickLogIrrigationSheet } from "@/components/irrigation/quick-log-irrigation-sheet";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
@@ -38,13 +38,36 @@ export function BlockMapDrawer({
               </div>
               <SheetTitle>{block.name}</SheetTitle>
               <SheetDescription>
-                {block.primaryVariety ?? "Mixed varieties"}
+                {block.blockType === "INFRASTRUCTURE"
+                  ? (block.infrastructureType ?? "Infrastructure area")
+                  : (block.primaryVariety ?? "Mixed varieties")}
+                {block.acreage != null && ` · ${block.acreage} ac`}
                 {block.totalVines > 0 &&
                   ` · ${block.totalVines.toLocaleString()} vines`}
               </SheetDescription>
             </SheetHeader>
 
             <div className="space-y-4 px-4 pb-4">
+              {block.elevMed != null && (
+                <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                  <Mountain className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Elevation</p>
+                    <p className="text-muted-foreground">
+                      {block.elevMin != null && block.elevMax != null
+                        ? `${block.elevMin.toFixed(1)}–${block.elevMax.toFixed(1)} m`
+                        : null}
+                      {block.elevMin != null &&
+                        block.elevMax != null &&
+                        block.elevMed != null &&
+                        " · "}
+                      {block.elevMed != null &&
+                        `median ${block.elevMed.toFixed(1)} m`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {(block.openTasks > 0 || block.irrigationOverdue) && (
                 <ul className="space-y-1 text-sm">
                   {block.openTasks > 0 && (

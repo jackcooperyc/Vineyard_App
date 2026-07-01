@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { MapPageClient } from "@/components/map/map-page-client";
 import { MapPlaceholder } from "@/components/map/map-placeholder";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
@@ -24,13 +25,21 @@ export default async function MapPage() {
       </div>
 
       {mapboxToken && blocks.length > 0 ? (
-        <MapPageClient
-          blocks={blocks}
-          geoJson={mapBlocksToGeoJSON(blocks)}
-          bounds={getMapBounds(blocks)}
-          equipment={equipment}
-          token={mapboxToken}
-        />
+        <Suspense
+          fallback={
+            <div className="flex h-[calc(100dvh-12rem)] min-h-[400px] items-center justify-center rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+              Loading map…
+            </div>
+          }
+        >
+          <MapPageClient
+            blocks={blocks}
+            geoJson={mapBlocksToGeoJSON(blocks)}
+            bounds={getMapBounds(blocks)}
+            equipment={equipment}
+            token={mapboxToken}
+          />
+        </Suspense>
       ) : (
         <MapPlaceholder blocks={blocks} />
       )}

@@ -1,4 +1,4 @@
-import type { BlockStatus } from "@/generated/prisma/client";
+import type { BlockStatus, BlockType } from "@/generated/prisma/client";
 
 export type MapBlockOverlay = "default" | "tasks" | "irrigation";
 
@@ -12,8 +12,15 @@ export type MapBlock = {
   code: string;
   name: string;
   status: BlockStatus;
+  blockType: BlockType;
+  infrastructureType: string | null;
   primaryVariety: string | null;
   totalVines: number;
+  acreage: number | null;
+  elevMin: number | null;
+  elevMed: number | null;
+  elevMax: number | null;
+  colorHex: string | null;
   centerLat: number;
   centerLng: number;
   geometry: MapBlockGeometry;
@@ -27,8 +34,11 @@ export type MapBlockFeatureProperties = {
   code: string;
   name: string;
   overlay: MapBlockOverlay;
+  blockType: BlockType;
   openTasks: number;
   irrigationOverdue: boolean;
+  elevMed: number | null;
+  colorHex: string | null;
 };
 
 export type MapBlockFeatureCollection = {
