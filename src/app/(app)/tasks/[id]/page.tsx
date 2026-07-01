@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, User } from "lucide-react";
+import { ArrowLeft, Calendar, Pencil, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,6 +58,17 @@ export default async function TaskDetailPage({
       </div>
 
       <TaskStatusActions taskId={task.id} status={task.status} />
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="min-h-11 gap-2"
+          render={<Link href={`/tasks/${task.id}/edit`} />}
+        >
+          <Pencil className="size-4" />
+          Edit task
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>

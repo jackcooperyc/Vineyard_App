@@ -27,13 +27,13 @@
 
 | Layer | Built | Missing / thin |
 |-------|-------|----------------|
-| **Routes** | `/equipment` list + status filters, `/equipment/new`, `/equipment/[id]` detail | No edit route |
-| **Domain** | `queries`, `actions` (create, maintenance log, status change), `validators` | No `updateEquipment` for name/type/serial/notes; no delete/retire confirmation flow |
-| **Components** | Filter bar, list card, form, maintenance form, status actions, select field for tasks | No edit form; no service-calendar view |
+| **Routes** | `/equipment` list + status filters, `/equipment/new`, `/equipment/[id]` detail, `/equipment/[id]/edit` | — |
+| **Domain** | `queries`, `actions` (create, maintenance log, status change, `updateEquipment`), `validators` | No delete/retire confirmation flow |
+| **Components** | Filter bar, list card, form (create + edit), maintenance form, status actions, select field for tasks | No service-calendar view |
 | **Integration** | Dashboard service-due section; task create/quick-log picker; equipment detail shows open tasks | **Not in mobile bottom nav** (buried under More); no `/field` equipment logging |
 | **Seed** | 6 assets (1 retired) with 1 maintenance record | Enough to demo filters; thin history |
 
-**Verdict:** Directory + maintenance logging works. Feels incomplete because **edit asset metadata** is absent and **mobile discoverability** is low.
+**Verdict:** Directory + maintenance logging works. **Edit asset metadata** shipped in Op-3; mobile discoverability remains low.
 
 ---
 
@@ -41,10 +41,10 @@
 
 | Layer | Built | Missing / thin |
 |-------|-------|----------------|
-| **Routes** | `/irrigation` hub (schedules / records / alerts), `/irrigation/schedules/new`, `/irrigation/records/new`, `/irrigation/records/[id]` | No schedule detail or edit route |
-| **Domain** | `queries` (schedules, records, alerts), `actions` (create schedule/record, quick-log, **`toggleScheduleActive`**) | `toggleScheduleActive` **not wired to any UI**; no schedule update/delete |
-| **Components** | View bar, schedule/record/alert cards, forms, quick-log sheet, status badges | Schedule cards link to **block** only, not schedule management |
-| **Integration** | Dashboard alerts; block detail schedule summary + recent records; map drawer quick-log; `/field` irrigation log | Block records not linked to `/irrigation/records/[id]`; no per-block filter on hub |
+| **Routes** | `/irrigation` hub (schedules / records / alerts), `/irrigation/schedules/new`, `/irrigation/schedules/[id]`, `/irrigation/schedules/[id]/edit`, `/irrigation/records/new`, `/irrigation/records/[id]` | — |
+| **Domain** | `queries`, `actions` (create schedule/record, quick-log, `toggleScheduleActive`, `updateSchedule`), `validators`, `constants` | No hard delete (deactivate-only) |
+| **Components** | View bar, filter bar, schedule/record/alert cards, forms, quick-log sheet, status badges, active toggle | — |
+| **Integration** | Dashboard alerts; block detail schedule summary + recent records; map drawer quick-log; `/field` irrigation log; `?blockId=` hub filter | Most blocks still have **no** irrigation history |
 | **Seed** | 3 active schedules; 3 imported records (blocks 3, 31, 32) | Most blocks have **no** irrigation history |
 
 **Verdict:** Logging and alert logic exist. Feels empty due to **sparse seed**, **no schedule management UI**, and **records hub showing 3 items** against 35 blocks.
@@ -84,10 +84,10 @@
 
 | Sprint | Focus | Deliverables |
 |--------|-------|--------------|
-| **Op-1** | Tasks polish | `updateTask` action + edit page; `?blockId=` filter on `/tasks` + block detail link fix; optional type filter chip |
-| **Op-2** | Irrigation admin | Schedule detail page; activate/deactivate toggle (wire `toggleScheduleActive`); edit schedule form; link block irrigation rows → record detail |
-| **Op-3** | Equipment polish | `updateEquipment` action + edit form; dashboard + irrigation-style empty states; optional "Log service" shortcut on dashboard |
-| **Op-4** | Density & discoverability | Expand seed script (tasks/schedules/records across ~10 blocks); dashboard empty-state CTAs; mobile More menu badges for alert counts |
+| **Op-1** | Tasks polish | `updateTask` action + edit page; `?blockId=` filter on `/tasks` + block detail link fix; optional type filter chip | ✅ |
+| **Op-2** | Irrigation admin | Schedule detail page; activate/deactivate toggle (wire `toggleScheduleActive`); edit schedule form; link block irrigation rows → record detail | ✅ |
+| **Op-3** | Equipment polish | `updateEquipment` action + edit form; dashboard + irrigation-style empty states; optional "Log service" shortcut on dashboard | ✅ |
+| **Op-4** | Density & discoverability | Expand seed script (tasks/schedules/records across ~10 blocks); dashboard empty-state CTAs; mobile More menu badges for alert counts | ✅ |
 
 **Exit criteria:** Every operational entity supports create + read + update; block-scoped navigation works; fresh `db:seed` produces a dashboard that looks alive.
 
@@ -110,13 +110,13 @@
 
 | # | Change | Impact |
 |---|--------|--------|
-| 1 | Fix block detail link → `/tasks?blockId={id}` (add filter bar support or dedicated query param) | Correct block → tasks navigation |
-| 2 | Wire `toggleScheduleActive` on schedule list cards (active/inactive toggle) | Unblocks irrigation admin without new routes |
-| 3 | Link block irrigation record rows to `/irrigation/records/[id]` | Detail pages become reachable |
-| 4 | Dashboard empty states: "No overdue irrigation" with CTA to `/irrigation/schedules/new` (same pattern for tasks/equipment) | Dashboard feels intentional, not broken |
-| 5 | Show alert count badge on mobile More button when `irrigationAlerts > 0` or `equipmentNeedingService > 0` | Surfaces buried modules |
-| 6 | Add Equipment + Irrigation to dashboard Quick links (already has Field log / Full task form) | Desktop and mobile parity |
-| 7 | Seed 6–8 more tasks and 2–3 schedules on blocks without data | Lists populate on first clone |
+| 1 | Fix block detail link → `/tasks?blockId={id}` (add filter bar support or dedicated query param) | Correct block → tasks navigation | ✅ |
+| 2 | Wire `toggleScheduleActive` on schedule list cards (active/inactive toggle) | Unblocks irrigation admin without new routes | ✅ |
+| 3 | Link block irrigation record rows to `/irrigation/records/[id]` | Detail pages become reachable | ✅ |
+| 4 | Dashboard empty states: "No overdue irrigation" with CTA to `/irrigation/schedules/new` (same pattern for tasks/equipment) | Dashboard feels intentional, not broken | ✅ |
+| 5 | Show alert count badge on mobile More button when `irrigationAlerts > 0` or `equipmentNeedingService > 0` | Surfaces buried modules | ✅ |
+| 6 | Add Equipment + Irrigation to dashboard Quick links (already has Field log / Full task form) | Desktop and mobile parity | ✅ |
+| 7 | Seed 6–8 more tasks and 2–3 schedules on blocks without data | Lists populate on first clone | ✅ |
 
 ---
 
@@ -162,8 +162,8 @@ Week 5+: Sprint 8 Phase 4 (pumps + /reports)
 
 ```
 src/app/(app)/tasks/          page, [id]/page, new/page
-src/app/(app)/equipment/      page, [id]/page, new/page
-src/app/(app)/irrigation/     page, records/[id], records/new, schedules/new
+src/app/(app)/equipment/      page, [id]/page, [id]/edit, new/page
+src/app/(app)/irrigation/     page, schedules/[id], schedules/[id]/edit, schedules/new, records/[id], records/new
 
 src/domains/tasks/            actions, queries, validators, constants
 src/domains/equipment/        actions, queries, validators, constants
@@ -171,7 +171,7 @@ src/domains/irrigation/       actions, queries, validators, constants
 
 src/components/tasks/         8 components (form, timeline, quick-log, …)
 src/components/equipment/     7 components
-src/components/irrigation/    8 components
+src/components/irrigation/    9 components
 
 Integration: dashboard/page.tsx, blocks/[id]/page.tsx, field/page.tsx, map/block-map-drawer.tsx
 ```

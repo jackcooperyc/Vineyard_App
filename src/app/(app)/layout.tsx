@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getVineyardName } from "@/domains/blocks/queries";
+import { getDashboardStats, getVineyardName } from "@/domains/blocks/queries";
 import { SidebarNav, BottomNav } from "@/components/shared/app-nav";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 
@@ -8,7 +8,14 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, vineyardName] = await Promise.all([auth(), getVineyardName()]);
+  const [session, vineyardName, stats] = await Promise.all([
+    auth(),
+    getVineyardName(),
+    getDashboardStats(),
+  ]);
+
+  const navAlertCount =
+    stats.irrigationAlerts + stats.equipmentNeedingService;
 
   return (
     <div className="flex min-h-screen flex-1">
@@ -37,7 +44,11 @@ export default async function AppLayout({
         <main className="field-readable flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
           {children}
         </main>
-        <BottomNav />
+        <BottomNav
+          alertCount={navAlertCount}
+          equipmentServiceCount={stats.equipmentNeedingService}
+          irrigationAlertCount={stats.irrigationAlerts}
+        />
       </div>
     </div>
   );

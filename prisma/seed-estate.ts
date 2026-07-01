@@ -228,18 +228,25 @@ export async function seedEstateBlocks(
   }
 
   const irrigationDate = new Date("2026-04-14T12:00:00.000Z");
+  const importedRecordNote =
+    "Imported from Cooper Estate source-of-truth (2026-04-14).";
   for (const code of ["3", "31", "32"] as const) {
     const blockId = blockByCode[code];
     if (!blockId) continue;
-    await prisma.irrigationRecord.create({
-      data: {
-        blockId,
-        appliedAt: irrigationDate,
-        status: "APPLIED",
-        method: "Drip",
-        notes: "Imported from Cooper Estate source-of-truth (2026-04-14).",
-      },
+    const existing = await prisma.irrigationRecord.findFirst({
+      where: { blockId, notes: importedRecordNote },
     });
+    if (!existing) {
+      await prisma.irrigationRecord.create({
+        data: {
+          blockId,
+          appliedAt: irrigationDate,
+          status: "APPLIED",
+          method: "Drip",
+          notes: importedRecordNote,
+        },
+      });
+    }
   }
 
   return {

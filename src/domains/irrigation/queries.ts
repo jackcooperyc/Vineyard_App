@@ -36,13 +36,35 @@ export type IrrigationAlert = {
 
 export type IrrigationView = "schedules" | "records" | "alerts";
 
-export async function getIrrigationSchedules(activeOnly = false) {
+export async function getIrrigationSchedules(filters?: {
+  blockId?: string;
+  activeOnly?: boolean;
+}) {
   return db.irrigationSchedule.findMany({
-    where: activeOnly ? { active: true } : undefined,
+    where: {
+      ...(filters?.blockId ? { blockId: filters.blockId } : {}),
+      ...(filters?.activeOnly ? { active: true } : {}),
+    },
     include: {
       block: { select: { id: true, code: true, name: true } },
     },
     orderBy: [{ active: "desc" }, { startDate: "desc" }],
+  });
+}
+
+export async function getIrrigationScheduleById(id: string) {
+  return db.irrigationSchedule.findUnique({
+    where: { id },
+    include: {
+      block: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          vineyard: { select: { name: true } },
+        },
+      },
+    },
   });
 }
 

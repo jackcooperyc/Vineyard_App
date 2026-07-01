@@ -185,7 +185,9 @@ export default async function BlockDetailPage({
           <Button
             variant="link"
             className="h-auto p-0"
-            render={<Link href={`/irrigation?view=records`} />}
+            render={
+              <Link href={`/irrigation?view=records&blockId=${block.id}`} />
+            }
           >
             View all
           </Button>
@@ -198,11 +200,15 @@ export default async function BlockDetailPage({
                   IRRIGATION_FREQUENCIES.find((f) => f.value === schedule.frequency)
                     ?.label ?? schedule.frequency;
                 return (
-                  <p key={schedule.id} className="text-sm">
+                  <Link
+                    key={schedule.id}
+                    href={`/irrigation/schedules/${schedule.id}`}
+                    className="block text-sm hover:text-primary"
+                  >
                     <span className="font-medium">{freq}</span>
                     {schedule.method && ` · ${schedule.method}`}
                     {schedule.volume != null && ` · ${schedule.volume} gal`}
-                  </p>
+                  </Link>
                 );
               })}
             </div>
@@ -213,9 +219,10 @@ export default async function BlockDetailPage({
             </p>
           ) : (
             block.irrigationRecords.map((record) => (
-              <div
+              <Link
                 key={record.id}
-                className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 last:border-0"
+                href={`/irrigation/records/${record.id}`}
+                className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors"
               >
                 <div>
                   <p className="text-sm font-medium">
@@ -225,7 +232,7 @@ export default async function BlockDetailPage({
                   </p>
                 </div>
                 <IrrigationStatusBadge status={record.status} />
-              </div>
+              </Link>
             ))
           )}
         </CardContent>
@@ -239,11 +246,11 @@ export default async function BlockDetailPage({
               {block._count.tasks} total for this block
             </CardDescription>
           </div>
-          {block._count.tasks > 5 && (
+          {block._count.tasks > 0 && (
             <Button
               variant="link"
               className="h-auto p-0"
-              render={<Link href={`/tasks?status=ALL`} />}
+              render={<Link href={`/tasks?blockId=${block.id}`} />}
             >
               View all
             </Button>

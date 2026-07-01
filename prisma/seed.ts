@@ -164,6 +164,109 @@ async function main() {
       dueDate: daysAgo(2),
       completedAt: daysAgo(1),
     },
+    {
+      blockCode: "5",
+      type: "PRUNING" as const,
+      status: "PENDING" as const,
+      title: "Cane selection — 5-CM5",
+      dueDate: daysFromNow(4),
+    },
+    {
+      blockCode: "7",
+      type: "INSPECTION" as const,
+      status: "PENDING" as const,
+      title: "Soil moisture check — 7-CM7",
+      dueDate: daysFromNow(2),
+    },
+    {
+      blockCode: "9",
+      type: "SPRAYING" as const,
+      status: "IN_PROGRESS" as const,
+      title: "Sulfur application — 9-CS9",
+      dueDate: daysFromNow(1),
+      equipmentName: "Gregoire G65 Sprayer",
+    },
+    {
+      blockCode: "15",
+      type: "HARVESTING" as const,
+      status: "PENDING" as const,
+      title: "Harvest prep walk-through — 15-CS15",
+      dueDate: daysFromNow(14),
+    },
+    {
+      blockCode: "18",
+      type: "INSPECTION" as const,
+      status: "PENDING" as const,
+      title: "Canopy thinning assessment — 18-ZN",
+      dueDate: daysFromNow(7),
+    },
+    {
+      blockCode: "20",
+      type: "PRUNING" as const,
+      status: "PENDING" as const,
+      title: "Spur pruning — 20-CS20",
+      dueDate: daysFromNow(6),
+      equipmentName: "Kubota M5-111",
+    },
+    {
+      blockCode: "22",
+      type: "OTHER" as const,
+      status: "PENDING" as const,
+      title: "Trellis wire tension check — 22-VN22",
+      dueDate: daysFromNow(10),
+    },
+    {
+      blockCode: "25",
+      type: "INSPECTION" as const,
+      status: "COMPLETED" as const,
+      title: "Winter damage survey — 25-NB",
+      dueDate: daysAgo(5),
+      completedAt: daysAgo(3),
+    },
+    {
+      blockCode: "2",
+      type: "PRUNING" as const,
+      status: "PENDING" as const,
+      title: "Spur pruning — 2-CF2",
+      dueDate: daysFromNow(8),
+      equipmentName: "Kubota M5-111",
+    },
+    {
+      blockCode: "4",
+      type: "INSPECTION" as const,
+      status: "PENDING" as const,
+      title: "Bud break count — 4-CH4",
+      dueDate: daysFromNow(6),
+    },
+    {
+      blockCode: "10",
+      type: "SPRAYING" as const,
+      status: "PENDING" as const,
+      title: "Pre-bloom sulfur — 10-CS10",
+      dueDate: daysFromNow(3),
+      equipmentName: "Gregoire G65 Sprayer",
+    },
+    {
+      blockCode: "14",
+      type: "INSPECTION" as const,
+      status: "IN_PROGRESS" as const,
+      title: "Canopy assessment — 14-CM14",
+      dueDate: daysFromNow(2),
+    },
+    {
+      blockCode: "21",
+      type: "PRUNING" as const,
+      status: "PENDING" as const,
+      title: "Cane thinning — 21-CM21",
+      dueDate: daysFromNow(9),
+    },
+    {
+      blockCode: "28",
+      type: "HARVESTING" as const,
+      status: "PENDING" as const,
+      title: "Yield estimate walk — 28-SY28",
+      dueDate: daysFromNow(21),
+    },
   ];
 
   for (const taskData of sampleTasks) {
@@ -215,6 +318,55 @@ async function main() {
       volume: 320,
       startDate: daysAgo(30),
     },
+    {
+      blockCode: "5",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 280,
+      startDate: daysAgo(21),
+    },
+    {
+      blockCode: "7",
+      frequency: "biweekly",
+      method: "Drip",
+      volume: 350,
+      startDate: daysAgo(14),
+    },
+    {
+      blockCode: "9",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 420,
+      startDate: daysAgo(7),
+    },
+    {
+      blockCode: "15",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 400,
+      startDate: daysAgo(28),
+    },
+    {
+      blockCode: "20",
+      frequency: "biweekly",
+      method: "Drip",
+      volume: 310,
+      startDate: daysAgo(35),
+    },
+    {
+      blockCode: "27",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 290,
+      startDate: daysAgo(10),
+    },
+    {
+      blockCode: "31",
+      frequency: "biweekly",
+      method: "Drip",
+      volume: 260,
+      startDate: daysAgo(50),
+    },
   ];
 
   for (const sched of sampleSchedules) {
@@ -239,6 +391,94 @@ async function main() {
     }
   }
 
+  const sampleIrrigationRecords = [
+    {
+      blockCode: "1",
+      appliedAt: daysAgo(4),
+      volume: 440,
+      method: "Drip",
+      notes: "Seed demo: weekly drip — block 1-CS1",
+    },
+    {
+      blockCode: "5",
+      appliedAt: daysAgo(5),
+      volume: 275,
+      method: "Drip",
+      notes: "Seed demo: weekly drip — block 5-CM5",
+    },
+    {
+      blockCode: "7",
+      appliedAt: daysAgo(18),
+      volume: 340,
+      method: "Drip",
+      notes: "Seed demo: biweekly drip — block 7-CM7 (overdue)",
+    },
+    {
+      blockCode: "9",
+      appliedAt: daysAgo(3),
+      volume: 410,
+      method: "Drip",
+      notes: "Seed demo: weekly drip — block 9-CS9",
+    },
+    {
+      blockCode: "13",
+      appliedAt: daysAgo(16),
+      volume: 305,
+      method: "Drip",
+      notes: "Seed demo: biweekly drip — block 13-MR13 (overdue)",
+    },
+    {
+      blockCode: "15",
+      appliedAt: daysAgo(6),
+      volume: 395,
+      method: "Drip",
+      notes: "Seed demo: weekly drip — block 15-CS15",
+    },
+    {
+      blockCode: "20",
+      appliedAt: daysAgo(10),
+      volume: 300,
+      method: "Drip",
+      notes: "Seed demo: biweekly drip — block 20-CS20",
+    },
+    {
+      blockCode: "27",
+      appliedAt: daysAgo(4),
+      volume: 285,
+      method: "Drip",
+      notes: "Seed demo: weekly drip — block 27-MR27",
+    },
+    {
+      blockCode: "32",
+      appliedAt: daysAgo(12),
+      volume: 250,
+      method: "Drip",
+      notes: "Seed demo: supplemental drip — block 32-MB32",
+    },
+  ];
+
+  for (const record of sampleIrrigationRecords) {
+    const blockId = estate.blockByCode[record.blockCode];
+    if (!blockId) continue;
+
+    const existing = await prisma.irrigationRecord.findFirst({
+      where: { blockId, notes: record.notes },
+    });
+
+    if (!existing) {
+      await prisma.irrigationRecord.create({
+        data: {
+          blockId,
+          appliedAt: record.appliedAt,
+          volume: record.volume,
+          method: record.method,
+          status: "APPLIED",
+          notes: record.notes,
+        },
+      });
+    }
+  }
+
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
   console.log(`  Estate center: ${ESTATE_CENTER.lat}, ${ESTATE_CENTER.lng}`);
@@ -254,7 +494,10 @@ async function main() {
   console.log(`  Varieties: ${estate.source.varieties.length}`);
   console.log(`  Equipment: ${sampleEquipment.length}`);
   console.log(`  Demo tasks: ${sampleTasks.length}`);
-  console.log(`  Imported irrigation records: 3 (blocks 3, 31, 32)`);
+  console.log(`  Demo schedules: ${sampleSchedules.length}`);
+  console.log(
+    `  Irrigation records: ${sampleIrrigationRecords.length} demo + 3 imported (blocks 3, 31, 32)`,
+  );
   console.log(`  Admin login: admin@cooperestate.com / cooper2026`);
 }
 

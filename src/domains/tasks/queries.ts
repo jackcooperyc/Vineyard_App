@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { TaskStatus } from "@/generated/prisma/client";
+import type { TaskStatus, TaskType } from "@/generated/prisma/client";
 
 export type TaskListItem = {
   id: string;
@@ -15,12 +15,14 @@ export type TaskListItem = {
 export type TaskFilters = {
   status?: TaskStatus | "ALL" | "OPEN";
   blockId?: string;
+  type?: TaskType;
 };
 
 export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[]> {
   const where: {
     status?: { in: TaskStatus[] } | TaskStatus;
     blockId?: string;
+    type?: TaskType;
   } = {};
 
   if (filters.status === "OPEN") {
@@ -31,6 +33,10 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
 
   if (filters.blockId) {
     where.blockId = filters.blockId;
+  }
+
+  if (filters.type) {
+    where.type = filters.type;
   }
 
   return db.task.findMany({

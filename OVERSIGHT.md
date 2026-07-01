@@ -86,3 +86,61 @@ Activity log for data import, deployment, and security items requiring human rev
 - Audited tasks, equipment, and irrigation modules (app routes, domains, components, dashboard/block/field/map integration).
 - Wrote `docs/next-development-plan.md`: current-state gap analysis, why UI feels empty, Op-1–4 operational track vs Sprint 8 Phase 2+, quick wins, and sequencing.
 - Finding: Sprints 2–4 v1 CRUD is shipped; gaps are edit flows, block-scoped navigation, schedule admin UI, thin seed data, and mobile nav burying Equipment/Irrigation.
+
+## 2026-07-01 — Op-1 + quick wins (operational UI polish)
+
+### Completed
+
+- **Tasks:** `updateTask` action + `/tasks/[id]/edit` page; `?blockId=` and type filter chips on `/tasks`; block detail "View all" links to block-scoped task list.
+- **Irrigation:** `toggleScheduleActive` wired on schedule list cards; block irrigation record rows link to `/irrigation/records/[id]`.
+- **Dashboard:** Irrigation, equipment, and tasks sections always visible with empty-state CTAs; Equipment + Irrigation added to quick links.
+- **Mobile nav:** Alert count badge on More button when irrigation alerts or equipment service due.
+- **Seed:** Expanded to 12 demo tasks (blocks 1, 3, 5, 7, 9, 13, 15, 18, 20, 22, 25, 40) and 6 schedules (blocks 1, 3, 5, 7, 9, 13).
+
+### Follow-up (Op-2)
+
+- Irrigation schedule detail page and edit form
+- Per-block filter on irrigation hub
+- Schedule update/delete actions
+
+## 2026-07-01 — Op-2 (irrigation schedule admin)
+
+### Completed
+
+- **Schedule detail:** `/irrigation/schedules/[id]` with metadata, block link, active toggle, recent block records.
+- **Edit schedule:** `/irrigation/schedules/[id]/edit` + `updateSchedule` action; `ScheduleForm` supports create and edit.
+- **Hub filter:** `?blockId=` on `/irrigation` with block chip (schedules, records, alerts views); block detail "View all" and schedule rows deep-link correctly.
+- **List cards:** Schedule cards link to schedule detail; alert cards include View schedule action.
+- **Lifecycle:** Deactivate via existing `toggleScheduleActive` (no hard delete — schedules are soft-retired only).
+
+### Follow-up (Op-3)
+
+- Equipment `updateEquipment` action + edit form
+- Dashboard empty states for equipment module
+
+## 2026-07-01 — Op-3 (equipment polish)
+
+### Completed
+
+- **Edit equipment:** `updateEquipment` action + `/equipment/[id]/edit` page; `EquipmentForm` supports create and edit (name, type, status, serial, service dates, notes).
+- **Detail page:** Edit button on equipment detail (matches task/schedule patterns).
+- **Dashboard:** Equipment empty state CTAs — "Log service" and "Add equipment"; "Log service" added to quick links.
+
+### Follow-up (Op-4)
+
+- Expand seed script density across ~10 blocks
+- Mobile More menu badges refinement
+- Dashboard empty-state polish for all modules
+
+## 2026-07-01 — Op-4 (density & discoverability)
+
+### Completed
+
+- **Seed density:** 18 demo tasks (blocks 1–15, 18–22, 25, 28, 40); 10 active schedules (blocks 1, 3, 5, 7, 9, 13, 15, 20, 27, 31); 9 additional demo irrigation records + 3 imported (blocks 3, 31, 32) — 12 blocks with irrigation history. Idempotent re-seed via unique notes.
+- **Dashboard:** Consistent empty-state CTAs across irrigation (create schedule + log irrigation), equipment (log service + add equipment), and tasks (create task + field log). Quick-link "Log service" routes to `?status=NEEDS_SERVICE`.
+- **Mobile nav:** Aggregate alert badge on More (ring for contrast); per-item badges on Equipment and Irrigation in the More dropdown; active-state highlight when on a More-route page.
+
+### Next
+
+- Sprint 8 Phase 2 — weather provider abstraction, dashboard weather card, environmental thresholds
+- Production seed: run `./scripts/sync-production-db.sh` with Neon `DATABASE_URL` after deploy (not run automatically from CI)

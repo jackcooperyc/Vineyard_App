@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Hash } from "lucide-react";
+import { ArrowLeft, Calendar, Hash, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +60,17 @@ export default async function EquipmentDetailPage({
       </div>
 
       <EquipmentStatusActions equipmentId={equipment.id} status={equipment.status} />
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="min-h-11 gap-2"
+          render={<Link href={`/equipment/${equipment.id}/edit`} />}
+        >
+          <Pencil className="size-4" />
+          Edit equipment
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>

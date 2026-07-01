@@ -7,6 +7,7 @@ import type { EquipmentStatus } from "@/generated/prisma/client";
 import {
   createEquipmentSchema,
   createMaintenanceRecordSchema,
+  updateEquipmentSchema,
   updateEquipmentStatusSchema,
 } from "@/domains/equipment/validators";
 
@@ -111,6 +112,65 @@ export async function createMaintenanceRecord(formData: FormData) {
 
   revalidateEquipmentPaths(equipmentId);
   return { success: true };
+}
+
+export async function updateEquipment(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  const parsed = updateEquipmentSchema.safeParse({
+    equipmentId: formData.get("equipmentId"),
+    name: formData.get("name"),
+    type: formData.get("type"),
+    status: formData.get("status") || "ACTIVE",
+    serialNumber: formData.get("serialNumber") || undefined,
+    lastServicedAt: formData.get("lastServicedAt") || undefined,
+    nextServiceAt: formData.get("nextServiceAt") || undefined,
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const {
+    equipmentId,
+    name,
+    type,
+    status,
+    serialNumber,
+    lastServicedAt,
+    nextServiceAt,
+    notes,
+  } = parsed.data;
+
+  const existing = await db.equipment.findUnique({
+    where: { id: equipmentId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Equipment not found" };
+  }
+
+  await db.equipment.update({
+    where: { id: equipmentId },
+    data: {
+      name,
+      type,
+      status,
+      serialNumber: serialNumber || null,
+      lastServicedAt: parseDate(lastServicedAt) ?? null,
+      nextServiceAt: parseDate(nextServiceAt) ?? null,
+      notes: notes || null,
+    },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  revalidatePath(`/equipment/${equipmentId}/edit`);
+  return { success: true, equipmentId };
 }
 
 export async function updateEquipmentStatus(

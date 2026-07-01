@@ -48,6 +48,7 @@
 - [x] Equipment picker on task create and quick-log
 - [x] Dashboard service-due alerts
 - [x] Seed data for 6 vineyard assets
+- [x] Equipment metadata edit (`updateEquipment` + `/equipment/[id]/edit`)
 
 ### Sprint 4 — Irrigation
 
@@ -81,6 +82,7 @@
 - [x] Load 35 vineyard blocks + 12 infrastructure areas from `cooper-estate-blocks.v1.json`
 - [x] Seed real MapFeature polygons (no fabricated rectangles)
 - [x] Import 3 irrigation records (blocks 3, 31, 32 — 2026-04-14)
+- [x] Operational seed density: 18 tasks, 10 schedules, 12 irrigation records across estate blocks
 - [ ] Base44 full entity dump (optional if KML source is sufficient)
 - [ ] Blake's House / Cowboy's Place polygons (missing from KML — 2/47)
 
@@ -97,4 +99,4 @@ See [sprint-8-plan.md](./sprint-8-plan.md) for detailed implementation steps.
 
 ## Current focus
 
-Sprint 8: 3D map prototype, sensor/API abstraction, and reporting.
+Operational UI polish (Op-1 through Op-4 complete) → Sprint 8 Phase 2 (weather).

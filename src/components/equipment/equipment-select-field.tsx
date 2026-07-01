@@ -5,11 +5,13 @@ export function EquipmentSelectField({
   id = "equipmentId",
   name = "equipmentId",
   className,
+  defaultValue,
 }: {
   equipment: EquipmentOption[];
   id?: string;
   name?: string;
   className?: string;
+  defaultValue?: string;
 }) {
   if (equipment.length === 0) {
     return (
@@ -26,6 +28,7 @@ export function EquipmentSelectField({
     <select
       id={id}
       name={name}
+      defaultValue={defaultValue ?? ""}
       className={
         className ??
         "flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"

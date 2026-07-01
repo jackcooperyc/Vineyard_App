@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createTask } from "@/domains/tasks/actions";
+import { createTask, updateTask } from "@/domains/tasks/actions";
 import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
 import type { TaskType } from "@/generated/prisma/client";
@@ -16,20 +16,39 @@ type BlockOption = { id: string; code: string; name: string };
 type UserOption = { id: string; name: string | null; email: string };
 type EquipmentOption = { id: string; name: string; type: string };
 
+type TaskValues = {
+  id: string;
+  blockId: string;
+  type: TaskType;
+  title: string;
+  description: string | null;
+  dueDate: Date | null;
+  assignedToId: string | null;
+  equipmentId: string | null;
+};
+
+function formatDateInput(date: Date | null): string {
+  if (!date) return "";
+  return date.toISOString().slice(0, 10);
+}
+
 export function TaskForm({
   blocks,
   users,
   equipment,
   defaultBlockId,
+  task,
 }: {
   blocks: BlockOption[];
   users: UserOption[];
   equipment: EquipmentOption[];
   defaultBlockId?: string;
+  task?: TaskValues;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const isEdit = Boolean(task);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,7 +56,9 @@ export function TaskForm({
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await createTask(formData);
+      const result = isEdit
+        ? await updateTask(formData)
+        : await createTask(formData);
       if (result.error) {
         setError(result.error);
         return;
@@ -51,13 +72,15 @@ export function TaskForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {task && <input type="hidden" name="taskId" value={task.id} />}
+
       <div className="space-y-2">
         <Label htmlFor="blockId">Block</Label>
         <select
           id="blockId"
           name="blockId"
           required
-          defaultValue={defaultBlockId ?? blocks[0]?.id}
+          defaultValue={task?.blockId ?? defaultBlockId ?? blocks[0]?.id}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
           {blocks.map((block) => (
@@ -74,7 +97,7 @@ export function TaskForm({
           id="type"
           name="type"
           required
-          defaultValue="INSPECTION"
+          defaultValue={task?.type ?? "INSPECTION"}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
           {TASK_TYPES.map((type) => (
@@ -93,6 +116,7 @@ export function TaskForm({
           required
           className="h-12 text-base"
           placeholder="e.g. Pre-harvest inspection"
+          defaultValue={task?.title}
         />
       </div>
 
@@ -104,6 +128,7 @@ export function TaskForm({
           rows={4}
           className="text-base"
           placeholder="Details, observations, or instructions…"
+          defaultValue={task?.description ?? ""}
         />
       </div>
 
@@ -114,12 +139,16 @@ export function TaskForm({
           name="dueDate"
           type="date"
           className="h-12 text-base"
+          defaultValue={formatDateInput(task?.dueDate ?? null)}
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="equipmentId">Equipment (optional)</Label>
-        <EquipmentSelectField equipment={equipment} />
+        <EquipmentSelectField
+          equipment={equipment}
+          defaultValue={task?.equipmentId ?? undefined}
+        />
       </div>
 
       <div className="space-y-2">
@@ -127,6 +156,7 @@ export function TaskForm({
         <select
           id="assignedToId"
           name="assignedToId"
+          defaultValue={task?.assignedToId ?? ""}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
           <option value="">Current user (default)</option>
@@ -146,13 +176,19 @@ export function TaskForm({
 
       <div className="flex gap-3">
         <Button type="submit" className="min-h-11 flex-1 text-base" disabled={pending}>
-          {pending ? "Creating…" : "Create task"}
+          {pending
+            ? isEdit
+              ? "Saving…"
+              : "Creating…"
+            : isEdit
+              ? "Save changes"
+              : "Create task"}
         </Button>
         <Button
           type="button"
           variant="outline"
           className="min-h-11"
-          render={<Link href="/tasks" />}
+          render={<Link href={task ? `/tasks/${task.id}` : "/tasks"} />}
         >
           Cancel
         </Button>

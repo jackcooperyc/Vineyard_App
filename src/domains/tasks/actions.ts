@@ -7,6 +7,7 @@ import type { TaskStatus } from "@/generated/prisma/client";
 import {
   createTaskSchema,
   quickLogTaskSchema,
+  updateTaskSchema,
   updateTaskStatusSchema,
 } from "@/domains/tasks/validators";
 import { defaultTitleForType } from "@/domains/tasks/constants";
@@ -144,6 +145,66 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
   revalidateTaskPaths(task.blockId);
   revalidatePath(`/tasks/${taskId}`);
   return { success: true };
+}
+
+export async function updateTask(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  const parsed = updateTaskSchema.safeParse({
+    taskId: formData.get("taskId"),
+    blockId: formData.get("blockId"),
+    type: formData.get("type"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    dueDate: formData.get("dueDate") || undefined,
+    assignedToId: formData.get("assignedToId") || undefined,
+    equipmentId: formData.get("equipmentId") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const {
+    taskId,
+    blockId,
+    type,
+    title,
+    description,
+    dueDate,
+    assignedToId,
+    equipmentId,
+  } = parsed.data;
+
+  const existing = await db.task.findUnique({
+    where: { id: taskId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Task not found" };
+  }
+
+  await db.task.update({
+    where: { id: taskId },
+    data: {
+      blockId,
+      type,
+      title,
+      description: description || null,
+      dueDate: parseDueDate(dueDate) ?? null,
+      assignedToId: assignedToId || session.user.id,
+      equipmentId: equipmentId || null,
+    },
+  });
+
+  revalidateTaskPaths(blockId);
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath(`/tasks/${taskId}/edit`);
+  return { success: true, taskId };
 }
 
 export async function markTaskComplete(taskId: string) {

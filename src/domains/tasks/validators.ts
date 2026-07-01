@@ -38,5 +38,10 @@ export const updateTaskStatusSchema = z.object({
   status: taskStatusSchema,
 });
 
+export const updateTaskSchema = createTaskSchema.extend({
+  taskId: z.string().min(1, "Task is required"),
+});
+
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 export type QuickLogTaskInput = z.infer<typeof quickLogTaskSchema>;
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;

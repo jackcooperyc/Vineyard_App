@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createIrrigationSchedule } from "@/domains/irrigation/actions";
+import {
+  createIrrigationSchedule,
+  updateSchedule,
+} from "@/domains/irrigation/actions";
 import {
   IRRIGATION_FREQUENCIES,
   IRRIGATION_METHODS,
@@ -15,17 +18,34 @@ import {
 
 type BlockOption = { id: string; code: string; name: string };
 
+type ScheduleValues = {
+  id: string;
+  blockId: string;
+  frequency: string;
+  startDate: Date;
+  volume: number | null;
+  method: string | null;
+  notes: string | null;
+};
+
+function formatDateInput(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export function ScheduleForm({
   blocks,
   defaultBlockId,
+  schedule,
 }: {
   blocks: BlockOption[];
   defaultBlockId?: string;
+  schedule?: ScheduleValues;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const today = new Date().toISOString().split("T")[0];
+  const isEdit = Boolean(schedule);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,25 +53,32 @@ export function ScheduleForm({
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await createIrrigationSchedule(formData);
+      const result = isEdit
+        ? await updateSchedule(formData)
+        : await createIrrigationSchedule(formData);
       if (result.error) {
         setError(result.error);
         return;
       }
-      router.push("/irrigation");
-      router.refresh();
+      if (result.scheduleId) {
+        router.push(`/irrigation/schedules/${result.scheduleId}`);
+        router.refresh();
+      }
     });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {schedule && (
+        <input type="hidden" name="scheduleId" value={schedule.id} />
+      )}
       <div className="space-y-2">
         <Label htmlFor="blockId">Block</Label>
         <select
           id="blockId"
           name="blockId"
           required
-          defaultValue={defaultBlockId ?? blocks[0]?.id}
+          defaultValue={schedule?.blockId ?? defaultBlockId ?? blocks[0]?.id}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
           {blocks.map((block) => (
@@ -68,7 +95,7 @@ export function ScheduleForm({
           id="frequency"
           name="frequency"
           required
-          defaultValue="weekly"
+          defaultValue={schedule?.frequency ?? "weekly"}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
           {IRRIGATION_FREQUENCIES.map((f) => (
@@ -86,7 +113,9 @@ export function ScheduleForm({
           name="startDate"
           type="date"
           required
-          defaultValue={today}
+          defaultValue={
+            schedule ? formatDateInput(schedule.startDate) : today
+          }
           className="h-12 text-base"
         />
       </div>
@@ -97,7 +126,7 @@ export function ScheduleForm({
           <select
             id="method"
             name="method"
-            defaultValue="Drip"
+            defaultValue={schedule?.method ?? "Drip"}
             className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
           >
             {IRRIGATION_METHODS.map((m) => (
@@ -117,13 +146,20 @@ export function ScheduleForm({
             min="0"
             className="h-12 text-base"
             placeholder="e.g. 500"
+            defaultValue={schedule?.volume ?? undefined}
           />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" name="notes" rows={3} className="text-base" />
+        <Textarea
+          id="notes"
+          name="notes"
+          rows={3}
+          className="text-base"
+          defaultValue={schedule?.notes ?? undefined}
+        />
       </div>
 
       {error && (
@@ -134,13 +170,21 @@ export function ScheduleForm({
 
       <div className="flex gap-3">
         <Button type="submit" className="min-h-11 flex-1 text-base" disabled={pending}>
-          {pending ? "Saving…" : "Create schedule"}
+          {pending ? "Saving…" : isEdit ? "Save changes" : "Create schedule"}
         </Button>
         <Button
           type="button"
           variant="outline"
           className="min-h-11"
-          render={<Link href="/irrigation" />}
+          render={
+            <Link
+              href={
+                schedule
+                  ? `/irrigation/schedules/${schedule.id}`
+                  : "/irrigation"
+              }
+            />
+          }
         >
           Cancel
         </Button>

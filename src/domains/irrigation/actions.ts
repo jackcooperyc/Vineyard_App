@@ -7,6 +7,7 @@ import {
   createRecordSchema,
   createScheduleSchema,
   quickLogRecordSchema,
+  updateScheduleSchema,
 } from "@/domains/irrigation/validators";
 
 function parseDate(value?: string): Date | undefined {
@@ -35,6 +36,12 @@ function revalidateIrrigationPaths(blockId?: string) {
   if (blockId) {
     revalidatePath(`/blocks/${blockId}`);
   }
+}
+
+function revalidateSchedulePaths(scheduleId: string, blockId: string) {
+  revalidateIrrigationPaths(blockId);
+  revalidatePath(`/irrigation/schedules/${scheduleId}`);
+  revalidatePath(`/irrigation/schedules/${scheduleId}/edit`);
 }
 
 export async function createIrrigationSchedule(formData: FormData) {
@@ -156,12 +163,69 @@ export async function toggleScheduleActive(scheduleId: string, active: boolean) 
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
+  const existing = await db.irrigationSchedule.findUnique({
+    where: { id: scheduleId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Schedule not found" };
+  }
+
   const schedule = await db.irrigationSchedule.update({
     where: { id: scheduleId },
     data: { active },
     select: { blockId: true },
   });
 
-  revalidateIrrigationPaths(schedule.blockId);
+  revalidateSchedulePaths(scheduleId, schedule.blockId);
   return { success: true };
+}
+
+export async function updateSchedule(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = updateScheduleSchema.safeParse({
+    scheduleId: formData.get("scheduleId"),
+    blockId: formData.get("blockId"),
+    frequency: formData.get("frequency"),
+    startDate: formData.get("startDate"),
+    volume: formData.get("volume") || undefined,
+    method: formData.get("method") || undefined,
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const { scheduleId, blockId, frequency, startDate, volume, method, notes } =
+    parsed.data;
+  const start = parseDate(startDate);
+  if (!start) return { error: "Invalid start date" };
+
+  const existing = await db.irrigationSchedule.findUnique({
+    where: { id: scheduleId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Schedule not found" };
+  }
+
+  await db.irrigationSchedule.update({
+    where: { id: scheduleId },
+    data: {
+      blockId,
+      frequency,
+      startDate: start,
+      volume: parseFloatOrNull(volume),
+      method: method || null,
+      notes: notes || null,
+    },
+  });
+
+  revalidateSchedulePaths(scheduleId, blockId);
+  return { success: true, scheduleId };
 }

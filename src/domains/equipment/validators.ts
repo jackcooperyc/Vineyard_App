@@ -28,3 +28,9 @@ export const updateEquipmentStatusSchema = z.object({
   equipmentId: z.string().min(1),
   status: equipmentStatusSchema,
 });
+
+export const updateEquipmentSchema = createEquipmentSchema.extend({
+  equipmentId: z.string().min(1, "Equipment is required"),
+});
+
+export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;

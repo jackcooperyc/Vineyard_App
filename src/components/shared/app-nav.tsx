@@ -30,8 +30,18 @@ const mainNav = [
 
 const moreNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/equipment", label: "Equipment", icon: Tractor },
-  { href: "/irrigation", label: "Irrigation", icon: Droplets },
+  {
+    href: "/equipment",
+    label: "Equipment",
+    icon: Tractor,
+    badgeKey: "equipment" as const,
+  },
+  {
+    href: "/irrigation",
+    label: "Irrigation",
+    icon: Droplets,
+    badgeKey: "irrigation" as const,
+  },
 ];
 
 const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];
@@ -74,8 +84,32 @@ export function SidebarNav() {
   );
 }
 
-export function BottomNav() {
+export function BottomNav({
+  alertCount = 0,
+  equipmentServiceCount = 0,
+  irrigationAlertCount = 0,
+}: {
+  alertCount?: number;
+  equipmentServiceCount?: number;
+  irrigationAlertCount?: number;
+}) {
   const pathname = usePathname();
+  const showBadge = alertCount > 0;
+
+  const itemBadge = (key: "equipment" | "irrigation") => {
+    const count =
+      key === "equipment" ? equipmentServiceCount : irrigationAlertCount;
+    if (count <= 0) return null;
+    return (
+      <span className="ml-auto flex size-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+        {count > 9 ? "9+" : count}
+      </span>
+    );
+  };
+
+  const moreActive = moreNav.some(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
 
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
@@ -117,25 +151,43 @@ export function BottomNav() {
               render={
                 <Button
                   variant="ghost"
-                  className="flex min-h-16 w-full flex-col items-center justify-center gap-1 rounded-none px-1 text-[11px] font-semibold text-muted-foreground touch-manipulation"
+                  className={cn(
+                    "flex min-h-16 w-full flex-col items-center justify-center gap-1 rounded-none px-1 text-[11px] font-semibold touch-manipulation",
+                    moreActive ? "text-primary" : "text-muted-foreground",
+                  )}
                 />
               }
             >
-              <span className="flex size-10 items-center justify-center">
+              <span className="relative flex size-10 items-center justify-center">
                 <MoreHorizontal className="size-5" />
+                {showBadge && (
+                  <span
+                    className="absolute -right-0.5 -top-0.5 flex size-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-bold leading-none text-destructive-foreground ring-2 ring-background"
+                    aria-label={`${alertCount} alert${alertCount === 1 ? "" : "s"}`}
+                  >
+                    {alertCount > 9 ? "9+" : alertCount}
+                  </span>
+                )}
               </span>
               <span>More</span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="mb-2 min-w-44">
+            <DropdownMenuContent align="end" side="top" className="mb-2 min-w-48">
               {moreNav.map((item) => {
                 const Icon = item.icon;
+                const active =
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
                 return (
                   <DropdownMenuItem
                     key={item.href}
                     render={<Link href={item.href} className="min-h-11" />}
+                    className={cn(active && "bg-accent")}
                   >
                     <Icon className="size-5" />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {"badgeKey" in item && item.badgeKey
+                      ? itemBadge(item.badgeKey)
+                      : null}
                   </DropdownMenuItem>
                 );
               })}

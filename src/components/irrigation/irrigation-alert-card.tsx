@@ -36,6 +36,16 @@ export function IrrigationAlertCard({ alert }: { alert: IrrigationAlert }) {
           size="sm"
           className="min-h-10 shrink-0"
           render={
+            <Link href={`/irrigation/schedules/${alert.scheduleId}`} />
+          }
+        >
+          View
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-10 shrink-0"
+          render={
             <Link
               href={`/irrigation/records/new?blockId=${alert.block.id}`}
             />

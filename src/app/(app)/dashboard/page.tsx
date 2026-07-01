@@ -128,68 +128,129 @@ export default async function DashboardPage() {
           <Button size="touch" variant="outline" render={<Link href="/tasks/new" />}>
             Full task form
           </Button>
+          <Button size="touch" variant="outline" render={<Link href="/equipment" />}>
+            Equipment
+          </Button>
+          <Button
+            size="touch"
+            variant="outline"
+            render={<Link href="/equipment?status=NEEDS_SERVICE" />}
+          >
+            Log service
+          </Button>
+          <Button size="touch" variant="outline" render={<Link href="/irrigation" />}>
+            Irrigation
+          </Button>
         </CardContent>
       </Card>
 
-      {irrigationAlerts.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Irrigation alerts</CardTitle>
-              <CardDescription>Blocks past their irrigation window</CardDescription>
-            </div>
-            <Button
-              variant="link"
-              className="h-auto p-0"
-              render={<Link href="/irrigation?view=alerts" />}
-            >
-              View all
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {irrigationAlerts.slice(0, 3).map((alert) => (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Irrigation alerts</CardTitle>
+            <CardDescription>Blocks past their irrigation window</CardDescription>
+          </div>
+          <Button
+            variant="link"
+            className="h-auto p-0"
+            render={<Link href="/irrigation?view=alerts" />}
+          >
+            View all
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {irrigationAlerts.length > 0 ? (
+            irrigationAlerts.slice(0, 3).map((alert) => (
               <IrrigationAlertCard key={alert.scheduleId} alert={alert} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {equipmentNeedingService.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Equipment needing service</CardTitle>
-              <CardDescription>Overdue or upcoming maintenance</CardDescription>
+            ))
+          ) : (
+            <div className="space-y-3 py-2 text-center">
+              <p className="text-sm text-muted-foreground">
+                No overdue irrigation — all blocks are on schedule.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/irrigation/schedules/new" />}
+                >
+                  Create schedule
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/irrigation/records/new" />}
+                >
+                  Log irrigation
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="link"
-              className="h-auto p-0"
-              render={<Link href="/equipment?status=NEEDS_SERVICE" />}
-            >
-              View all
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {equipmentNeedingService.map((item) => (
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Equipment needing service</CardTitle>
+            <CardDescription>Overdue or upcoming maintenance</CardDescription>
+          </div>
+          <Button
+            variant="link"
+            className="h-auto p-0"
+            render={<Link href="/equipment?status=NEEDS_SERVICE" />}
+          >
+            View all
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {equipmentNeedingService.length > 0 ? (
+            equipmentNeedingService.map((item) => (
               <EquipmentListCard key={item.id} item={item} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {upcomingTasks.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Upcoming tasks</CardTitle>
-              <CardDescription>Next due dates across the estate</CardDescription>
+            ))
+          ) : (
+            <div className="space-y-3 py-2 text-center">
+              <p className="text-sm text-muted-foreground">
+                No equipment currently due for service.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/equipment?status=NEEDS_SERVICE" />}
+                >
+                  Log service
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/equipment/new" />}
+                >
+                  Add equipment
+                </Button>
+              </div>
             </div>
-            <Button variant="link" className="h-auto p-0" render={<Link href="/tasks" />}>
-              View all
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {upcomingTasks.map((task) => (
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Upcoming tasks</CardTitle>
+            <CardDescription>Next due dates across the estate</CardDescription>
+          </div>
+          <Button variant="link" className="h-auto p-0" render={<Link href="/tasks" />}>
+            View all
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {upcomingTasks.length > 0 ? (
+            upcomingTasks.map((task) => (
               <TaskListCard
                 key={task.id}
                 task={{
@@ -207,10 +268,34 @@ export default async function DashboardPage() {
                   assignedTo: null,
                 }}
               />
-            ))}
-          </CardContent>
-        </Card>
-      )}
+            ))
+          ) : (
+            <div className="space-y-3 py-2 text-center">
+              <p className="text-sm text-muted-foreground">
+                No upcoming tasks with due dates.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/tasks/new" />}
+                >
+                  Create task
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10"
+                  render={<Link href="/field" />}
+                >
+                  Field log
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
