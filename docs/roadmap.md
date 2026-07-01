@@ -86,9 +86,12 @@
 
 ### Sprint 8 — Intelligence
 
-- 3D map prototype
-- Sensor/API abstraction
-- Reporting and forecasting
+See [sprint-8-plan.md](./sprint-8-plan.md) for detailed implementation steps.
+
+- [ ] 3D map toggle (Mapbox terrain + pitch)
+- [ ] Weather provider abstraction + dashboard card
+- [ ] Block terrain / viticulture metrics on detail pages
+- [ ] Irrigation pump map pins + `/reports` CSV export
 
 ## Current focus
 
