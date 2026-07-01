@@ -4,7 +4,11 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { getBlockById } from "@/domains/blocks/queries";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
+import { QuickLogIrrigationSheet } from "@/components/irrigation/quick-log-irrigation-sheet";
+import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
+import { IRRIGATION_FREQUENCIES } from "@/domains/irrigation/constants";
 import { TaskListCard } from "@/components/tasks/task-list-card";
+import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +25,10 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const block = await getBlockById(id);
+  const [block, equipment] = await Promise.all([
+    getBlockById(id),
+    getActiveEquipmentForSelect(),
+  ]);
 
   if (!block) {
     notFound();
@@ -69,6 +76,12 @@ export default async function BlockDetailPage({
 
       <div className="flex flex-wrap gap-2">
         <QuickLogTaskSheet
+          blockId={block.id}
+          blockCode={block.code}
+          blockName={block.name}
+          equipment={equipment}
+        />
+        <QuickLogIrrigationSheet
           blockId={block.id}
           blockCode={block.code}
           blockName={block.name}
@@ -145,6 +158,66 @@ export default async function BlockDetailPage({
                   {note.author.name ?? note.author.email} ·{" "}
                   {note.createdAt.toLocaleDateString()}
                 </p>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle>Irrigation</CardTitle>
+            <CardDescription>
+              {block._count.irrigationRecords} record
+              {block._count.irrigationRecords !== 1 ? "s" : ""}
+              {block.irrigationSchedules.length > 0 &&
+                ` · ${block.irrigationSchedules.length} active schedule${block.irrigationSchedules.length !== 1 ? "s" : ""}`}
+            </CardDescription>
+          </div>
+          <Button
+            variant="link"
+            className="h-auto p-0"
+            render={<Link href={`/irrigation?view=records`} />}
+          >
+            View all
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {block.irrigationSchedules.length > 0 && (
+            <div className="space-y-2 border-b pb-4">
+              {block.irrigationSchedules.map((schedule) => {
+                const freq =
+                  IRRIGATION_FREQUENCIES.find((f) => f.value === schedule.frequency)
+                    ?.label ?? schedule.frequency;
+                return (
+                  <p key={schedule.id} className="text-sm">
+                    <span className="font-medium">{freq}</span>
+                    {schedule.method && ` · ${schedule.method}`}
+                    {schedule.volume != null && ` · ${schedule.volume} gal`}
+                  </p>
+                );
+              })}
+            </div>
+          )}
+          {block.irrigationRecords.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No irrigation logged yet. Use Log irrigation above.
+            </p>
+          ) : (
+            block.irrigationRecords.map((record) => (
+              <div
+                key={record.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 last:border-0"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {record.appliedAt.toLocaleDateString()}
+                    {record.method && ` · ${record.method}`}
+                    {record.volume != null && ` · ${record.volume} gal`}
+                  </p>
+                </div>
+                <IrrigationStatusBadge status={record.status} />
               </div>
             ))
           )}

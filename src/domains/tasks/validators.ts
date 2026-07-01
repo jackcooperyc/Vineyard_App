@@ -22,6 +22,7 @@ export const createTaskSchema = z.object({
   description: z.string().max(2000).optional(),
   dueDate: z.string().optional(),
   assignedToId: z.string().optional(),
+  equipmentId: z.string().optional(),
 });
 
 export const quickLogTaskSchema = z.object({
@@ -29,6 +30,7 @@ export const quickLogTaskSchema = z.object({
   type: taskTypeSchema,
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(500).optional(),
+  equipmentId: z.string().optional(),
 });
 
 export const updateTaskStatusSchema = z.object({

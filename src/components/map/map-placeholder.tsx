@@ -1,7 +1,12 @@
-import { MapPin } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
 
-export function MapPlaceholder() {
+import Link from "next/link";
+import { MapPin } from "lucide-react";
+import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { MapBlock } from "@/domains/map/types";
+
+export function MapPlaceholder({ blocks = [] }: { blocks?: MapBlock[] }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
@@ -13,16 +18,25 @@ export function MapPlaceholder() {
       <CardContent className="space-y-4">
         <div className="relative flex aspect-[4/3] items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 md:aspect-[16/9]">
           <div className="max-w-sm space-y-2 px-6 text-center">
-            <p className="text-sm font-medium">2D map coming in Sprint 5</p>
+            <p className="text-sm font-medium">Mapbox token required</p>
             <p className="text-xs text-muted-foreground">
-              Mapbox GL JS will render block polygons from{" "}
-              <code className="rounded bg-muted px-1">MapFeature</code> records.
-              Tap a block to open a slide-up drawer with quick actions.
+              Set{" "}
+              <code className="rounded bg-muted px-1">NEXT_PUBLIC_MAPBOX_TOKEN</code>{" "}
+              in <code className="rounded bg-muted px-1">.env</code> to load the
+              live block map. Get a free token at{" "}
+              <a
+                href="https://account.mapbox.com/access-tokens/"
+                className="text-primary underline-offset-2 hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                mapbox.com
+              </a>
+              .
             </p>
           </div>
-          {/* Decorative block grid */}
           <div className="pointer-events-none absolute inset-4 grid grid-cols-4 grid-rows-3 gap-2 opacity-40">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array.from({ length: Math.max(blocks.length, 8) }).map((_, i) => (
               <div
                 key={i}
                 className="rounded border border-emerald-600/50 bg-emerald-500/20"
@@ -30,10 +44,30 @@ export function MapPlaceholder() {
             ))}
           </div>
         </div>
+        {blocks.length > 0 && (
+          <ul className="divide-y rounded-lg border text-sm">
+            {blocks.map((block) => (
+              <li key={block.id}>
+                <Link
+                  href={`/blocks/${block.id}`}
+                  className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted/50"
+                >
+                  <div>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {block.code}
+                    </span>
+                    <p className="font-medium">{block.name}</p>
+                  </div>
+                  <BlockStatusBadge status={block.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li>· Block boundaries stored as GeoJSON in the database</li>
-          <li>· Shared dataset supports future 3D terrain view</li>
-          <li>· Set NEXT_PUBLIC_MAPBOX_TOKEN when ready for live map</li>
+          <li>· Tap blocks on the map for quick task and irrigation logging</li>
+          <li>· Status overlays highlight open tasks and irrigation alerts</li>
         </ul>
       </CardContent>
     </Card>

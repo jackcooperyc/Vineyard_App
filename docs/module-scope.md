@@ -18,17 +18,21 @@
 - Full create form and quick log sheet from block detail
 - Dashboard upcoming tasks section
 
-### Equipment — Sprint 3
+### Equipment — Sprint 3 ✓
 
-- Equipment directory with type and status
-- Maintenance records and service schedule
-- Link equipment to tasks
+- Equipment directory with type and status filters (including needs service)
+- Equipment detail with maintenance history and open tasks
+- Maintenance record logging with next-service date updates
+- Equipment assignment on task create and quick-log
+- Dashboard service-due count and equipment alerts
 
-### Irrigation — Sprint 4
+### Irrigation — Sprint 4 ✓
 
-- Irrigation schedules per block
-- Irrigation records (date, volume, duration, method)
-- Overdue/missed event alerts
+- Irrigation schedules per block (daily, weekly, bi-weekly, monthly)
+- Irrigation records (date, volume, duration, method, status)
+- Alerts view for overdue irrigation based on schedule frequency
+- Quick log from block detail
+- Dashboard irrigation alerts
 
 ### Map — Sprint 5
 

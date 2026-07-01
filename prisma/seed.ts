@@ -230,6 +230,94 @@ async function main() {
   };
   const daysAgo = (days: number) => daysFromNow(-days);
 
+  const sampleEquipment = [
+    {
+      name: "Kubota M5-111",
+      type: "Tractor",
+      status: "ACTIVE" as const,
+      serialNumber: "CEV-TR-001",
+      lastServicedAt: daysAgo(45),
+      nextServiceAt: daysFromNow(15),
+      notes: "Primary vineyard tractor. 4WD.",
+    },
+    {
+      name: "Pellenc Optimum 9900",
+      type: "Harvester",
+      status: "ACTIVE" as const,
+      serialNumber: "CEV-HV-001",
+      lastServicedAt: daysAgo(120),
+      nextServiceAt: daysFromNow(60),
+    },
+    {
+      name: "Gregoire G65 Sprayer",
+      type: "Sprayer",
+      status: "ACTIVE" as const,
+      serialNumber: "CEV-SP-001",
+      lastServicedAt: daysAgo(20),
+      nextServiceAt: daysAgo(3),
+      notes: "Overdue filter and nozzle check.",
+    },
+    {
+      name: "Polaris Ranger 570",
+      type: "ATV",
+      status: "ACTIVE" as const,
+      serialNumber: "CEV-ATV-01",
+      lastServicedAt: daysAgo(30),
+      nextServiceAt: daysFromNow(30),
+    },
+    {
+      name: "Netafim Pump Station",
+      type: "Pump",
+      status: "IN_MAINTENANCE" as const,
+      serialNumber: "CEV-PU-001",
+      lastServicedAt: daysAgo(5),
+      nextServiceAt: daysFromNow(2),
+      notes: "Valve replacement in progress.",
+    },
+    {
+      name: "John Deere 5075E",
+      type: "Tractor",
+      status: "RETIRED" as const,
+      serialNumber: "CEV-TR-OLD",
+      notes: "Replaced by Kubota M5-111.",
+    },
+  ];
+
+  const equipmentByName: Record<string, string> = {};
+
+  for (const equip of sampleEquipment) {
+    const existing = await prisma.equipment.findFirst({
+      where: { name: equip.name },
+    });
+
+    const record = existing
+      ? existing
+      : await prisma.equipment.create({
+          data: {
+            name: equip.name,
+            type: equip.type,
+            status: equip.status,
+            serialNumber: equip.serialNumber,
+            lastServicedAt: equip.lastServicedAt,
+            nextServiceAt: equip.nextServiceAt,
+            notes: equip.notes,
+          },
+        });
+
+    equipmentByName[equip.name] = record.id;
+
+    if (!existing && equip.name === "Gregoire G65 Sprayer") {
+      await prisma.maintenanceRecord.create({
+        data: {
+          equipmentId: record.id,
+          performedAt: equip.lastServicedAt!,
+          description: "Pre-season nozzle inspection",
+          notes: "Scheduled follow-up for filter replacement.",
+        },
+      });
+    }
+  }
+
   const sampleTasks = [
     {
       blockCode: "CEV-01",
@@ -237,6 +325,7 @@ async function main() {
       status: "IN_PROGRESS" as const,
       title: "Winter cane pruning — North Ridge",
       dueDate: daysFromNow(3),
+      equipmentName: "Kubota M5-111",
     },
     {
       blockCode: "CEV-02",
@@ -244,6 +333,7 @@ async function main() {
       status: "PENDING" as const,
       title: "Early season fungicide application",
       dueDate: daysFromNow(1),
+      equipmentName: "Gregoire G65 Sprayer",
     },
     {
       blockCode: "CEV-03",
@@ -287,6 +377,135 @@ async function main() {
           dueDate: taskData.dueDate,
           completedAt: taskData.completedAt ?? null,
           assignedToId: admin.id,
+          equipmentId:
+            "equipmentName" in taskData && taskData.equipmentName
+              ? equipmentByName[taskData.equipmentName]
+              : undefined,
+        },
+      });
+    }
+  }
+
+  const sampleSchedules = [
+    {
+      blockCode: "CEV-01",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 450,
+      startDate: daysAgo(60),
+    },
+    {
+      blockCode: "CEV-02",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 380,
+      startDate: daysAgo(45),
+    },
+    {
+      blockCode: "CEV-03",
+      frequency: "biweekly",
+      method: "Drip",
+      volume: 320,
+      startDate: daysAgo(30),
+    },
+    {
+      blockCode: "CEV-08",
+      frequency: "weekly",
+      method: "Drip",
+      volume: 520,
+      startDate: daysAgo(90),
+    },
+  ];
+
+  for (const sched of sampleSchedules) {
+    const blockId = blockByCode[sched.blockCode];
+    if (!blockId) continue;
+
+    const existing = await prisma.irrigationSchedule.findFirst({
+      where: { blockId, frequency: sched.frequency, active: true },
+    });
+
+    if (!existing) {
+      await prisma.irrigationSchedule.create({
+        data: {
+          blockId,
+          frequency: sched.frequency,
+          startDate: sched.startDate,
+          volume: sched.volume,
+          method: sched.method,
+          active: true,
+        },
+      });
+    }
+  }
+
+  const sampleRecords = [
+    {
+      blockCode: "CEV-01",
+      appliedAt: daysAgo(5),
+      volume: 440,
+      duration: 120,
+      method: "Drip",
+      status: "APPLIED" as const,
+    },
+    {
+      blockCode: "CEV-02",
+      appliedAt: daysAgo(10),
+      volume: 375,
+      duration: 100,
+      method: "Drip",
+      status: "APPLIED" as const,
+    },
+    {
+      blockCode: "CEV-03",
+      appliedAt: daysAgo(20),
+      volume: 310,
+      duration: 90,
+      method: "Drip",
+      status: "APPLIED" as const,
+      notes: "Slightly under target volume — check pressure.",
+    },
+    {
+      blockCode: "CEV-08",
+      appliedAt: daysAgo(12),
+      volume: 500,
+      duration: 140,
+      method: "Drip",
+      status: "APPLIED" as const,
+    },
+    {
+      blockCode: "CEV-04",
+      appliedAt: daysAgo(3),
+      volume: 200,
+      duration: 60,
+      method: "Drip",
+      status: "MISSED" as const,
+      notes: "Valve stuck — irrigation did not run as scheduled.",
+    },
+  ];
+
+  for (const rec of sampleRecords) {
+    const blockId = blockByCode[rec.blockCode];
+    if (!blockId) continue;
+
+    const existing = await prisma.irrigationRecord.findFirst({
+      where: {
+        blockId,
+        appliedAt: rec.appliedAt,
+        status: rec.status,
+      },
+    });
+
+    if (!existing) {
+      await prisma.irrigationRecord.create({
+        data: {
+          blockId,
+          appliedAt: rec.appliedAt,
+          volume: rec.volume,
+          duration: rec.duration,
+          method: rec.method,
+          status: rec.status,
+          notes: rec.notes,
         },
       });
     }
@@ -295,7 +514,10 @@ async function main() {
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
   console.log(`  Blocks: ${blocksData.length}`);
+  console.log(`  Equipment: ${sampleEquipment.length}`);
   console.log(`  Tasks: ${sampleTasks.length}`);
+  console.log(`  Irrigation schedules: ${sampleSchedules.length}`);
+  console.log(`  Irrigation records: ${sampleRecords.length}`);
   console.log(`  Admin login: admin@cooperestate.com / cooper2026`);
 }
 

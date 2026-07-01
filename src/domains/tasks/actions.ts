@@ -38,13 +38,14 @@ export async function createTask(formData: FormData) {
     description: formData.get("description") || undefined,
     dueDate: formData.get("dueDate") || undefined,
     assignedToId: formData.get("assignedToId") || undefined,
+    equipmentId: formData.get("equipmentId") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { blockId, type, title, description, dueDate, assignedToId } =
+  const { blockId, type, title, description, dueDate, assignedToId, equipmentId } =
     parsed.data;
 
   const task = await db.task.create({
@@ -55,6 +56,7 @@ export async function createTask(formData: FormData) {
       description,
       dueDate: parseDueDate(dueDate),
       assignedToId: assignedToId || session.user.id,
+      equipmentId: equipmentId || null,
       status: "PENDING",
     },
   });
@@ -84,13 +86,14 @@ export async function quickLogTask(formData: FormData) {
     type: formData.get("type"),
     title: formData.get("title") || undefined,
     description: formData.get("description") || undefined,
+    equipmentId: formData.get("equipmentId") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { type, title, description } = parsed.data;
+  const { type, title, description, equipmentId } = parsed.data;
 
   const task = await db.task.create({
     data: {
@@ -99,6 +102,7 @@ export async function quickLogTask(formData: FormData) {
       title: title ?? defaultTitleForType(type, block.code),
       description,
       assignedToId: session.user.id,
+      equipmentId: equipmentId || null,
       status: "PENDING",
     },
   });

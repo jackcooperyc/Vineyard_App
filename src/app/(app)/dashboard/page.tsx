@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Grape, ListTodo, Droplets } from "lucide-react";
+import { Grape, ListTodo, Droplets, Tractor } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,14 +8,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EquipmentListCard } from "@/components/equipment/equipment-list-card";
+import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getDashboardStats } from "@/domains/blocks/queries";
+import { getEquipmentNeedingService } from "@/domains/equipment/queries";
+import { getIrrigationAlerts } from "@/domains/irrigation/queries";
 import { getUpcomingTasks } from "@/domains/tasks/queries";
 
 export default async function DashboardPage() {
-  const [stats, upcomingTasks] = await Promise.all([
+  const [stats, upcomingTasks, equipmentNeedingService, irrigationAlerts] =
+    await Promise.all([
     getDashboardStats(),
     getUpcomingTasks(3),
+    getEquipmentNeedingService(3),
+    getIrrigationAlerts(),
   ]);
 
   const cards = [
@@ -34,10 +41,17 @@ export default async function DashboardPage() {
       icon: ListTodo,
     },
     {
-      title: "Irrigation schedules",
-      value: stats.upcomingIrrigation,
-      description: "Active schedules",
-      href: "/irrigation",
+      title: "Service due",
+      value: stats.equipmentNeedingService,
+      description: "Equipment needing maintenance",
+      href: "/equipment?status=NEEDS_SERVICE",
+      icon: Tractor,
+    },
+    {
+      title: "Irrigation alerts",
+      value: stats.irrigationAlerts,
+      description: "Overdue block irrigation",
+      href: "/irrigation?view=alerts",
       icon: Droplets,
     },
   ];
@@ -51,7 +65,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -93,8 +107,57 @@ export default async function DashboardPage() {
           <Button variant="outline" render={<Link href="/tasks/new" />}>
             Log task
           </Button>
+          <Button variant="outline" render={<Link href="/equipment" />}>
+            Equipment
+          </Button>
         </CardContent>
       </Card>
+
+      {irrigationAlerts.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Irrigation alerts</CardTitle>
+              <CardDescription>Blocks past their irrigation window</CardDescription>
+            </div>
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              render={<Link href="/irrigation?view=alerts" />}
+            >
+              View all
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {irrigationAlerts.slice(0, 3).map((alert) => (
+              <IrrigationAlertCard key={alert.scheduleId} alert={alert} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {equipmentNeedingService.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Equipment needing service</CardTitle>
+              <CardDescription>Overdue or upcoming maintenance</CardDescription>
+            </div>
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              render={<Link href="/equipment?status=NEEDS_SERVICE" />}
+            >
+              View all
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {equipmentNeedingService.map((item) => (
+              <EquipmentListCard key={item.id} item={item} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {upcomingTasks.length > 0 && (
         <Card>

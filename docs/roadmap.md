@@ -42,22 +42,28 @@
 
 ### Sprint 3 — Equipment
 
-- Equipment directory and detail
-- Maintenance records and reminders
-- Task linkage
+- [x] Equipment directory with status filters
+- [x] Equipment detail with maintenance history
+- [x] Maintenance record logging and next-service updates
+- [x] Equipment picker on task create and quick-log
+- [x] Dashboard service-due alerts
+- [x] Seed data for 6 vineyard assets
 
 ### Sprint 4 — Irrigation
 
-- Schedule creation
-- Irrigation history by block
-- Overdue/missed alerts
+- [x] Irrigation schedules per block with frequency and method
+- [x] Irrigation records with volume, duration, and status
+- [x] Irrigation hub with schedules, records, and alerts views
+- [x] Overdue alert logic based on schedule frequency
+- [x] Quick log irrigation from block detail
+- [x] Dashboard irrigation alerts section
 
 ### Sprint 5 — 2D map
 
-- Mapbox GL JS integration
-- Block polygon rendering
-- Tap → drawer with quick actions
-- Status overlays
+- [x] Mapbox GL JS integration
+- [x] Block polygon rendering
+- [x] Tap → drawer with quick actions
+- [x] Status overlays
 
 ### Sprint 6 — Mobile polish
 
@@ -79,4 +85,4 @@
 
 ## Current focus
 
-Sprint 3: equipment directory, maintenance records, and task linkage.
+Sprint 5: Mapbox 2D map with block polygons, tap-to-open drawer, and quick actions.

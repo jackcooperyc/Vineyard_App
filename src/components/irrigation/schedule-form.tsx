@@ -7,29 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createTask } from "@/domains/tasks/actions";
-import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
-import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
-import type { TaskType } from "@/generated/prisma/client";
+import { createIrrigationSchedule } from "@/domains/irrigation/actions";
+import {
+  IRRIGATION_FREQUENCIES,
+  IRRIGATION_METHODS,
+} from "@/domains/irrigation/constants";
 
 type BlockOption = { id: string; code: string; name: string };
-type UserOption = { id: string; name: string | null; email: string };
-type EquipmentOption = { id: string; name: string; type: string };
 
-export function TaskForm({
+export function ScheduleForm({
   blocks,
-  users,
-  equipment,
   defaultBlockId,
 }: {
   blocks: BlockOption[];
-  users: UserOption[];
-  equipment: EquipmentOption[];
   defaultBlockId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const today = new Date().toISOString().split("T")[0];
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,15 +33,13 @@ export function TaskForm({
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const result = await createTask(formData);
+      const result = await createIrrigationSchedule(formData);
       if (result.error) {
         setError(result.error);
         return;
       }
-      if (result.taskId) {
-        router.push(`/tasks/${result.taskId}`);
-        router.refresh();
-      }
+      router.push("/irrigation");
+      router.refresh();
     });
   }
 
@@ -69,73 +63,67 @@ export function TaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Task type</Label>
+        <Label htmlFor="frequency">Frequency</Label>
         <select
-          id="type"
-          name="type"
+          id="frequency"
+          name="frequency"
           required
-          defaultValue="INSPECTION"
+          defaultValue="weekly"
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
-          {TASK_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {TASK_TYPE_LABELS[type as TaskType]}
+          {IRRIGATION_FREQUENCIES.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
             </option>
           ))}
         </select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="startDate">Start date</Label>
         <Input
-          id="title"
-          name="title"
-          required
-          className="h-12 text-base"
-          placeholder="e.g. Pre-harvest inspection"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          name="description"
-          rows={4}
-          className="text-base"
-          placeholder="Details, observations, or instructions…"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="dueDate">Due date</Label>
-        <Input
-          id="dueDate"
-          name="dueDate"
+          id="startDate"
+          name="startDate"
           type="date"
+          required
+          defaultValue={today}
           className="h-12 text-base"
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="equipmentId">Equipment (optional)</Label>
-        <EquipmentSelectField equipment={equipment} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="method">Method</Label>
+          <select
+            id="method"
+            name="method"
+            defaultValue="Drip"
+            className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
+          >
+            {IRRIGATION_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="volume">Volume (gallons)</Label>
+          <Input
+            id="volume"
+            name="volume"
+            type="number"
+            step="0.1"
+            min="0"
+            className="h-12 text-base"
+            placeholder="e.g. 500"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="assignedToId">Assigned to</Label>
-        <select
-          id="assignedToId"
-          name="assignedToId"
-          className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
-        >
-          <option value="">Current user (default)</option>
-          {users.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.name ?? user.email}
-            </option>
-          ))}
-        </select>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" name="notes" rows={3} className="text-base" />
       </div>
 
       {error && (
@@ -146,13 +134,13 @@ export function TaskForm({
 
       <div className="flex gap-3">
         <Button type="submit" className="min-h-11 flex-1 text-base" disabled={pending}>
-          {pending ? "Creating…" : "Create task"}
+          {pending ? "Saving…" : "Create schedule"}
         </Button>
         <Button
           type="button"
           variant="outline"
           className="min-h-11"
-          render={<Link href="/tasks" />}
+          render={<Link href="/irrigation" />}
         >
           Cancel
         </Button>

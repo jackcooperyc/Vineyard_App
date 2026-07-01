@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { BlockStatus } from "@/generated/prisma/client";
+import { countIrrigationAlerts } from "@/domains/irrigation/queries";
 
 export type BlockListItem = {
   id: string;
@@ -59,6 +60,14 @@ export async function getBlockById(id: string) {
         },
       },
       mapFeature: true,
+      irrigationRecords: {
+        orderBy: { appliedAt: "desc" },
+        take: 5,
+      },
+      irrigationSchedules: {
+        where: { active: true },
+        take: 3,
+      },
       _count: {
         select: {
           tasks: true,
@@ -70,7 +79,8 @@ export async function getBlockById(id: string) {
 }
 
 export async function getDashboardStats() {
-  const [blockCount, pendingTasks, upcomingIrrigation] = await Promise.all([
+  const [blockCount, pendingTasks, upcomingIrrigation, equipmentNeedingService, irrigationAlerts] =
+    await Promise.all([
     db.block.count(),
     db.task.count({
       where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
@@ -78,9 +88,22 @@ export async function getDashboardStats() {
     db.irrigationSchedule.count({
       where: { active: true },
     }),
+    db.equipment.count({
+      where: {
+        status: { not: "RETIRED" },
+        nextServiceAt: { lte: new Date() },
+      },
+    }),
+    countIrrigationAlerts(),
   ]);
 
-  return { blockCount, pendingTasks, upcomingIrrigation };
+  return {
+    blockCount,
+    pendingTasks,
+    upcomingIrrigation,
+    equipmentNeedingService,
+    irrigationAlerts,
+  };
 }
 
 export async function getVineyardName() {

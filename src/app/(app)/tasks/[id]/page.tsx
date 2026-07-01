@@ -102,7 +102,15 @@ export default async function TaskDetailPage({
             {task.equipment && (
               <div>
                 <dt className="text-muted-foreground">Equipment</dt>
-                <dd className="font-medium">{task.equipment.name}</dd>
+                <dd className="font-medium">
+                  <Link
+                    href={`/equipment/${task.equipment.id}`}
+                    className="text-primary underline-offset-4 hover:underline"
+                  >
+                    {task.equipment.name}
+                  </Link>
+                  <span className="text-muted-foreground"> · {task.equipment.type}</span>
+                </dd>
               </div>
             )}
           </dl>

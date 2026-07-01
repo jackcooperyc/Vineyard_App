@@ -100,11 +100,26 @@ See [PROJECT_START.md](./PROJECT_START.md) for the full product brief and [docs/
 4. Set environment variables:
    - `DATABASE_URL` — Neon **pooled** connection string
    - `DIRECT_URL` — Neon **direct** connection string
-   - `AUTH_SECRET` — production secret
-   - `AUTH_URL` — your Vercel production URL
+   - `AUTH_SECRET` — production secret (`openssl rand -base64 32`)
+   - `AUTH_URL` — your Vercel production URL (e.g. `https://cev-app-puce.vercel.app`)
+   - `NEXT_PUBLIC_MAPBOX_TOKEN` — Mapbox public token for the vineyard map
 5. Deploy — `postinstall` runs `prisma generate` automatically
 6. Run migrations against production: `npx prisma db push` (or `migrate deploy`)
 7. Seed production once: `npm run db:seed`
+8. Redeploy after adding or changing env vars (required for `NEXT_PUBLIC_*` at build time)
+
+### Quick production sync (Vercel CLI)
+
+```bash
+npx vercel link
+npx vercel env pull .env.production.local --environment=production
+# Add any missing vars: npx vercel env add VARIABLE_NAME production
+
+export $(grep -v '^#' .env.production.local | xargs)
+npx prisma db push
+npm run db:seed
+npx vercel deploy --prod
+```
 
 ## Documentation
 
