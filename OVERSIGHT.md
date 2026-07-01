@@ -2,6 +2,22 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-01 — Production seed (Neon, manual sync)
+
+### Completed
+
+- Ran `./scripts/sync-production-db.sh` against Neon production (`cev-app-db` / Vercel marketplace) with dashboard-supplied `DATABASE_URL` and `DIRECT_URL` (not committed; `.env.production.local` unchanged).
+- Schema already in sync with Prisma; seed completed idempotently.
+- Approximate counts verified: **35 blocks**, **18 tasks**, **10 irrigation schedules**, **12 irrigation records** (9 demo + 3 imported), **13 varieties**, **6 equipment**, admin user `admin@cooperestate.com`.
+- Two blocks still without map geometry: Blake's House, Cowboy's Place (unchanged from Sprint 7).
+
+### Notes
+
+- Vercel `AUTH_URL` remains **https://cev.cupr.app** (custom domain); user also referenced `https://cev-app-puce.vercel.app` for smoke tests — no env change required for seed.
+
+---
+
+
 ## 2026-07-01 — Production DB migration to Neon
 
 ### Completed
@@ -23,7 +39,7 @@ Activity log for data import, deployment, and security items requiring human rev
 
 ### Manual follow-up
 
-- **Production seed:** run `./scripts/sync-production-db.sh` with `DATABASE_URL` copied from Vercel dashboard (sensitive vars are not exposed via `vercel env pull`)
+- **Production seed:** **Done** (2026-07-01) — see "Production seed (Neon, manual sync)" above
 
 ### Decommission
 
