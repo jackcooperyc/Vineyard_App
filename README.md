@@ -94,7 +94,7 @@ See [PROJECT_START.md](./PROJECT_START.md) for the full product brief and [docs/
 
 ## Deployment (Vercel + Neon)
 
-Production: **https://cev-app-puce.vercel.app** (`jackcooperyc-6691s-projects/cev-app`)
+Production: **https://cev.cupr.app** (custom domain; Vercel alias **https://cev-app-puce.vercel.app**, project `jackcooperyc-6691s-projects/cev-app`)
 
 ### Provision Neon (recommended: Vercel integration)
 
@@ -118,7 +118,7 @@ Set on **production**, **preview**, and **development** in Vercel:
 | `DATABASE_URL` | Neon **pooled** URL (`-pooler` host) with `?sslmode=verify-full` |
 | `DIRECT_URL` | Neon **direct** URL (non-pooler host) with `?sslmode=verify-full` |
 | `AUTH_SECRET` | `openssl rand -base64 32` (do not rotate unless compromised) |
-| `AUTH_URL` | `https://cev-app-puce.vercel.app` |
+| `AUTH_URL` | `https://cev.cupr.app` (production/preview); `http://localhost:3000` (development) |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox public token |
 
 ```bash

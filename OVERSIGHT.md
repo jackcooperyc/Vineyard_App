@@ -12,6 +12,19 @@ Activity log for data import, deployment, and security items requiring human rev
 - Production redeployed to https://cev-app-puce.vercel.app
 - Login smoke test passed: `admin@cooperestate.com` → dashboard HTTP 200
 
+## 2026-07-01 — Custom domain + Op-1–4 production deploy
+
+### Completed
+
+- Custom domain **https://cev.cupr.app** added on Vercel (aliases `cev-app-puce.vercel.app`)
+- `AUTH_URL` updated to `https://cev.cupr.app` on Vercel production and preview
+- Production redeployed at commit `373e3cb` (Op-1 through Op-4 operational UI track)
+- Login page smoke test passed on both `cev.cupr.app` and `cev-app-puce.vercel.app`
+
+### Manual follow-up
+
+- **Production seed:** run `./scripts/sync-production-db.sh` with `DATABASE_URL` copied from Vercel dashboard (sensitive vars are not exposed via `vercel env pull`)
+
 ### Decommission
 
 - **Temporary Prisma Postgres** (`db.prisma.io`, expires ~2026-07-02) can be deleted — production now uses Neon
