@@ -71,9 +71,9 @@ These are **not** Sprint 8 blockers but close open Sprint 7 items if time allows
 
 ### Acceptance
 
-- [ ] Dashboard shows live weather for estate center
-- [ ] Provider swappable without UI changes
-- [ ] API keys server-only (never `NEXT_PUBLIC_`)
+- [x] Dashboard shows live weather for estate center
+- [x] Provider swappable without UI changes
+- [x] API keys server-only (never `NEXT_PUBLIC_`)
 
 ---
 
@@ -91,8 +91,8 @@ These are **not** Sprint 8 blockers but close open Sprint 7 items if time allows
 
 ### Acceptance
 
-- [ ] Block 40-CM40 shows elevation + acreage from imported data
-- [ ] Map respects `colorHex` when populated
+- [x] Block 40-CM40 shows elevation + acreage from imported data
+- [x] Map respects `colorHex` when populated
 
 ---
 
@@ -112,8 +112,8 @@ These are **not** Sprint 8 blockers but close open Sprint 7 items if time allows
 
 ### Acceptance
 
-- [ ] At least one pump can be created and appears on map
-- [ ] CSV export of irrigation records works
+- [x] At least one pump can be created and appears on map
+- [x] CSV export of irrigation records works
 
 ---
 
