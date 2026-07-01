@@ -8,10 +8,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getDashboardStats } from "@/domains/blocks/queries";
+import { getUpcomingTasks } from "@/domains/tasks/queries";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, upcomingTasks] = await Promise.all([
+    getDashboardStats(),
+    getUpcomingTasks(3),
+  ]);
 
   const cards = [
     {
@@ -85,11 +90,46 @@ export default async function DashboardPage() {
           <Button variant="outline" render={<Link href="/map" />}>
             Open map
           </Button>
-          <Button variant="outline" disabled>
-            Log task (Sprint 2)
+          <Button variant="outline" render={<Link href="/tasks/new" />}>
+            Log task
           </Button>
         </CardContent>
       </Card>
+
+      {upcomingTasks.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Upcoming tasks</CardTitle>
+              <CardDescription>Next due dates across the estate</CardDescription>
+            </div>
+            <Button variant="link" className="h-auto p-0" render={<Link href="/tasks" />}>
+              View all
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {upcomingTasks.map((task) => (
+              <TaskListCard
+                key={task.id}
+                task={{
+                  id: task.id,
+                  title: task.title,
+                  type: task.type,
+                  status: task.status,
+                  dueDate: task.dueDate,
+                  completedAt: task.completedAt,
+                  block: {
+                    id: task.block.id,
+                    code: task.block.code,
+                    name: task.block.name,
+                  },
+                  assignedTo: null,
+                }}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

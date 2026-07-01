@@ -34,9 +34,11 @@
 
 ### Sprint 2 — Tasks
 
-- Task list, detail, and creation flows
-- Quick log from block detail
-- Status workflow and filters
+- [x] Task list with status filters and timeline grouping
+- [x] Task detail page with status workflow
+- [x] Task creation form
+- [x] Quick log from block detail (slide-up sheet)
+- [x] Dashboard upcoming tasks section
 
 ### Sprint 3 — Equipment
 
@@ -77,4 +79,4 @@
 
 ## Current focus
 
-Sprint 0 + Sprint 1: working skeleton with authenticated shell, seeded blocks, list/detail pages, and deployment-ready configuration.
+Sprint 3: equipment directory, maintenance records, and task linkage.

@@ -9,12 +9,14 @@
 - Block detail page with notes
 - Basic CRUD for block data
 
-### Tasks — Sprint 2
+### Tasks — Sprint 2 ✓
 
 - Task types: pruning, spraying, harvesting, inspection, other
-- Status workflow: pending → in progress → completed
-- Assignment to user and optional equipment
-- Quick log from block detail page
+- Status workflow: pending → in progress → completed (cancel/reopen supported)
+- Task list with filters and timeline grouping by due date
+- Task detail page with status actions
+- Full create form and quick log sheet from block detail
+- Dashboard upcoming tasks section
 
 ### Equipment — Sprint 3
 

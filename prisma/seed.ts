@@ -168,6 +168,8 @@ async function main() {
     },
   ];
 
+  const blockByCode: Record<string, string> = {};
+
   for (const [index, blockData] of blocksData.entries()) {
     const variety = varietyByName[blockData.variety];
     const geometry = blockPolygon(index, blockData.latOffset, blockData.lngOffset);
@@ -209,6 +211,8 @@ async function main() {
       },
     });
 
+    blockByCode[blockData.code] = block.id;
+
     await prisma.note.create({
       data: {
         blockId: block.id,
@@ -218,9 +222,80 @@ async function main() {
     });
   }
 
+  const now = new Date();
+  const daysFromNow = (days: number) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+  const daysAgo = (days: number) => daysFromNow(-days);
+
+  const sampleTasks = [
+    {
+      blockCode: "CEV-01",
+      type: "PRUNING" as const,
+      status: "IN_PROGRESS" as const,
+      title: "Winter cane pruning — North Ridge",
+      dueDate: daysFromNow(3),
+    },
+    {
+      blockCode: "CEV-02",
+      type: "SPRAYING" as const,
+      status: "PENDING" as const,
+      title: "Early season fungicide application",
+      dueDate: daysFromNow(1),
+    },
+    {
+      blockCode: "CEV-03",
+      type: "INSPECTION" as const,
+      status: "PENDING" as const,
+      title: "Bud break inspection",
+      dueDate: daysFromNow(5),
+    },
+    {
+      blockCode: "CEV-04",
+      type: "HARVESTING" as const,
+      status: "PENDING" as const,
+      title: "Harvest prep walkthrough",
+      dueDate: daysFromNow(14),
+    },
+    {
+      blockCode: "CEV-08",
+      type: "INSPECTION" as const,
+      status: "COMPLETED" as const,
+      title: "Canopy health check — Heritage Block",
+      dueDate: daysAgo(2),
+      completedAt: daysAgo(1),
+    },
+  ];
+
+  for (const taskData of sampleTasks) {
+    const blockId = blockByCode[taskData.blockCode];
+    if (!blockId) continue;
+
+    const existing = await prisma.task.findFirst({
+      where: { blockId, title: taskData.title },
+    });
+
+    if (!existing) {
+      await prisma.task.create({
+        data: {
+          blockId,
+          type: taskData.type,
+          status: taskData.status,
+          title: taskData.title,
+          dueDate: taskData.dueDate,
+          completedAt: taskData.completedAt ?? null,
+          assignedToId: admin.id,
+        },
+      });
+    }
+  }
+
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
   console.log(`  Blocks: ${blocksData.length}`);
+  console.log(`  Tasks: ${sampleTasks.length}`);
   console.log(`  Admin login: admin@cooperestate.com / cooper2026`);
 }
 

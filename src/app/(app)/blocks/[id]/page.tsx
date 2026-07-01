@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { getBlockById } from "@/domains/blocks/queries";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
+import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
+import { TaskListCard } from "@/components/tasks/task-list-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { TaskListItem } from "@/domains/tasks/queries";
 
 export default async function BlockDetailPage({
   params,
@@ -25,6 +28,17 @@ export default async function BlockDetailPage({
   }
 
   const totalVines = block.plantings.reduce((sum, p) => sum + p.vineCount, 0);
+
+  const taskItems: TaskListItem[] = block.tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    type: task.type,
+    status: task.status,
+    dueDate: task.dueDate,
+    completedAt: task.completedAt,
+    block: { id: block.id, code: block.code, name: block.name },
+    assignedTo: task.assignedTo,
+  }));
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -54,11 +68,17 @@ export default async function BlockDetailPage({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button disabled className="min-h-11">
-          Log task (Sprint 2)
-        </Button>
-        <Button variant="outline" disabled className="min-h-11">
-          Add note (Sprint 2)
+        <QuickLogTaskSheet
+          blockId={block.id}
+          blockCode={block.code}
+          blockName={block.name}
+        />
+        <Button
+          variant="outline"
+          className="min-h-11"
+          render={<Link href={`/tasks/new?blockId=${block.id}`} />}
+        >
+          Full task form
         </Button>
         {block.mapFeature && (
           <Button
@@ -132,23 +152,30 @@ export default async function BlockDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Recent tasks</CardTitle>
-          <CardDescription>
-            {block._count.tasks} total · full module in Sprint 2
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle>Tasks</CardTitle>
+            <CardDescription>
+              {block._count.tasks} total for this block
+            </CardDescription>
+          </div>
+          {block._count.tasks > 5 && (
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              render={<Link href={`/tasks?status=ALL`} />}
+            >
+              View all
+            </Button>
+          )}
         </CardHeader>
-        <CardContent>
-          {block.tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No tasks yet.</p>
+        <CardContent className="space-y-3">
+          {taskItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No tasks yet. Use Log task above to get started.
+            </p>
           ) : (
-            <ul className="space-y-2">
-              {block.tasks.map((task) => (
-                <li key={task.id} className="text-sm">
-                  {task.title} — {task.status}
-                </li>
-              ))}
-            </ul>
+            taskItems.map((task) => <TaskListCard key={task.id} task={task} />)
           )}
         </CardContent>
       </Card>
