@@ -14,6 +14,7 @@ import {
   EquipmentStatusBadge,
   ServiceDueBadge,
 } from "@/components/equipment/equipment-status-badge";
+import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getEquipmentById } from "@/domains/equipment/queries";
@@ -31,7 +32,7 @@ export default async function EquipmentDetailPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="field-readable mx-auto max-w-3xl space-y-6">
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"
@@ -43,7 +44,8 @@ export default async function EquipmentDetailPage({
         </Button>
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <EquipmentTypeIcon type={equipment.type} className="size-3.5" />
               {equipment.type}
             </span>
             <EquipmentStatusBadge status={equipment.status} />
@@ -109,7 +111,7 @@ export default async function EquipmentDetailPage({
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="maintenance">
         <CardHeader>
           <CardTitle>Log maintenance</CardTitle>
           <CardDescription>
@@ -131,24 +133,40 @@ export default async function EquipmentDetailPage({
         </CardHeader>
         <CardContent className="space-y-4">
           {equipment.maintenanceRecords.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No maintenance logged yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No maintenance logged yet.{" "}
+              <a href="#maintenance" className="text-primary underline-offset-4 hover:underline">
+                Log the first service
+              </a>
+            </p>
           ) : (
-            equipment.maintenanceRecords.map((record) => (
-              <div
-                key={record.id}
-                className="space-y-1 border-b pb-4 last:border-0 last:pb-0"
-              >
-                <p className="font-medium">
-                  {record.description ?? "Maintenance service"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {record.performedAt.toLocaleDateString()}
-                </p>
-                {record.notes && (
-                  <p className="text-sm text-muted-foreground">{record.notes}</p>
-                )}
-              </div>
-            ))
+            <div className="space-y-3">
+              {equipment.maintenanceRecords.map((record) => (
+                <div
+                  key={record.id}
+                  className="rounded-lg border bg-muted/20 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">
+                      {record.description ?? "Maintenance service"}
+                    </p>
+                    <time
+                      dateTime={record.performedAt.toISOString()}
+                      className="shrink-0 text-xs text-muted-foreground"
+                    >
+                      {record.performedAt.toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </time>
+                  </div>
+                  {record.notes && (
+                    <p className="mt-2 text-sm text-muted-foreground">{record.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

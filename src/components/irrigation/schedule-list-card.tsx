@@ -1,24 +1,65 @@
 import Link from "next/link";
-import { ChevronRight, Calendar } from "lucide-react";
+import { ChevronRight, Calendar, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScheduleActiveToggle } from "@/components/irrigation/schedule-active-toggle";
 import { IRRIGATION_FREQUENCIES } from "@/domains/irrigation/constants";
-import type { ScheduleListItem } from "@/domains/irrigation/queries";
+import type { ScheduleWithDueHint } from "@/domains/irrigation/queries";
+import { cn } from "@/lib/utils";
 
 function frequencyLabel(value: string) {
   return IRRIGATION_FREQUENCIES.find((f) => f.value === value)?.label ?? value;
 }
 
-export function ScheduleListCard({ schedule }: { schedule: ScheduleListItem }) {
+function dueHint(schedule: ScheduleWithDueHint) {
+  if (!schedule.active) return null;
+
+  const expectedDays =
+    IRRIGATION_FREQUENCIES.find((f) => f.value === schedule.frequency)?.days ?? 7;
+
+  if (schedule.isOverdue) {
+    const overdueBy =
+      schedule.daysSinceLast != null
+        ? schedule.daysSinceLast - expectedDays
+        : null;
+    return {
+      text:
+        overdueBy != null && overdueBy > 0
+          ? `${overdueBy} day${overdueBy !== 1 ? "s" : ""} overdue`
+          : "Overdue",
+      tone: "danger" as const,
+    };
+  }
+
+  if (schedule.daysSinceLast != null) {
+    const daysUntil = expectedDays - schedule.daysSinceLast;
+    if (daysUntil <= 3) {
+      return {
+        text: daysUntil <= 0 ? "Due now" : `Due in ${daysUntil} day${daysUntil !== 1 ? "s" : ""}`,
+        tone: daysUntil <= 1 ? ("warning" as const) : ("default" as const),
+      };
+    }
+  }
+
+  return null;
+}
+
+export function ScheduleListCard({ schedule }: { schedule: ScheduleWithDueHint }) {
+  const hint = dueHint(schedule);
+
   return (
-    <Card className={schedule.active ? "" : "opacity-60"}>
-      <CardContent className="flex min-h-[72px] items-center gap-3 p-4">
+    <Card
+      className={cn(
+        schedule.active ? "" : "opacity-60",
+        schedule.isOverdue && schedule.active && "border-red-200 dark:border-red-900/50",
+      )}
+    >
+      <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
         <Link
           href={`/irrigation/schedules/${schedule.id}`}
-          className="flex flex-1 items-center gap-3 transition-colors hover:opacity-90"
+          className="field-tap flex flex-1 items-center gap-3 transition-colors hover:opacity-90"
         >
-          <div className="flex-1 space-y-1">
+          <div className="flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-xs text-muted-foreground">
                 {schedule.block.code}
@@ -29,16 +70,31 @@ export function ScheduleListCard({ schedule }: { schedule: ScheduleListItem }) {
                   Inactive
                 </Badge>
               )}
+              {hint && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    hint.tone === "danger" &&
+                      "border-red-300 bg-red-50 text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100",
+                    hint.tone === "warning" &&
+                      "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100",
+                  )}
+                >
+                  <Clock className="mr-1 size-3" />
+                  {hint.text}
+                </Badge>
+              )}
             </div>
             <p className="font-medium leading-tight">{schedule.block.name}</p>
             <p className="text-sm text-muted-foreground">
               {schedule.method && `${schedule.method} · `}
-              {schedule.volume != null && `${schedule.volume} gal`}
-              {schedule.volume == null && "Volume not set"}
+              {schedule.volume != null ? `${schedule.volume} gal` : "Volume not set"}
             </p>
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="size-3" />
               Started {schedule.startDate.toLocaleDateString()}
+              {schedule.lastAppliedAt &&
+                ` · Last applied ${schedule.lastAppliedAt.toLocaleDateString()}`}
             </p>
           </div>
           <ChevronRight className="size-5 shrink-0 text-muted-foreground" />

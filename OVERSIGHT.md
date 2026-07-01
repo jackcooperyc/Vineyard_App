@@ -262,3 +262,20 @@ Activity log for data import, deployment, and security items requiring human rev
 | GitHub branch protection / CI gates | GitHub admin |
 | Production seed on Neon | **Done** (2026-07-01) — Sprint 8 schema sync; see entry above |
 | Seed password rotation | Defer — documented in seed output |
+
+---
+
+## 2026-07-01 — Irrigation & equipment hub rebuild
+
+### Completed
+
+- **Irrigation hub (`/irrigation`):** Stat chips (active schedules, overdue alerts, records/volume this week), enhanced filter bar (block select, active/inactive schedules, record date range), polished view bar with icons, schedule due hints, richer record/alert cards, contextual empty states, hub quick actions (new schedule, log irrigation sheet, field log link).
+- **Equipment hub (`/equipment`):** Stat chips (operational, needs service, in maintenance, retired), search + type filter, richer list cards with type icons and open task counts, contextual empty states, hub actions (add equipment, log maintenance shortcut).
+- **Equipment detail:** Type icon, maintenance history cards, `#maintenance` anchor for service logging.
+- **Queries:** `getIrrigationHubStats`, `getSchedulesWithDueHints`, record range filters; `getEquipmentHubStats`, search/type filters, open-task counts on list items.
+
+### Validation
+
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+- `npm run build` — compiles; page-data step requires `DATABASE_URL` in env (same as prior sprints)
