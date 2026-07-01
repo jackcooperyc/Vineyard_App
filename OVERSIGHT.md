@@ -2,6 +2,29 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-01 — Production DB migration to Neon
+
+### Completed
+
+- Provisioned Neon database **`cev-app-db`** via Vercel marketplace integration (`falling-art-30934602`, region `pdx1` / US West)
+- Updated Vercel env vars (`DATABASE_URL`, `DIRECT_URL`) on production, preview, and development with `sslmode=verify-full`
+- Ran `./scripts/sync-production-db.sh` — schema push + Sprint 7 seed (35 blocks, 12 infrastructure, admin user)
+- Production redeployed to https://cev-app-puce.vercel.app
+- Login smoke test passed: `admin@cooperestate.com` → dashboard HTTP 200
+
+### Decommission
+
+- **Temporary Prisma Postgres** (`db.prisma.io`, expires ~2026-07-02) can be deleted — production now uses Neon
+- Prior production DB password was exposed in chat; migration to Neon rotates those credentials
+
+### Open items
+
+| Item | Status |
+|------|--------|
+| Blake's House polygon | Missing from KML — block imported without `MapFeature` |
+| Cowboy's Place polygon | Missing from KML — block imported without `MapFeature` |
+| KML "Untitled polygon" | Unmapped — may be Blake's House or Cowboy's Place; needs field verification |
+
 ## 2026-07-01 — Sprint 7 real data import
 
 ### Completed
@@ -21,8 +44,8 @@ Activity log for data import, deployment, and security items requiring human rev
 | Blake's House polygon | Missing from KML — block imported without `MapFeature` |
 | Cowboy's Place polygon | Missing from KML — block imported without `MapFeature` |
 | KML "Untitled polygon" | Unmapped — may be Blake's House or Cowboy's Place; needs field verification |
-| Production DB password | Exposed in prior chat — **rotate** Prisma Postgres / migrate to Neon |
-| Temporary Prisma Postgres | Expires ~2026-07-02 unless claimed |
+| Production DB password | **Resolved** — migrated to Neon (2026-07-01) |
+| Temporary Prisma Postgres | **Decommission** — delete in Prisma dashboard |
 
 ### Validation
 

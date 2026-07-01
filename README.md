@@ -94,37 +94,63 @@ See [PROJECT_START.md](./PROJECT_START.md) for the full product brief and [docs/
 
 ## Deployment (Vercel + Neon)
 
-1. Push repo to GitHub
-2. Create a [Neon](https://neon.tech) project and copy connection strings
-3. Import repo in [Vercel](https://vercel.com)
-4. Set environment variables:
-   - `DATABASE_URL` — Neon **pooled** connection string
-   - `DIRECT_URL` — Neon **direct** connection string
-   - `AUTH_SECRET` — production secret (`openssl rand -base64 32`)
-   - `AUTH_URL` — your Vercel production URL (e.g. `https://cev-app-puce.vercel.app`)
-   - `NEXT_PUBLIC_MAPBOX_TOKEN` — Mapbox public token for the vineyard map
-5. Deploy — `postinstall` runs `prisma generate` automatically
-6. Run migrations against production: `npx prisma db push` (or `migrate deploy`)
-7. Seed production once: `npm run db:seed`
-8. Redeploy after adding or changing env vars (required for `NEXT_PUBLIC_*` at build time)
+Production: **https://cev-app-puce.vercel.app** (`jackcooperyc-6691s-projects/cev-app`)
 
-### Quick production sync (Vercel CLI)
+### Provision Neon (recommended: Vercel integration)
+
+If your Vercel team uses the [Neon marketplace integration](https://vercel.com/integrations/neon), provision from the linked project:
 
 ```bash
-npx vercel link
-npx vercel deploy --prod
-
-# Schema + seed (copy DATABASE_URL from Vercel dashboard — not available via env pull)
-DATABASE_URL='postgres://...' ./scripts/sync-production-db.sh
+npx vercel link --project cev-app
+npx vercel integration add neon --name cev-app-db -m region=pdx1 -m auth=false --plan free_v3
 ```
 
-Add or update env vars with:
+If `DATABASE_URL` already exists, override it after provisioning (see below). Use `pdx1` (US West) for Cooper Estate latency.
+
+Alternatively, create a project at [neon.tech](https://neon.tech) and copy connection strings from the dashboard.
+
+### Environment variables
+
+Set on **production**, **preview**, and **development** in Vercel:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Neon **pooled** URL (`-pooler` host) with `?sslmode=verify-full` |
+| `DIRECT_URL` | Neon **direct** URL (non-pooler host) with `?sslmode=verify-full` |
+| `AUTH_SECRET` | `openssl rand -base64 32` (do not rotate unless compromised) |
+| `AUTH_URL` | `https://cev-app-puce.vercel.app` |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox public token |
 
 ```bash
-printf '%s' 'your-value' | npx vercel env add VARIABLE_NAME production --force
+printf '%s' 'postgresql://...-pooler...?sslmode=verify-full' | npx vercel env add DATABASE_URL production --force
+printf '%s' 'postgresql://...direct...?sslmode=verify-full' | npx vercel env add DIRECT_URL production --force
 ```
 
-Redeploy after changing `NEXT_PUBLIC_*` variables so they are included at build time.
+Redeploy after changing env vars (required for `NEXT_PUBLIC_*` at build time).
+
+### Deploy and sync schema + seed
+
+```bash
+npx vercel deploy --prod --yes
+
+# Schema + seed — copy URLs from Vercel dashboard (sensitive vars are not in env pull)
+DATABASE_URL='postgresql://...-pooler...?sslmode=verify-full' \
+DIRECT_URL='postgresql://...direct...?sslmode=verify-full' \
+  ./scripts/sync-production-db.sh
+```
+
+`postinstall` runs `prisma generate` on Vercel automatically. The sync script backs up local `.env` so localhost credentials are not used.
+
+### Neon CLI (optional)
+
+```bash
+npx neonctl auth                    # browser login (one-time)
+npx neonctl projects list --org-id <org-id>
+npx neonctl connection-string --project-id <id> --pooled --ssl verify-full
+npx neonctl connection-string --project-id <id> --ssl verify-full   # direct
+```
+
+Vercel-managed Neon orgs cannot create projects via `neonctl projects create`; use `vercel integration add neon` instead.
 
 ## Documentation
 
