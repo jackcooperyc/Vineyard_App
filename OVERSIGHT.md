@@ -2,6 +2,17 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-01 — Production deploy (tasks / irrigation / equipment hubs)
+
+### Completed
+
+- `main` @ `4ed2369` (OVERSIGHT log for PR #13 / PR #14 merges) deployed to Vercel production via `npx vercel deploy --prod --yes`.
+- Deployment: https://cev-e3ilj8n42-jackcooperyc-6691s-projects.vercel.app (`dpl_J11BoTEyd45bumJ7UfqL3Bikd9GF`).
+- Production aliases confirmed: **https://cev.cupr.app**, **https://cev-app-puce.vercel.app** (plus team default URLs).
+- Login smoke test: **https://cev.cupr.app/login** → HTTP 200; **https://cev-app-puce.vercel.app/login** → HTTP 200.
+
+---
+
 ## 2026-07-01 — Tasks hub comprehensive rebuild
 
 **Merged:** [PR #13](https://github.com/jackcooperyc/Vineyard_App/pull/13) → `main` @ `09367b8`
