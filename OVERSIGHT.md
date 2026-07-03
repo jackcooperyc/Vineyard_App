@@ -53,7 +53,7 @@ Activity log for data import, deployment, and security items requiring human rev
 - **Domain:** `src/domains/notifications/` — preferences, outbox delivery, email templates (Resend), quiet hours, due-soon/overdue cron logic with overdue throttle (1/day/task/user).
 - **Hooks:** `createTask`, `quickLogTask`, `updateTask`, `updateTaskStatus`, `bulkUpdateTasks` emit events respecting prefs and soft-delete filters.
 - **UI:** `/settings/notifications` toggle matrix; link in app More nav.
-- **Cron:** `GET /api/cron/task-reminders` + `vercel.json` hourly schedule (`CRON_SECRET`).
+- **Cron:** `GET /api/cron/task-reminders` + `vercel.json` daily schedule (`0 12 * * *`, Hobby-plan limit; was hourly on Pro).
 
 ### Verification
 
