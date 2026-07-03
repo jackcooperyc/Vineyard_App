@@ -1,12 +1,5 @@
 import { Suspense } from "react";
-import {
-  EquipmentFilterBar,
-  parseEquipmentDueFilter,
-  parseEquipmentStatusFilter,
-  parseEquipmentTypeFilter,
-  parseEquipmentView,
-  equipmentFiltersAreActive,
-} from "@/components/equipment/equipment-filter-bar";
+import { EquipmentFilterBar } from "@/components/equipment/equipment-filter-bar";
 import { EquipmentStatsChips } from "@/components/equipment/equipment-stats-chips";
 import { EquipmentEmptyState } from "@/components/equipment/equipment-empty-state";
 import { EquipmentHubActions } from "@/components/equipment/equipment-hub-actions";
@@ -18,6 +11,13 @@ import {
   getEquipment,
   getEquipmentHubStats,
 } from "@/domains/equipment/queries";
+import {
+  equipmentFiltersAreActive,
+  parseEquipmentDueFilter,
+  parseEquipmentStatusFilter,
+  parseEquipmentTypeFilter,
+  parseEquipmentView,
+} from "@/domains/equipment/filters";
 import { equipmentHubParamsFromSearch } from "@/lib/hub-back-href";
 
 export default async function EquipmentPage({

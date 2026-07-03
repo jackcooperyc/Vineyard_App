@@ -53,10 +53,3 @@ export function IrrigationViewBar() {
     </div>
   );
 }
-
-export function parseIrrigationView(
-  value: string | undefined,
-): "schedules" | "records" | "alerts" {
-  if (value === "records" || value === "alerts") return value;
-  return "schedules";
-}

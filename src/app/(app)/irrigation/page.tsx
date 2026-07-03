@@ -1,16 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import {
-  IrrigationViewBar,
-  parseIrrigationView,
-} from "@/components/irrigation/irrigation-view-bar";
-import {
-  IrrigationFilterBar,
-  parseIrrigationActiveFilter,
-  parseIrrigationRecordRange,
-  parseIrrigationRecordStatus,
-  irrigationFiltersAreActive,
-} from "@/components/irrigation/irrigation-filter-bar";
+import { IrrigationViewBar } from "@/components/irrigation/irrigation-view-bar";
+import { IrrigationFilterBar } from "@/components/irrigation/irrigation-filter-bar";
 import { IrrigationStatsChips } from "@/components/irrigation/irrigation-stats-chips";
 import { IrrigationEmptyState } from "@/components/irrigation/irrigation-empty-state";
 import { IrrigationHubActions } from "@/components/irrigation/irrigation-hub-actions";
@@ -19,6 +10,13 @@ import { RecordListCard } from "@/components/irrigation/record-list-card";
 import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
 import { Button } from "@/components/ui/button";
 import { getBlockById } from "@/domains/blocks/queries";
+import {
+  irrigationFiltersAreActive,
+  parseIrrigationActiveFilter,
+  parseIrrigationRecordRange,
+  parseIrrigationRecordStatus,
+  parseIrrigationView,
+} from "@/domains/irrigation/filters";
 import {
   getIrrigationHubStats,
   getSchedulesWithDueHints,

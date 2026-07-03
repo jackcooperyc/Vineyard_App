@@ -1,23 +1,24 @@
 import { Suspense } from "react";
-import {
-  TaskFilterBar,
-  parseTaskDueFilter,
-  parseTaskSortFilter,
-  parseTaskStatusFilter,
-  parseTaskTypeFilter,
-  taskFiltersAreActive,
-} from "@/components/tasks/task-filter-bar";
+import { TaskFilterBar } from "@/components/tasks/task-filter-bar";
 import { TaskStatsChips } from "@/components/tasks/task-stats-chips";
 import { TaskTimeline } from "@/components/tasks/task-timeline";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskEmptyState } from "@/components/tasks/task-empty-state";
-import { TaskViewBar, parseTaskView } from "@/components/tasks/task-view-bar";
+import { TaskViewBar } from "@/components/tasks/task-view-bar";
 import { TasksHubActions } from "@/components/tasks/tasks-hub-actions";
 import { TasksMobileFab } from "@/components/tasks/tasks-mobile-fab";
 import { TasksPagination } from "@/components/tasks/tasks-pagination";
 import { getBlockById, getVineyardBlocksForField } from "@/domains/blocks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
 import { TASKS_PAGE_SIZE } from "@/domains/tasks/constants";
+import {
+  parseTaskDueFilter,
+  parseTaskSortFilter,
+  parseTaskStatusFilter,
+  parseTaskTypeFilter,
+  parseTaskView,
+  taskFiltersAreActive,
+} from "@/domains/tasks/filters";
 import { getTaskHubStats, getTasks, getTasksCount, getUsersForAssignment } from "@/domains/tasks/queries";
 import { tasksHubParamsFromSearch } from "@/lib/hub-back-href";
 

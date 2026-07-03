@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { TaskSearchInput, buildHref } from "@/components/tasks/task-search-input";
 import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
-import type { TaskSortOption, TaskDueFilter } from "@/domains/tasks/queries";
-import type { TaskStatus, TaskType } from "@/generated/prisma/client";
+import type { TaskSortOption } from "@/domains/tasks/queries";
+import type { TaskType } from "@/generated/prisma/client";
 
 const statusFilters = [
   { value: "OPEN", label: "Open" },
@@ -247,70 +247,5 @@ export function TaskFilterBar({
         })}
       </div>
     </div>
-  );
-}
-
-export function parseTaskStatusFilter(
-  value: string | undefined,
-): TaskStatus | "ALL" | "OPEN" {
-  if (!value || value === "OPEN") return "OPEN";
-  if (value === "ALL") return "ALL";
-  if (["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(value)) {
-    return value as TaskStatus;
-  }
-  return "OPEN";
-}
-
-export function parseTaskTypeFilter(
-  value: string | undefined,
-): TaskType | undefined {
-  if (!value) return undefined;
-  if (TASK_TYPES.includes(value as TaskType)) {
-    return value as TaskType;
-  }
-  return undefined;
-}
-
-export function parseTaskSortFilter(
-  value: string | undefined,
-): TaskSortOption {
-  if (value === "createdAt" || value === "title" || value === "status") {
-    return value;
-  }
-  return "dueDate";
-}
-
-export function parseTaskDueFilter(
-  value: string | undefined,
-): TaskDueFilter | undefined {
-  if (value === "overdue" || value === "today" || value === "week") {
-    return value;
-  }
-  return undefined;
-}
-
-export function taskFiltersAreActive(params: {
-  status?: string;
-  blockId?: string;
-  type?: string;
-  q?: string;
-  sort?: string;
-  due?: string;
-  view?: string;
-  assignee?: string;
-  equipmentId?: string;
-  page?: string;
-}) {
-  return Boolean(
-    params.status ||
-      params.blockId ||
-      params.type ||
-      params.q ||
-      (params.sort && params.sort !== "dueDate") ||
-      params.due ||
-      (params.view && params.view !== "timeline") ||
-      params.assignee ||
-      params.equipmentId ||
-      (params.page && params.page !== "1"),
   );
 }

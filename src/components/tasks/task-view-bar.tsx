@@ -49,10 +49,3 @@ export function TaskViewBar() {
     </div>
   );
 }
-
-export function parseTaskView(
-  value: string | undefined,
-): "timeline" | "list" {
-  if (value === "list") return "list";
-  return "timeline";
-}
