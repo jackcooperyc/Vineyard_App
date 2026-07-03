@@ -103,15 +103,21 @@ export default async function IrrigationPage({
         : `${filteredAlerts.length} alert${filteredAlerts.length !== 1 ? "s" : ""}`;
 
   return (
-    <div className="field-readable mx-auto max-w-3xl space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="field-readable mx-auto max-w-3xl space-y-4 pb-32 md:space-y-6 md:pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight">Irrigation</h2>
           <p className="text-muted-foreground">
-            {subtitle}
-            {blockFilter
-              ? ` · ${blockFilter.code} ${blockFilter.name}`
-              : " · schedules, records, and alerts"}
+            <span className="md:hidden">
+              {subtitle}
+              {blockFilter ? ` · ${blockFilter.code}` : ""}
+            </span>
+            <span className="hidden md:inline">
+              {subtitle}
+              {blockFilter
+                ? ` · ${blockFilter.code} ${blockFilter.name}`
+                : " · schedules, records, and alerts"}
+            </span>
           </p>
           {pumpCount > 0 && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">

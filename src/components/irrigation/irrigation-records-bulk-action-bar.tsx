@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { bulkDeleteIrrigationRecords } from "@/domains/irrigation/actions";
+import { cn } from "@/lib/utils";
 
 export function IrrigationRecordsBulkActionBar({
   selectedIds,
@@ -45,15 +46,19 @@ export function IrrigationRecordsBulkActionBar({
   if (selectedIds.length === 0) return null;
 
   const count = selectedIds.length;
+  const countLabel = `${count} record${count !== 1 ? "s" : ""} selected`;
 
   return (
     <>
-      <div className="sticky bottom-4 z-20 rounded-xl border bg-background/95 p-4 shadow-lg backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium">
-            {count} record{count !== 1 ? "s" : ""} selected
-          </p>
-          <div className="flex items-center gap-2">
+      <div
+        className={cn(
+          "z-40 rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur",
+          "fixed inset-x-4 bottom-[5.75rem] md:sticky md:inset-x-auto md:bottom-4 md:p-4",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium">{countLabel}</p>
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="destructive"
@@ -66,13 +71,14 @@ export function IrrigationRecordsBulkActionBar({
               }}
             >
               <Trash2 className="size-4" />
-              Delete selected
+              <span className="hidden sm:inline">Delete selected</span>
+              <span className="sm:hidden">Delete</span>
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="size-8"
+              className="size-10 shrink-0 touch-manipulation"
               onClick={onClear}
               aria-label="Clear selection"
             >

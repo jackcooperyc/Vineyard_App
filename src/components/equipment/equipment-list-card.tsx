@@ -21,10 +21,10 @@ export function EquipmentListCard({
   return (
     <Link
       href={buildDetailHref("/equipment", item.id, backParams)}
-      className="block"
+      className="block touch-manipulation"
     >
-      <Card className="field-tap transition-colors hover:bg-muted/40 active:bg-muted/60">
-        <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
+      <Card className="transition-colors hover:bg-muted/40 active:bg-muted/60">
+        <CardContent className="flex min-h-[72px] items-center gap-3 p-3 sm:min-h-[80px] sm:p-4">
           <div
             className={cn(
               "flex size-10 shrink-0 items-center justify-center rounded-full",

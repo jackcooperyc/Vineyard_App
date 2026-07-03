@@ -64,7 +64,8 @@ export function TaskViewBar() {
         )}
       >
         <Trash2 className="size-4" />
-        Recently deleted
+        <span className="sm:hidden">Deleted</span>
+        <span className="hidden sm:inline">Recently deleted</span>
       </Link>
     </div>
   );

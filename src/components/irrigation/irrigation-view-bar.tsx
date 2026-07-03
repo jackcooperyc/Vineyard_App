@@ -6,10 +6,10 @@ import { AlertTriangle, CalendarClock, Droplets, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const views = [
-  { value: "schedules", label: "Schedules", icon: CalendarClock },
-  { value: "records", label: "Records", icon: Droplets },
-  { value: "alerts", label: "Alerts", icon: AlertTriangle },
-  { value: "deleted", label: "Recently deleted", icon: Trash2 },
+  { value: "schedules", label: "Schedules", shortLabel: "Schedules", icon: CalendarClock },
+  { value: "records", label: "Records", shortLabel: "Records", icon: Droplets },
+  { value: "alerts", label: "Alerts", shortLabel: "Alerts", icon: AlertTriangle },
+  { value: "deleted", label: "Recently deleted", shortLabel: "Deleted", icon: Trash2 },
 ] as const;
 
 export function IrrigationViewBar() {
@@ -37,7 +37,7 @@ export function IrrigationViewBar() {
             key={view.value}
             href={href}
             className={cn(
-              "inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors sm:flex-none",
+              "inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors touch-manipulation sm:flex-none sm:px-4",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background text-muted-foreground hover:bg-muted",
@@ -47,7 +47,8 @@ export function IrrigationViewBar() {
             )}
           >
             <Icon className="size-4" />
-            {view.label}
+            <span className="sm:hidden">{view.shortLabel}</span>
+            <span className="hidden sm:inline">{view.label}</span>
           </Link>
         );
       })}

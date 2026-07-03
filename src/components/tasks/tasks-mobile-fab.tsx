@@ -14,7 +14,7 @@ export function TasksMobileFab({
   blockId?: string;
 }) {
   return (
-    <div className="fixed right-4 bottom-24 z-40 sm:hidden">
+    <div className="fixed right-4 bottom-[10.5rem] z-30 sm:hidden">
       <TasksQuickLogSheet
         blocks={blocks}
         quickLogTypes={quickLogTypes}

@@ -57,7 +57,7 @@ export function TaskListCard({
           "border-amber-200/80 dark:border-amber-900/40",
       )}
     >
-      <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
+      <CardContent className="flex min-h-[72px] items-center gap-3 p-3 sm:min-h-[80px] sm:p-4">
         {selectable && (
           <input
             type="checkbox"
@@ -65,7 +65,7 @@ export function TaskListCard({
             onChange={(e) => onSelectedChange?.(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Select ${task.title}`}
-            className="size-5 shrink-0 rounded border-input"
+            className="size-6 shrink-0 rounded border-input touch-manipulation sm:size-5"
           />
         )}
 
@@ -153,7 +153,7 @@ export function TaskListCard({
   return (
     <Link
       href={buildDetailHref("/tasks", task.id, backParams)}
-      className="block"
+      className="block touch-manipulation"
     >
       {card}
     </Link>

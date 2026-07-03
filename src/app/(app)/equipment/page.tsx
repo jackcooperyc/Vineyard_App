@@ -64,19 +64,27 @@ export default async function EquipmentPage({
         : statusFilter.toLowerCase().replace("_", " ");
 
   return (
-    <div className="field-readable mx-auto max-w-3xl space-y-6 pb-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="field-readable mx-auto max-w-3xl space-y-4 pb-32 md:space-y-6 md:pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight">Equipment</h2>
           <p className="text-muted-foreground">
-            {view === "deleted"
-              ? `${deletedEquipment.length} recently deleted`
-              : `${items.length} asset${items.length !== 1 ? "s" : ""}`}
-            {view !== "deleted" && hasFilters
-              ? ` · ${statusLabel}`
-              : view !== "deleted"
-                ? " · tractors, sprayers, and tools"
-                : ""}
+            <span className="md:hidden">
+              {view === "deleted"
+                ? `${deletedEquipment.length} deleted`
+                : `${items.length} asset${items.length !== 1 ? "s" : ""}`}
+              {view !== "deleted" && hasFilters ? ` · filtered` : ""}
+            </span>
+            <span className="hidden md:inline">
+              {view === "deleted"
+                ? `${deletedEquipment.length} recently deleted`
+                : `${items.length} asset${items.length !== 1 ? "s" : ""}`}
+              {view !== "deleted" && hasFilters
+                ? ` · ${statusLabel}`
+                : view !== "deleted"
+                  ? " · tractors, sprayers, and tools"
+                  : ""}
+            </span>
           </p>
         </div>
         <EquipmentHubActions equipment={equipmentForSelect} exportItems={items} />

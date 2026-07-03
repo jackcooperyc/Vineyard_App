@@ -99,19 +99,27 @@ export default async function TasksPage({
   };
 
   return (
-    <div className="field-readable mx-auto max-w-3xl space-y-6 pb-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+    <div className="field-readable mx-auto max-w-3xl space-y-4 pb-32 md:space-y-6 md:pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Tasks</h2>
           <p className="text-muted-foreground">
-            {showTrash
-              ? `${deletedTasks.length} recently deleted`
-              : `${total} total · ${tasks.length} shown`}
-            {blockFilter
-              ? ` · ${blockFilter.code} ${blockFilter.name}`
-              : showTrash
-                ? ""
-                : " · vineyard work by block"}
+            <span className="md:hidden">
+              {showTrash
+                ? `${deletedTasks.length} deleted`
+                : `${total} total`}
+              {blockFilter ? ` · ${blockFilter.code}` : ""}
+            </span>
+            <span className="hidden md:inline">
+              {showTrash
+                ? `${deletedTasks.length} recently deleted`
+                : `${total} total · ${tasks.length} shown`}
+              {blockFilter
+                ? ` · ${blockFilter.code} ${blockFilter.name}`
+                : showTrash
+                  ? ""
+                  : " · vineyard work by block"}
+            </span>
           </p>
         </div>
         <TasksHubActions
@@ -127,7 +135,7 @@ export default async function TasksPage({
         <TaskViewBar />
       </Suspense>
 
-      <div className="sticky top-0 z-10 -mx-4 bg-background/95 px-4 pb-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="sticky top-0 z-10 -mx-4 bg-background/95 px-4 py-2 pb-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <Suspense
           fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}
         >

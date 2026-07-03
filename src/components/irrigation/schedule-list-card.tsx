@@ -69,7 +69,7 @@ export function ScheduleListCard({
         selectable && selected && "border-primary bg-primary/5",
       )}
     >
-      <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
+      <CardContent className="flex min-h-[72px] items-center gap-3 p-3 sm:min-h-[80px] sm:p-4">
         {selectable && (
           <input
             type="checkbox"
@@ -77,7 +77,7 @@ export function ScheduleListCard({
             onChange={(e) => onSelectedChange?.(e.target.checked)}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Select ${schedule.block.name} irrigation schedule`}
-            className="size-5 shrink-0 rounded border-input"
+            className="size-6 shrink-0 rounded border-input touch-manipulation sm:size-5"
           />
         )}
 
