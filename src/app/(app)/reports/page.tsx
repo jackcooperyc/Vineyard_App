@@ -257,7 +257,7 @@ export default async function ReportsPage() {
         <CardContent>
           {gpsCoverage.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No GPS coverage data yet. Start a session from Field log → GPS.
+              No GPS coverage data yet. Start a session from Field log → Task → GPS track.
             </p>
           ) : (
             <div className="overflow-x-auto">

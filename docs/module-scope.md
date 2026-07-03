@@ -48,7 +48,7 @@
 ### GPS task progress — post-Sprint 8 ✓
 
 - `TaskGpsSession` / `TaskGpsPoint` models; `TaskTypeDefinition.tracksGpsProgress` + `defaultSwathWidthM`
-- Field log GPS tab: start/pause/resume/end sessions; Turf.js block coverage %
+- Field log Task tab: quick-log + nested GPS track section (start/pause/resume/end); Turf.js block coverage %
 - Row progress when `BlockRow` GIS data or planting spacing exists
 - Coverage chips on task list cards; GPS sessions on task detail
 - Dashboard active sessions widget; reports GPS coverage table

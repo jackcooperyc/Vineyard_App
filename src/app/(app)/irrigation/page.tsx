@@ -7,7 +7,7 @@ import { IrrigationEmptyState } from "@/components/irrigation/irrigation-empty-s
 import { IrrigationHubActions } from "@/components/irrigation/irrigation-hub-actions";
 import { ScheduleListCard } from "@/components/irrigation/schedule-list-card";
 import { IrrigationRecordsHubBody } from "@/components/irrigation/irrigation-records-hub-body";
-import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
+import { IrrigationAlertsHubBody } from "@/components/irrigation/irrigation-alerts-hub-body";
 import { Button } from "@/components/ui/button";
 import { getBlockById } from "@/domains/blocks/queries";
 import {
@@ -74,7 +74,7 @@ export default async function IrrigationPage({
             status: recordStatus,
           })
         : Promise.resolve([]),
-      view === "alerts" ? getIrrigationAlerts() : Promise.resolve([]),
+      view === "alerts" ? getIrrigationAlerts(blockId) : Promise.resolve([]),
       blockId ? getBlockById(blockId) : Promise.resolve(null),
       getBlocksForIrrigationForm(),
       countIrrigationPumps(),
@@ -91,9 +91,7 @@ export default async function IrrigationPage({
       ? { id: block.id, code: block.code, name: block.name }
       : undefined;
 
-  const filteredAlerts = blockId
-    ? alerts.filter((alert) => alert.block.id === blockId)
-    : alerts;
+  const filteredAlerts = alerts;
 
   const subtitle =
     view === "deleted"
@@ -208,11 +206,11 @@ export default async function IrrigationPage({
             }}
           />
         ) : (
-          <div className="space-y-3">
-            {filteredAlerts.map((alert) => (
-              <IrrigationAlertCard key={alert.scheduleId} alert={alert} />
-            ))}
-          </div>
+          <IrrigationAlertsHubBody
+            alerts={filteredAlerts}
+            blockId={blockId}
+            blockCode={blockFilter?.code}
+          />
         ))}
     </div>
   );

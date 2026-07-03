@@ -47,3 +47,11 @@ export const updateRecordSchema = createRecordSchema.extend({
 export const bulkDeleteIrrigationRecordsSchema = z.object({
   recordIds: z.array(z.string().min(1)).min(1),
 });
+
+export const clearIrrigationAlertsSchema = z.object({
+  blockId: z.string().min(1).optional(),
+});
+
+export const dismissIrrigationAlertSchema = z.object({
+  scheduleId: z.string().min(1),
+});

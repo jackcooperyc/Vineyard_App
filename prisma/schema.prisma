@@ -264,6 +264,7 @@ model IrrigationSchedule {
   method    String?
   active    Boolean   @default(true)
   notes     String?
+  alertDismissedAt DateTime?
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

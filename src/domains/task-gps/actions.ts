@@ -357,7 +357,7 @@ export async function cancelGpsSession(sessionId: string) {
   return { success: true };
 }
 
-export async function fetchGpsFieldData(blockId: string) {
+export async function fetchGpsFieldData(blockId: string | null) {
   const session = await auth();
   if (!session?.user) {
     return {
@@ -368,7 +368,7 @@ export async function fetchGpsFieldData(blockId: string) {
 
   const [activeSession, eligibleTasks] = await Promise.all([
     getActiveGpsSessionForUser(session.user.id),
-    getOpenGpsEligibleTasks(blockId),
+    blockId ? getOpenGpsEligibleTasks(blockId) : Promise.resolve([]),
   ]);
 
   return { activeSession, eligibleTasks };

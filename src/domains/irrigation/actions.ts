@@ -5,14 +5,20 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   bulkDeleteIrrigationRecordsSchema,
+  clearIrrigationAlertsSchema,
   createRecordSchema,
   createScheduleSchema,
+  dismissIrrigationAlertSchema,
   quickLogRecordSchema,
   updateRecordSchema,
   updateScheduleSchema,
 } from "@/domains/irrigation/validators";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
+import {
+  collectOverdueIrrigationSchedules,
+} from "@/domains/irrigation/queries";
+import { isIrrigationAlertDismissed } from "@/domains/irrigation/alert-dismissal";
 
 function parseDate(value?: string): Date | undefined {
   if (!value) return undefined;
@@ -46,6 +52,17 @@ function revalidateSchedulePaths(scheduleId: string, blockId: string) {
   revalidateIrrigationPaths(blockId);
   revalidatePath(`/irrigation/schedules/${scheduleId}`);
   revalidatePath(`/irrigation/schedules/${scheduleId}/edit`);
+}
+
+async function resetAlertDismissalsForBlock(blockId: string) {
+  await db.irrigationSchedule.updateMany({
+    where: {
+      blockId,
+      ...notDeletedWhere(),
+      alertDismissedAt: { not: null },
+    },
+    data: { alertDismissedAt: null },
+  });
 }
 
 export async function createIrrigationSchedule(formData: FormData) {
@@ -121,6 +138,10 @@ export async function createIrrigationRecord(formData: FormData) {
     },
   });
 
+  if (data.status === "APPLIED") {
+    await resetAlertDismissalsForBlock(data.blockId);
+  }
+
   revalidateIrrigationPaths(data.blockId);
   return { success: true, recordId: record.id };
 }
@@ -158,6 +179,8 @@ export async function quickLogIrrigation(formData: FormData) {
       notes,
     },
   });
+
+  await resetAlertDismissalsForBlock(blockId);
 
   revalidateIrrigationPaths(blockId);
   return { success: true, recordId: record.id };
@@ -280,6 +303,10 @@ export async function updateIrrigationRecord(formData: FormData) {
       notes: data.notes || null,
     },
   });
+
+  if (data.status === "APPLIED") {
+    await resetAlertDismissalsForBlock(data.blockId);
+  }
 
   revalidateIrrigationPaths(data.blockId);
   revalidatePath(`/irrigation/records/${data.recordId}`);
@@ -408,6 +435,59 @@ export async function restoreIrrigationSchedule(scheduleId: string) {
   await db.irrigationSchedule.update({
     where: { id: scheduleId },
     data: { deletedAt: null },
+  });
+
+  revalidateSchedulePaths(scheduleId, schedule.blockId);
+  return { success: true };
+}
+
+export async function clearIrrigationAlerts(input?: { blockId?: string }) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = clearIrrigationAlertsSchema.safeParse(input ?? {});
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const overdue = await collectOverdueIrrigationSchedules(parsed.data.blockId);
+  const scheduleIds = overdue
+    .filter(
+      (row) =>
+        !isIrrigationAlertDismissed(row.alertDismissedAt, row.lastAppliedAt),
+    )
+    .map((row) => row.scheduleId);
+
+  if (scheduleIds.length === 0) {
+    return { success: true, clearedCount: 0 };
+  }
+
+  const now = new Date();
+  await db.irrigationSchedule.updateMany({
+    where: { id: { in: scheduleIds }, ...notDeletedWhere() },
+    data: { alertDismissedAt: now },
+  });
+
+  revalidateIrrigationPaths(parsed.data.blockId);
+  return { success: true, clearedCount: scheduleIds.length };
+}
+
+export async function dismissIrrigationAlert(scheduleId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = dismissIrrigationAlertSchema.safeParse({ scheduleId });
+  if (!parsed.success) return { error: "Invalid schedule" };
+
+  const schedule = await db.irrigationSchedule.findFirst({
+    where: { id: scheduleId, ...notDeletedWhere(), active: true },
+    select: { id: true, blockId: true },
+  });
+  if (!schedule) return { error: "Schedule not found" };
+
+  await db.irrigationSchedule.update({
+    where: { id: scheduleId },
+    data: { alertDismissedAt: new Date() },
   });
 
   revalidateSchedulePaths(scheduleId, schedule.blockId);

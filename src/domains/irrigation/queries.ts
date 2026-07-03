@@ -1,6 +1,11 @@
 import { db } from "@/lib/db";
 import type { IrrigationStatus } from "@/generated/prisma/client";
 import { frequencyToDays } from "@/domains/irrigation/constants";
+import {
+  isIrrigationAlertDismissed,
+  toIrrigationAlert,
+  type OverdueScheduleRow,
+} from "@/domains/irrigation/alert-dismissal";
 import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type ScheduleListItem = {
@@ -276,19 +281,29 @@ export async function getIrrigationRecordById(id: string) {
   });
 }
 
-export async function getIrrigationAlerts(): Promise<IrrigationAlert[]> {
+export async function collectOverdueIrrigationSchedules(
+  blockId?: string,
+): Promise<OverdueScheduleRow[]> {
   const schedules = await db.irrigationSchedule.findMany({
-    where: { ...notDeletedWhere(), active: true },
+    where: {
+      ...notDeletedWhere(),
+      active: true,
+      ...(blockId ? { blockId } : {}),
+    },
     include: { block: { select: { id: true, code: true, name: true } } },
   });
 
-  const alerts: IrrigationAlert[] = [];
+  const rows: OverdueScheduleRow[] = [];
   const now = new Date();
 
   for (const schedule of schedules) {
     const expectedDays = frequencyToDays(schedule.frequency);
     const lastApplied = await db.irrigationRecord.findFirst({
-      where: { ...notDeletedWhere(), blockId: schedule.blockId, status: "APPLIED" },
+      where: {
+        ...notDeletedWhere(),
+        blockId: schedule.blockId,
+        status: "APPLIED",
+      },
       orderBy: { appliedAt: "desc" },
       select: { appliedAt: true },
     });
@@ -305,19 +320,35 @@ export async function getIrrigationAlerts(): Promise<IrrigationAlert[]> {
         ? now.getTime() - schedule.startDate.getTime() > expectedDays * 86400000
         : daysSinceLast > expectedDays;
 
-    if (isOverdue) {
-      alerts.push({
-        scheduleId: schedule.id,
-        block: schedule.block,
-        frequency: schedule.frequency,
-        lastAppliedAt: lastApplied?.appliedAt ?? null,
-        daysSinceLast,
-        expectedDays,
-      });
-    }
+    if (!isOverdue) continue;
+
+    rows.push({
+      scheduleId: schedule.id,
+      blockId: schedule.blockId,
+      block: schedule.block,
+      frequency: schedule.frequency,
+      alertDismissedAt: schedule.alertDismissedAt,
+      lastAppliedAt: lastApplied?.appliedAt ?? null,
+      daysSinceLast,
+      expectedDays,
+    });
   }
 
-  return alerts.sort((a, b) => (b.daysSinceLast ?? 999) - (a.daysSinceLast ?? 999));
+  return rows.sort(
+    (a, b) => (b.daysSinceLast ?? 999) - (a.daysSinceLast ?? 999),
+  );
+}
+
+export async function getIrrigationAlerts(
+  blockId?: string,
+): Promise<IrrigationAlert[]> {
+  const overdue = await collectOverdueIrrigationSchedules(blockId);
+  return overdue
+    .filter(
+      (row) =>
+        !isIrrigationAlertDismissed(row.alertDismissedAt, row.lastAppliedAt),
+    )
+    .map(toIrrigationAlert);
 }
 
 export async function countIrrigationAlerts() {

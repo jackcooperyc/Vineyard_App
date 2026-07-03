@@ -16,7 +16,8 @@ export default async function FieldPage() {
         <h2 className="text-2xl font-semibold tracking-tight">Field log</h2>
         <p className="text-muted-foreground">
           One-handed logging for tasks, irrigation, and equipment service in the
-          vineyard.
+          vineyard. GPS tracking lives under the Task tab for in-progress field
+          work.
         </p>
       </div>
       <FieldLogPanel
