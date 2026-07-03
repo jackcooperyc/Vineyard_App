@@ -16,7 +16,7 @@ function resolveOverlay(
 }
 
 export async function getMapBlocks(): Promise<MapBlock[]> {
-  const [features, openTaskCounts, alerts] = await Promise.all([
+  const [features, openTaskCounts, openTasksWithEquipment, alerts] = await Promise.all([
     db.mapFeature.findMany({
       include: {
         block: {
@@ -37,8 +37,31 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
       },
       _count: { _all: true },
     }),
+    db.task.findMany({
+      where: {
+        status: { in: ["PENDING", "IN_PROGRESS"] },
+        equipmentId: { not: null },
+      },
+      select: {
+        blockId: true,
+        equipment: { select: { id: true, name: true, type: true } },
+      },
+    }),
     getIrrigationAlerts(),
   ]);
+
+  const equipmentByBlock = new Map<
+    string,
+    { id: string; name: string; type: string }[]
+  >();
+  for (const task of openTasksWithEquipment) {
+    if (!task.equipment) continue;
+    const list = equipmentByBlock.get(task.blockId) ?? [];
+    if (!list.some((eq) => eq.id === task.equipment!.id)) {
+      list.push(task.equipment);
+      equipmentByBlock.set(task.blockId, list);
+    }
+  }
 
   const taskCountByBlock = new Map(
     openTaskCounts.map((row) => [row.blockId, row._count._all]),
@@ -75,6 +98,7 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
         openTasks,
         irrigationOverdue,
         overlay: resolveOverlay(openTasks, irrigationOverdue),
+        openTaskEquipment: equipmentByBlock.get(block.id) ?? [],
       };
     })
     .sort((a, b) => a.code.localeCompare(b.code));

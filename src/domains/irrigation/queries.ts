@@ -119,12 +119,24 @@ export async function getSchedulesWithDueHints(filters?: {
   blockId?: string;
   activeOnly?: boolean;
   inactiveOnly?: boolean;
+  search?: string;
 }): Promise<ScheduleWithDueHint[]> {
+  const search = filters?.search?.trim();
   const schedules = await db.irrigationSchedule.findMany({
     where: {
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.activeOnly ? { active: true } : {}),
       ...(filters?.inactiveOnly ? { active: false } : {}),
+      ...(search
+        ? {
+            OR: [
+              { notes: { contains: search, mode: "insensitive" } },
+              { method: { contains: search, mode: "insensitive" } },
+              { block: { name: { contains: search, mode: "insensitive" } } },
+              { block: { code: { contains: search, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
     },
     include: {
       block: { select: { id: true, code: true, name: true } },
@@ -171,6 +183,21 @@ export async function getSchedulesWithDueHints(filters?: {
       daysSinceLast,
       isOverdue,
     };
+  });
+}
+
+export async function getScheduleDueHintById(
+  scheduleId: string,
+): Promise<ScheduleWithDueHint | null> {
+  const schedules = await getSchedulesWithDueHints();
+  return schedules.find((s) => s.id === scheduleId) ?? null;
+}
+
+export async function getPumpsForBlock(blockId: string) {
+  return db.irrigationPump.findMany({
+    where: { servicedBlockIds: { has: blockId } },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
   });
 }
 

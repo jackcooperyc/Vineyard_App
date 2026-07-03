@@ -39,3 +39,7 @@ export const quickLogRecordSchema = z.object({
 export const updateScheduleSchema = createScheduleSchema.extend({
   scheduleId: z.string().min(1, "Schedule is required"),
 });
+
+export const updateRecordSchema = createRecordSchema.extend({
+  recordId: z.string().min(1, "Record is required"),
+});

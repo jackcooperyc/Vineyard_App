@@ -40,11 +40,25 @@ function buildHref(
   return params.toString() ? `${pathname}?${params}` : pathname;
 }
 
+const dueFilters = [
+  { value: "all", label: "All due dates" },
+  { value: "overdue", label: "Overdue" },
+  { value: "week", label: "Due this week" },
+  { value: "month", label: "Due this month" },
+] as const;
+
+const viewFilters = [
+  { value: "list", label: "List" },
+  { value: "calendar", label: "Calendar" },
+] as const;
+
 function hasActiveFilters(searchParams: URLSearchParams) {
   return (
     searchParams.has("status") ||
     searchParams.has("type") ||
-    searchParams.has("q")
+    searchParams.has("q") ||
+    searchParams.has("due") ||
+    (searchParams.has("view") && searchParams.get("view") !== "list")
   );
 }
 
@@ -88,6 +102,8 @@ export function EquipmentFilterBar() {
   const currentStatus = searchParams.get("status") ?? "ALL";
   const currentType = searchParams.get("type");
   const currentQuery = searchParams.get("q") ?? "";
+  const currentDue = searchParams.get("due") ?? "all";
+  const currentView = searchParams.get("view") ?? "list";
 
   function handleTypeChange(value: string | null) {
     const href = buildHref(pathname, searchParams, {
@@ -127,6 +143,58 @@ export function EquipmentFilterBar() {
             Clear all
           </Link>
         )}
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {viewFilters.map((filter) => {
+          const href = buildHref(pathname, searchParams, {
+            view: filter.value === "list" ? null : filter.value,
+          });
+          const active =
+            currentView === filter.value ||
+            (filter.value === "list" && !searchParams.get("view"));
+
+          return (
+            <Link
+              key={filter.value}
+              href={href}
+              className={cn(
+                "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {filter.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {dueFilters.map((filter) => {
+          const href = buildHref(pathname, searchParams, {
+            due: filter.value === "all" ? null : filter.value,
+          });
+          const active =
+            currentDue === filter.value ||
+            (filter.value === "all" && !searchParams.get("due"));
+
+          return (
+            <Link
+              key={filter.value}
+              href={href}
+              className={cn(
+                "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {filter.label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -183,10 +251,33 @@ export function parseEquipmentTypeFilter(
   return undefined;
 }
 
+export function parseEquipmentDueFilter(
+  value: string | undefined,
+): "overdue" | "week" | "month" | undefined {
+  if (value === "overdue" || value === "week" || value === "month") {
+    return value;
+  }
+  return undefined;
+}
+
+export function parseEquipmentView(
+  value: string | undefined,
+): "list" | "calendar" {
+  return value === "calendar" ? "calendar" : "list";
+}
+
 export function equipmentFiltersAreActive(params: {
   status?: string;
   type?: string;
   q?: string;
+  due?: string;
+  view?: string;
 }) {
-  return Boolean(params.status || params.type || params.q);
+  return Boolean(
+    params.status ||
+      params.type ||
+      params.q ||
+      params.due ||
+      (params.view && params.view !== "list"),
+  );
 }

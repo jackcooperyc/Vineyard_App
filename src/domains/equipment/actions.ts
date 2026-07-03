@@ -9,6 +9,7 @@ import {
   createMaintenanceRecordSchema,
   updateEquipmentSchema,
   updateEquipmentStatusSchema,
+  updateMaintenanceRecordSchema,
 } from "@/domains/equipment/validators";
 
 function parseDate(value?: string): Date | undefined {
@@ -190,6 +191,80 @@ export async function updateEquipmentStatus(
   await db.equipment.update({
     where: { id: equipmentId },
     data: { status },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function retireEquipment(equipmentId: string) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  const existing = await db.equipment.findUnique({
+    where: { id: equipmentId },
+    select: { id: true, status: true },
+  });
+
+  if (!existing) {
+    return { error: "Equipment not found" };
+  }
+
+  if (existing.status === "RETIRED") {
+    return { error: "Equipment is already retired" };
+  }
+
+  await db.equipment.update({
+    where: { id: equipmentId },
+    data: { status: "RETIRED" },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function updateMaintenanceRecord(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  const parsed = updateMaintenanceRecordSchema.safeParse({
+    recordId: formData.get("recordId"),
+    equipmentId: formData.get("equipmentId"),
+    performedAt: formData.get("performedAt"),
+    description: formData.get("description") || undefined,
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const { recordId, equipmentId, performedAt, description, notes } = parsed.data;
+  const performedDate = parseDate(performedAt);
+  if (!performedDate) {
+    return { error: "Invalid service date" };
+  }
+
+  const existing = await db.maintenanceRecord.findFirst({
+    where: { id: recordId, equipmentId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Maintenance record not found" };
+  }
+
+  await db.maintenanceRecord.update({
+    where: { id: recordId },
+    data: {
+      performedAt: performedDate,
+      description: description || null,
+      notes: notes || null,
+    },
   });
 
   revalidateEquipmentPaths(equipmentId);

@@ -2,6 +2,23 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-03 — Operational modules Op-5 through Op-9
+
+### Completed
+
+- **Op-5 Detail & navigation:** `hub-back-href.ts` back-param encoding on hub list cards and detail/edit pages; `updateIrrigationRecord` + record edit route; schedule due hints; task `updatedAt`; block equipment section from open tasks.
+- **Op-6 Field & map:** Field log maintenance mode with equipment picker; `equipment-hub-quick-log-sheet`; map drawer equipment from open tasks; irrigation hub pumps link; schedule detail pump note.
+- **Op-7 Hub depth:** Tasks assignee/equipment filters and pagination (`TASKS_PAGE_SIZE=50`); irrigation record status + schedule search; equipment service-due filter and calendar view.
+- **Op-8 Lifecycle:** `deleteTask`, `retireEquipment`, `updateMaintenanceRecord` with confirm/edit UI.
+- **Op-9 Reports:** `getEquipmentMaintenanceReport`, `getOverdueIrrigationReport`, `getOpenTasksByTypeReport`; extended `/reports` page and CSV exports; dashboard filtered hub quick links; additional seed maintenance records.
+
+### Verification
+
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+
+---
+
 ## 2026-07-02 — Vercel Git repository link (cev-app)
 
 ### Completed

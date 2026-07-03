@@ -1,6 +1,7 @@
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { TaskEmptyState } from "@/components/tasks/task-empty-state";
 import type { TaskListItem } from "@/domains/tasks/queries";
+import type { TasksHubParams } from "@/lib/hub-back-href";
 
 function formatGroupLabel(date: Date | null): string {
   if (!date) return "No due date";
@@ -50,6 +51,7 @@ function groupTasks(tasks: TaskListItem[]) {
 export function TaskTimeline({
   tasks,
   emptyContext,
+  backParams,
 }: {
   tasks: TaskListItem[];
   emptyContext?: {
@@ -58,6 +60,7 @@ export function TaskTimeline({
     blockCode?: string;
     search?: string;
   };
+  backParams?: TasksHubParams;
 }) {
   if (tasks.length === 0) {
     return (
@@ -86,7 +89,7 @@ export function TaskTimeline({
           </h3>
           <div className="space-y-3">
             {group.tasks.map((task) => (
-              <TaskListCard key={task.id} task={task} />
+              <TaskListCard key={task.id} task={task} backParams={backParams} />
             ))}
           </div>
         </section>

@@ -16,15 +16,28 @@ import {
 } from "@/components/equipment/equipment-status-badge";
 import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
+import { MaintenanceRecordItem } from "@/components/equipment/maintenance-record-item";
+import { RetireEquipmentDialog } from "@/components/equipment/retire-equipment-dialog";
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getEquipmentById } from "@/domains/equipment/queries";
+import {
+  buildEquipmentHubHref,
+  decodeBackParams,
+  encodeBackParams,
+} from "@/lib/hub-back-href";
 
 export default async function EquipmentDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const backParams = decodeBackParams(sp);
+  const backHref = buildEquipmentHubHref(backParams);
+  const editHref = `/equipment/${id}/edit${encodeBackParams(backParams)}`;
   const equipment = await getEquipmentById(id);
 
   if (!equipment) {
@@ -38,7 +51,7 @@ export default async function EquipmentDetailPage({
           variant="ghost"
           size="icon"
           className="mt-0.5 shrink-0"
-          render={<Link href="/equipment" aria-label="Back to equipment" />}
+          render={<Link href={backHref} aria-label="Back to equipment" />}
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -67,11 +80,17 @@ export default async function EquipmentDetailPage({
         <Button
           variant="outline"
           className="min-h-11 gap-2"
-          render={<Link href={`/equipment/${equipment.id}/edit`} />}
+          render={<Link href={editHref} />}
         >
           <Pencil className="size-4" />
           Edit equipment
         </Button>
+        {equipment.status !== "RETIRED" && (
+          <RetireEquipmentDialog
+            equipmentId={equipment.id}
+            equipmentName={equipment.name}
+          />
+        )}
       </div>
 
       <Card>
@@ -142,29 +161,11 @@ export default async function EquipmentDetailPage({
           ) : (
             <div className="space-y-3">
               {equipment.maintenanceRecords.map((record) => (
-                <div
+                <MaintenanceRecordItem
                   key={record.id}
-                  className="rounded-lg border bg-muted/20 p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">
-                      {record.description ?? "Maintenance service"}
-                    </p>
-                    <time
-                      dateTime={record.performedAt.toISOString()}
-                      className="shrink-0 text-xs text-muted-foreground"
-                    >
-                      {record.performedAt.toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </time>
-                  </div>
-                  {record.notes && (
-                    <p className="mt-2 text-sm text-muted-foreground">{record.notes}</p>
-                  )}
-                </div>
+                  record={record}
+                  equipmentId={equipment.id}
+                />
               ))}
             </div>
           )}

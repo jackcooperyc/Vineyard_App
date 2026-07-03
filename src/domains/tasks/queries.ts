@@ -23,6 +23,10 @@ export type TaskFilters = {
   search?: string;
   sort?: TaskSortOption;
   due?: TaskDueFilter;
+  assigneeId?: string;
+  equipmentId?: string;
+  skip?: number;
+  take?: number;
 };
 
 export type TaskHubStats = {
@@ -89,6 +93,14 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
     where.type = filters.type;
   }
 
+  if (filters.assigneeId) {
+    where.assignedToId = filters.assigneeId;
+  }
+
+  if (filters.equipmentId) {
+    where.equipmentId = filters.equipmentId;
+  }
+
   const search = filters.search?.trim();
   if (search) {
     where.title = { contains: search, mode: "insensitive" };
@@ -110,7 +122,51 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
       assignedTo: { select: { name: true } },
     },
     orderBy: taskOrderBy(filters.sort),
+    ...(filters.skip != null ? { skip: filters.skip } : {}),
+    ...(filters.take != null ? { take: filters.take } : {}),
   });
+}
+
+export async function getTasksCount(filters: TaskFilters = {}): Promise<number> {
+  const where: Prisma.TaskWhereInput = {};
+
+  if (filters.status === "OPEN") {
+    where.status = { in: ["PENDING", "IN_PROGRESS"] };
+  } else if (filters.status && filters.status !== "ALL") {
+    where.status = filters.status;
+  }
+
+  if (filters.blockId) {
+    where.blockId = filters.blockId;
+  }
+
+  if (filters.type) {
+    where.type = filters.type;
+  }
+
+  if (filters.assigneeId) {
+    where.assignedToId = filters.assigneeId;
+  }
+
+  if (filters.equipmentId) {
+    where.equipmentId = filters.equipmentId;
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    where.title = { contains: search, mode: "insensitive" };
+  }
+
+  const today = startOfToday();
+  if (filters.due === "overdue") {
+    where.dueDate = { lt: today };
+  } else if (filters.due === "today") {
+    where.dueDate = { gte: today, lt: startOfTomorrow() };
+  } else if (filters.due === "week") {
+    where.dueDate = { gte: today, lte: endOfWeek() };
+  }
+
+  return db.task.count({ where });
 }
 
 export async function getTaskHubStats(blockId?: string): Promise<TaskHubStats> {

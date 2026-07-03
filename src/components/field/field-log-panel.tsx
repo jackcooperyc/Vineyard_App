@@ -2,22 +2,42 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Droplets, ListTodo } from "lucide-react";
+import { CheckCircle2, Droplets, ListTodo, Wrench } from "lucide-react";
 import { BlockPicker, type BlockPickerItem } from "@/components/shared/block-picker";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
+import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
 import { quickLogTask } from "@/domains/tasks/actions";
 import type { TaskType } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
-type FieldMode = "task" | "irrigation";
+type FieldMode = "task" | "irrigation" | "maintenance";
 
-export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
+type EquipmentOption = { id: string; name: string; type: string };
+
+export function FieldLogPanel({
+  blocks,
+  equipment = [],
+}: {
+  blocks: BlockPickerItem[];
+  equipment?: EquipmentOption[];
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<FieldMode>("task");
   const [blockId, setBlockId] = useState<string | null>(null);
   const [taskType, setTaskType] = useState<TaskType>("INSPECTION");
+  const [equipmentId, setEquipmentId] = useState<string>(
+    equipment[0]?.id ?? "",
+  );
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,15 +89,16 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
     });
   }
 
+  const tabs = [
+    { id: "task" as const, label: "Task", icon: ListTodo },
+    { id: "irrigation" as const, label: "Irrigation", icon: Droplets },
+    { id: "maintenance" as const, label: "Service", icon: Wrench },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-2">
-        {(
-          [
-            { id: "task" as const, label: "Log task", icon: ListTodo },
-            { id: "irrigation" as const, label: "Irrigation", icon: Droplets },
-          ] as const
-        ).map((tab) => {
+      <div className="grid grid-cols-3 gap-2">
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
@@ -89,7 +110,7 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
                 setMessage(null);
               }}
               className={cn(
-                "field-tap flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold touch-manipulation",
+                "field-tap flex items-center justify-center gap-2 rounded-xl border px-2 py-3 text-sm font-semibold touch-manipulation",
                 mode === tab.id
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card",
@@ -102,12 +123,14 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
         })}
       </div>
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          1 · Select block
-        </h3>
-        <BlockPicker blocks={blocks} value={blockId} onChange={setBlockId} />
-      </section>
+      {mode !== "maintenance" && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            1 · Select block
+          </h3>
+          <BlockPicker blocks={blocks} value={blockId} onChange={setBlockId} />
+        </section>
+      )}
 
       {mode === "task" ? (
         <section className="space-y-3">
@@ -124,7 +147,7 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
             Tap a task type to save immediately with an auto-generated title.
           </p>
         </section>
-      ) : (
+      ) : mode === "irrigation" ? (
         <section className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             2 · Mark irrigated today
@@ -144,6 +167,44 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
             block detail page if needed.
           </p>
         </section>
+      ) : (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Log equipment service
+          </h3>
+          {equipment.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No active equipment on file.
+            </p>
+          ) : (
+            <>
+              <select
+                value={equipmentId}
+                onChange={(e) => setEquipmentId(e.target.value)}
+                className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
+              >
+                {equipment.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} ({item.type})
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                size="touch"
+                className="w-full"
+                onClick={() => setMaintenanceOpen(true)}
+                disabled={!equipmentId}
+              >
+                <Wrench className="size-5" />
+                Open service form
+              </Button>
+            </>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Record maintenance work and set the next service due date.
+          </p>
+        </section>
       )}
 
       {message && (
@@ -156,10 +217,36 @@ export function FieldLogPanel({ blocks }: { blocks: BlockPickerItem[] }) {
         </p>
       )}
       {error && (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
+        <p
+          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
           {error}
         </p>
       )}
+
+      <Sheet open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Log maintenance</SheetTitle>
+            <SheetDescription>
+              Record service work for the selected equipment.
+            </SheetDescription>
+          </SheetHeader>
+          {equipmentId && (
+            <div className="mt-6">
+              <MaintenanceRecordForm
+                key={equipmentId}
+                equipmentId={equipmentId}
+                onSuccess={() => {
+                  setMaintenanceOpen(false);
+                  setMessage("Maintenance logged.");
+                }}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

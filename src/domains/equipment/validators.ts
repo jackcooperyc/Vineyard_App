@@ -34,3 +34,11 @@ export const updateEquipmentSchema = createEquipmentSchema.extend({
 });
 
 export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;
+
+export const updateMaintenanceRecordSchema = z.object({
+  recordId: z.string().min(1),
+  equipmentId: z.string().min(1),
+  performedAt: z.string().min(1, "Date is required"),
+  description: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+});

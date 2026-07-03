@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { getBlockById } from "@/domains/blocks/queries";
+import { getBlockById, getOpenTaskEquipmentForBlock } from "@/domains/blocks/queries";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
 import { BlockTerrainSection } from "@/components/blocks/block-terrain-section";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
@@ -26,9 +26,10 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [block, equipment] = await Promise.all([
+  const [block, equipment, blockEquipment] = await Promise.all([
     getBlockById(id),
     getActiveEquipmentForSelect(),
+    getOpenTaskEquipmentForBlock(id),
   ]);
 
   if (!block) {
@@ -253,6 +254,44 @@ export default async function BlockDetailPage({
                   </p>
                 </div>
                 <IrrigationStatusBadge status={record.status} />
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle>Equipment</CardTitle>
+            <CardDescription>
+              Assets linked to open tasks on this block
+            </CardDescription>
+          </div>
+          {blockEquipment.length > 0 && (
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              render={<Link href="/equipment" />}
+            >
+              View all
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {blockEquipment.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No equipment assigned to open tasks on this block.
+            </p>
+          ) : (
+            blockEquipment.map((item) => (
+              <Link
+                key={item.id}
+                href={`/equipment/${item.id}`}
+                className="block rounded-lg border bg-muted/20 p-3 text-sm transition-colors hover:bg-muted/40"
+              >
+                <p className="font-medium">{item.name}</p>
+                <p className="text-muted-foreground">{item.type}</p>
               </Link>
             ))
           )}

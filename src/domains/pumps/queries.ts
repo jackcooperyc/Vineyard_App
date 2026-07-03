@@ -116,6 +116,10 @@ export async function getVineyardBlocksForPumpForm() {
   });
 }
 
+export async function countIrrigationPumps() {
+  return db.irrigationPump.count();
+}
+
 export function mapPumpsToGeoJSON(pumps: MapPump[]) {
   return {
     type: "FeatureCollection" as const,

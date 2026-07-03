@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DeleteTaskDialog } from "@/components/tasks/delete-task-dialog";
 import { TaskStatusBadge } from "@/components/tasks/task-status-badge";
 import { TaskTypeIcon } from "@/components/tasks/task-type-icon";
 import { TaskTypeLabel } from "@/components/tasks/task-type-label";
@@ -21,14 +22,19 @@ import {
 } from "@/domains/tasks/due-date";
 import { getTaskById } from "@/domains/tasks/queries";
 import type { TaskType } from "@/generated/prisma/client";
+import { buildTasksHubHref, decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
 
 export default async function TaskDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const backParams = decodeBackParams(sp);
   const task = await getTaskById(id);
 
   if (!task) {
@@ -39,6 +45,8 @@ export default async function TaskDetailPage({
   const urgency = getDueUrgency(task.dueDate);
   const dueLabel = formatDueLabel(task.dueDate);
   const urgencyStyle = dueUrgencyStyles[urgency];
+  const backHref = buildTasksHubHref(backParams);
+  const editHref = `/tasks/${task.id}/edit${encodeBackParams(backParams)}`;
 
   return (
     <div className="field-readable mx-auto max-w-3xl space-y-6">
@@ -47,7 +55,7 @@ export default async function TaskDetailPage({
           variant="ghost"
           size="icon"
           className="mt-0.5 shrink-0"
-          render={<Link href="/tasks" aria-label="Back to tasks" />}
+          render={<Link href={backHref} aria-label="Back to tasks" />}
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -88,11 +96,16 @@ export default async function TaskDetailPage({
         <Button
           variant="outline"
           className="min-h-11 gap-2"
-          render={<Link href={`/tasks/${task.id}/edit`} />}
+          render={<Link href={editHref} />}
         >
           <Pencil className="size-4" />
           Edit task
         </Button>
+        <DeleteTaskDialog
+          taskId={task.id}
+          taskTitle={task.title}
+          backParams={backParams}
+        />
       </div>
 
       <Card>
@@ -122,6 +135,15 @@ export default async function TaskDetailPage({
                 <dt className="text-muted-foreground">Created</dt>
                 <dd className="font-medium">
                   {task.createdAt.toLocaleDateString()}
+                </dd>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="size-4 text-muted-foreground" />
+              <div>
+                <dt className="text-muted-foreground">Last updated</dt>
+                <dd className="font-medium">
+                  {task.updatedAt.toLocaleDateString()}
                 </dd>
               </div>
             </div>

@@ -10,8 +10,10 @@ import { createMaintenanceRecord } from "@/domains/equipment/actions";
 
 export function MaintenanceRecordForm({
   equipmentId,
+  onSuccess,
 }: {
   equipmentId: string;
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -31,6 +33,7 @@ export function MaintenanceRecordForm({
         setError(result.error);
         return;
       }
+      onSuccess?.();
       router.refresh();
       e.currentTarget.reset();
     });

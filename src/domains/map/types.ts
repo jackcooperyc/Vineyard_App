@@ -27,6 +27,7 @@ export type MapBlock = {
   openTasks: number;
   irrigationOverdue: boolean;
   overlay: MapBlockOverlay;
+  openTaskEquipment: { id: string; name: string; type: string }[];
 };
 
 export type MapBlockFeatureProperties = {

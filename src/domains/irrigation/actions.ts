@@ -7,6 +7,7 @@ import {
   createRecordSchema,
   createScheduleSchema,
   quickLogRecordSchema,
+  updateRecordSchema,
   updateScheduleSchema,
 } from "@/domains/irrigation/validators";
 
@@ -228,4 +229,57 @@ export async function updateSchedule(formData: FormData) {
 
   revalidateSchedulePaths(scheduleId, blockId);
   return { success: true, scheduleId };
+}
+
+export async function updateIrrigationRecord(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = updateRecordSchema.safeParse({
+    recordId: formData.get("recordId"),
+    blockId: formData.get("blockId"),
+    appliedAt: formData.get("appliedAt"),
+    scheduledAt: formData.get("scheduledAt") || undefined,
+    volume: formData.get("volume") || undefined,
+    duration: formData.get("duration") || undefined,
+    method: formData.get("method") || undefined,
+    status: formData.get("status") || "APPLIED",
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const data = parsed.data;
+  const appliedAt = parseDate(data.appliedAt);
+  if (!appliedAt) return { error: "Invalid application date" };
+
+  const existing = await db.irrigationRecord.findUnique({
+    where: { id: data.recordId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Record not found" };
+  }
+
+  await db.irrigationRecord.update({
+    where: { id: data.recordId },
+    data: {
+      blockId: data.blockId,
+      appliedAt,
+      scheduledAt: parseDate(data.scheduledAt),
+      volume: parseFloatOrNull(data.volume),
+      duration: parseIntOrNull(data.duration),
+      method: data.method || null,
+      status: data.status,
+      notes: data.notes || null,
+    },
+  });
+
+  revalidateIrrigationPaths(data.blockId);
+  revalidatePath(`/irrigation/records/${data.recordId}`);
+  revalidatePath(`/irrigation/records/${data.recordId}/edit`);
+  return { success: true, recordId: data.recordId };
 }

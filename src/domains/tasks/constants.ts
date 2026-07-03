@@ -33,3 +33,5 @@ export function defaultTitleForType(type: TaskType, blockCode?: string): string 
   const label = TASK_TYPE_LABELS[type];
   return blockCode ? `${label} — ${blockCode}` : label;
 }
+
+export const TASKS_PAGE_SIZE = 50;

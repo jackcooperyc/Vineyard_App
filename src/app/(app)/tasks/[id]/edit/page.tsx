@@ -11,13 +11,18 @@ import {
 } from "@/domains/tasks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
 import type { TaskType } from "@/generated/prisma/client";
+import { decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 
 export default async function EditTaskPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const backQuery = encodeBackParams(decodeBackParams(sp));
   const [task, blocks, users, equipment] = await Promise.all([
     getTaskById(id),
     getBlocksForTaskForm(),
@@ -36,7 +41,12 @@ export default async function EditTaskPage({
           variant="ghost"
           size="icon"
           className="shrink-0"
-          render={<Link href={`/tasks/${task.id}`} aria-label="Back to task" />}
+          render={
+            <Link
+              href={`/tasks/${task.id}${backQuery}`}
+              aria-label="Back to task"
+            />
+          }
         >
           <ArrowLeft className="size-5" />
         </Button>

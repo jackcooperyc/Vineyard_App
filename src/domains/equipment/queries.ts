@@ -16,6 +16,7 @@ export type EquipmentFilters = {
   status?: EquipmentStatus | "ALL" | "NEEDS_SERVICE";
   type?: string;
   search?: string;
+  due?: "overdue" | "week" | "month";
 };
 
 export type EquipmentHubStats = {
@@ -34,6 +35,31 @@ function needsServiceWhere() {
       { nextServiceAt: null, status: "IN_MAINTENANCE" as EquipmentStatus },
     ],
   };
+}
+
+function endOfMonth() {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1, 0);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function serviceDueWhere(due: "overdue" | "week" | "month") {
+  const now = new Date();
+  const weekEnd = new Date(now);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  weekEnd.setHours(23, 59, 59, 999);
+  const monthEnd = endOfMonth();
+
+  const base = { status: { not: "RETIRED" as EquipmentStatus }, nextServiceAt: { not: null } };
+
+  if (due === "overdue") {
+    return { ...base, nextServiceAt: { lte: now } };
+  }
+  if (due === "week") {
+    return { ...base, nextServiceAt: { gte: now, lte: weekEnd } };
+  }
+  return { ...base, nextServiceAt: { gte: now, lte: monthEnd } };
 }
 
 export async function getEquipmentHubStats(): Promise<EquipmentHubStats> {
@@ -63,6 +89,10 @@ export async function getEquipment(
     Object.assign(where, needsServiceWhere());
   } else if (filters.status && filters.status !== "ALL") {
     where.status = filters.status;
+  }
+
+  if (filters.due) {
+    Object.assign(where, serviceDueWhere(filters.due));
   }
 
   if (filters.type) {

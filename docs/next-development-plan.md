@@ -158,6 +158,35 @@ Week 5+: Sprint 8 Phase 4 (pumps + /reports)
 
 ---
 
+## F) Operational modules Op-5 through Op-9 — ✅ Complete (2026-07-03)
+
+**Context:** Follow-on operational depth after Op-1–4 hub rebuilds and Sprint 8 intelligence layer.
+
+| Sprint | Focus | Status |
+|--------|-------|--------|
+| **Op-5** | Detail pages & navigation | ✅ Back-param hub links; record edit; schedule due hints; block equipment section |
+| **Op-6** | Field & map | ✅ Field maintenance log; equipment quick-log sheet; map drawer equipment; pumps link |
+| **Op-7** | Hub depth | ✅ Task assignee/equipment filters + pagination; irrigation status/search; equipment due filter + calendar |
+| **Op-8** | Lifecycle | ✅ deleteTask; retireEquipment; updateMaintenanceRecord |
+| **Op-9** | Reports | ✅ Maintenance, overdue irrigation, open tasks by type reports + CSV exports |
+
+### Prior tracks (complete)
+
+| Track | Status |
+|-------|--------|
+| **Op-1 – Op-4** | ✅ Task/irrigation/equipment polish, seed density, hub rebuilds |
+| **Sprint 8** | ✅ Phases 1–4 (3D map, weather, terrain, pumps, `/reports`) |
+
+### Exit criteria met
+
+- Detail/edit pages preserve hub filter state via `back*` query params (`hub-back-href.ts`)
+- Full CRUD + lifecycle for tasks, equipment maintenance, irrigation records
+- Field log supports tasks, irrigation, and equipment service
+- Hub filters: assignee, equipment, pagination, record status, schedule search, service due, calendar view
+- Reports export five operational datasets
+
+---
+
 ## Appendix — file inventory (audit 2026-07-01)
 
 ```

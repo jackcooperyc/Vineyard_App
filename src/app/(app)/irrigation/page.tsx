@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import {
   IrrigationViewBar,
   parseIrrigationView,
@@ -7,6 +8,7 @@ import {
   IrrigationFilterBar,
   parseIrrigationActiveFilter,
   parseIrrigationRecordRange,
+  parseIrrigationRecordStatus,
   irrigationFiltersAreActive,
 } from "@/components/irrigation/irrigation-filter-bar";
 import { IrrigationStatsChips } from "@/components/irrigation/irrigation-stats-chips";
@@ -15,6 +17,7 @@ import { IrrigationHubActions } from "@/components/irrigation/irrigation-hub-act
 import { ScheduleListCard } from "@/components/irrigation/schedule-list-card";
 import { RecordListCard } from "@/components/irrigation/record-list-card";
 import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
+import { Button } from "@/components/ui/button";
 import { getBlockById } from "@/domains/blocks/queries";
 import {
   getIrrigationHubStats,
@@ -23,6 +26,8 @@ import {
   getIrrigationAlerts,
   getBlocksForIrrigationForm,
 } from "@/domains/irrigation/queries";
+import { countIrrigationPumps } from "@/domains/pumps/queries";
+import { irrigationHubParamsFromSearch } from "@/lib/hub-back-href";
 
 export default async function IrrigationPage({
   searchParams,
@@ -32,6 +37,8 @@ export default async function IrrigationPage({
     blockId?: string;
     active?: string;
     range?: string;
+    status?: string;
+    q?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -39,26 +46,36 @@ export default async function IrrigationPage({
   const blockId = params.blockId;
   const activeFilter = parseIrrigationActiveFilter(params.active);
   const recordRange = parseIrrigationRecordRange(params.range);
+  const recordStatus = parseIrrigationRecordStatus(params.status);
+  const scheduleSearch = params.q?.trim();
   const hasFilters = irrigationFiltersAreActive(params);
+  const backParams = irrigationHubParamsFromSearch(params);
 
   const scheduleFilters = {
     blockId,
     activeOnly: activeFilter === "active" ? true : undefined,
     inactiveOnly: activeFilter === "inactive" ? true : undefined,
+    search: view === "schedules" ? scheduleSearch : undefined,
   };
 
-  const [stats, schedules, records, alerts, block, blocks] = await Promise.all([
-    getIrrigationHubStats(blockId),
-    view === "schedules"
-      ? getSchedulesWithDueHints(scheduleFilters)
-      : Promise.resolve([]),
-    view === "records"
-      ? getIrrigationRecords({ blockId, range: recordRange })
-      : Promise.resolve([]),
-    view === "alerts" ? getIrrigationAlerts() : Promise.resolve([]),
-    blockId ? getBlockById(blockId) : Promise.resolve(null),
-    getBlocksForIrrigationForm(),
-  ]);
+  const [stats, schedules, records, alerts, block, blocks, pumpCount] =
+    await Promise.all([
+      getIrrigationHubStats(blockId),
+      view === "schedules"
+        ? getSchedulesWithDueHints(scheduleFilters)
+        : Promise.resolve([]),
+      view === "records"
+        ? getIrrigationRecords({
+            blockId,
+            range: recordRange,
+            status: recordStatus,
+          })
+        : Promise.resolve([]),
+      view === "alerts" ? getIrrigationAlerts() : Promise.resolve([]),
+      blockId ? getBlockById(blockId) : Promise.resolve(null),
+      getBlocksForIrrigationForm(),
+      countIrrigationPumps(),
+    ]);
 
   const blockFilter =
     block && blockId
@@ -87,6 +104,15 @@ export default async function IrrigationPage({
               ? ` · ${blockFilter.code} ${blockFilter.name}`
               : " · schedules, records, and alerts"}
           </p>
+          {pumpCount > 0 && (
+            <Button
+              variant="link"
+              className="mt-1 h-auto p-0 text-sm"
+              render={<Link href="/pumps" />}
+            >
+              {pumpCount} pump{pumpCount !== 1 ? "s" : ""} on estate →
+            </Button>
+          )}
         </div>
         <IrrigationHubActions blocks={blocks} blockId={blockId} />
       </div>
@@ -120,7 +146,11 @@ export default async function IrrigationPage({
         ) : (
           <div className="space-y-3">
             {schedules.map((schedule) => (
-              <ScheduleListCard key={schedule.id} schedule={schedule} />
+              <ScheduleListCard
+                key={schedule.id}
+                schedule={schedule}
+                backParams={backParams}
+              />
             ))}
           </div>
         ))}
@@ -138,7 +168,11 @@ export default async function IrrigationPage({
         ) : (
           <div className="space-y-3">
             {records.map((record) => (
-              <RecordListCard key={record.id} record={record} />
+              <RecordListCard
+                key={record.id}
+                record={record}
+                backParams={backParams}
+              />
             ))}
           </div>
         ))}

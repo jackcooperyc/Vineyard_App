@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Droplets } from "lucide-react";
+import { ArrowLeft, Droplets, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,13 +11,27 @@ import {
 } from "@/components/ui/card";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
 import { getIrrigationRecordById } from "@/domains/irrigation/queries";
+import {
+  buildIrrigationHubHref,
+  decodeBackParams,
+  encodeBackParams,
+} from "@/lib/hub-back-href";
 
 export default async function RecordDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const backParams = decodeBackParams(sp);
+  const backHref = buildIrrigationHubHref({
+    ...backParams,
+    view: backParams.view ?? "records",
+  });
+  const editHref = `/irrigation/records/${id}/edit${encodeBackParams(backParams)}`;
   const record = await getIrrigationRecordById(id);
 
   if (!record) {
@@ -31,12 +45,7 @@ export default async function RecordDetailPage({
           variant="ghost"
           size="icon"
           className="mt-0.5 shrink-0"
-          render={
-            <Link
-              href="/irrigation?view=records"
-              aria-label="Back to records"
-            />
-          }
+          render={<Link href={backHref} aria-label="Back to records" />}
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -57,6 +66,17 @@ export default async function RecordDetailPage({
             </Link>
           </p>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="min-h-11 gap-2"
+          render={<Link href={editHref} />}
+        >
+          <Pencil className="size-4" />
+          Edit record
+        </Button>
       </div>
 
       <Card>

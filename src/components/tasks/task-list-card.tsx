@@ -12,16 +12,27 @@ import {
 } from "@/domains/tasks/due-date";
 import type { TaskListItem } from "@/domains/tasks/queries";
 import type { TaskType } from "@/generated/prisma/client";
+import { buildDetailHref } from "@/lib/hub-back-href";
+import type { TasksHubParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
 
-export function TaskListCard({ task }: { task: TaskListItem }) {
+export function TaskListCard({
+  task,
+  backParams,
+}: {
+  task: TaskListItem;
+  backParams?: TasksHubParams;
+}) {
   const urgency = getDueUrgency(task.dueDate);
   const dueLabel = formatDueLabel(task.dueDate);
   const urgencyStyle = dueUrgencyStyles[urgency];
   const isOpen = task.status === "PENDING" || task.status === "IN_PROGRESS";
 
   return (
-    <Link href={`/tasks/${task.id}`} className="block">
+    <Link
+      href={buildDetailHref("/tasks", task.id, backParams)}
+      className="block"
+    >
       <Card
         className={cn(
           "transition-colors hover:bg-muted/40 active:bg-muted/60",

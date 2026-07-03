@@ -130,6 +130,38 @@ async function main() {
         },
       });
     }
+
+    if (!existing && equip.name === "Kubota M5-111") {
+      await prisma.maintenanceRecord.create({
+        data: {
+          equipmentId: record.id,
+          performedAt: daysAgo(45),
+          description: "Oil and filter change",
+          notes: "Next service at 100-hour interval.",
+        },
+      });
+    }
+
+    if (!existing && equip.name === "Polaris Ranger 570") {
+      await prisma.maintenanceRecord.create({
+        data: {
+          equipmentId: record.id,
+          performedAt: daysAgo(30),
+          description: "Tire pressure and brake check",
+        },
+      });
+    }
+
+    if (!existing && equip.name === "Netafim Pump Station") {
+      await prisma.maintenanceRecord.create({
+        data: {
+          equipmentId: record.id,
+          performedAt: daysAgo(5),
+          description: "Valve inspection — replacement started",
+          notes: "Pump offline until valve swap completes.",
+        },
+      });
+    }
   }
 
   const sampleTasks = [

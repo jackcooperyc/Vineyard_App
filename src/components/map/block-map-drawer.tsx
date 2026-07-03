@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Droplets, ListTodo, Mountain } from "lucide-react";
+import { ArrowRight, Droplets, ListTodo, Mountain, Tractor } from "lucide-react";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
 import { QuickLogIrrigationSheet } from "@/components/irrigation/quick-log-irrigation-sheet";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
@@ -84,6 +84,26 @@ export function BlockMapDrawer({
                     </li>
                   )}
                 </ul>
+              )}
+
+              {block.openTaskEquipment.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Equipment in use</p>
+                  <ul className="space-y-1 text-sm text-muted-foreground">
+                    {block.openTaskEquipment.map((item) => (
+                      <li key={item.id} className="flex items-center gap-2">
+                        <Tractor className="size-4 shrink-0" />
+                        <Link
+                          href={`/equipment/${item.id}`}
+                          className="text-primary underline-offset-4 hover:underline"
+                        >
+                          {item.name}
+                        </Link>
+                        <span>· {item.type}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               <div className="flex flex-wrap gap-2">

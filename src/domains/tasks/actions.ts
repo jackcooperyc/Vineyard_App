@@ -214,3 +214,24 @@ export async function markTaskComplete(taskId: string) {
 export async function startTask(taskId: string) {
   return updateTaskStatus(taskId, "IN_PROGRESS");
 }
+
+export async function deleteTask(taskId: string) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  const task = await db.task.findUnique({
+    where: { id: taskId },
+    select: { blockId: true },
+  });
+
+  if (!task) {
+    return { error: "Task not found" };
+  }
+
+  await db.task.delete({ where: { id: taskId } });
+
+  revalidateTaskPaths(task.blockId);
+  return { success: true };
+}

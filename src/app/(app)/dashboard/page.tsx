@@ -160,8 +160,29 @@ export default async function DashboardPage() {
           >
             Log service
           </Button>
-          <Button size="touch" variant="outline" render={<Link href="/irrigation" />}>
-            Irrigation
+          <Button
+            size="touch"
+            variant="outline"
+            render={<Link href="/tasks?due=overdue" />}
+          >
+            Overdue tasks
+          </Button>
+          <Button
+            size="touch"
+            variant="outline"
+            render={<Link href="/irrigation?view=alerts" />}
+          >
+            Irrigation alerts
+          </Button>
+          <Button
+            size="touch"
+            variant="outline"
+            render={<Link href="/equipment?due=overdue" />}
+          >
+            Service overdue
+          </Button>
+          <Button size="touch" variant="outline" render={<Link href="/reports" />}>
+            Reports
           </Button>
         </CardContent>
       </Card>

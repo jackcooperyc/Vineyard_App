@@ -3,10 +3,21 @@ import { ChevronRight, Droplets } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
 import type { RecordListItem } from "@/domains/irrigation/queries";
+import { buildDetailHref } from "@/lib/hub-back-href";
+import type { IrrigationHubParams } from "@/lib/hub-back-href";
 
-export function RecordListCard({ record }: { record: RecordListItem }) {
+export function RecordListCard({
+  record,
+  backParams,
+}: {
+  record: RecordListItem;
+  backParams?: IrrigationHubParams;
+}) {
   return (
-    <Link href={`/irrigation/records/${record.id}`} className="block">
+    <Link
+      href={buildDetailHref("/irrigation/records", record.id, backParams)}
+      className="block"
+    >
       <Card className="field-tap transition-colors hover:bg-muted/40 active:bg-muted/60">
         <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40">

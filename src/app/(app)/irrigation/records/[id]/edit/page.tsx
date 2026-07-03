@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EquipmentForm } from "@/components/equipment/equipment-form";
-import { getEquipmentById } from "@/domains/equipment/queries";
-import type { EquipmentStatus } from "@/generated/prisma/client";
+import { RecordForm } from "@/components/irrigation/record-form";
+import {
+  getBlocksForIrrigationForm,
+  getIrrigationRecordById,
+} from "@/domains/irrigation/queries";
 import { decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 
-export default async function EditEquipmentPage({
+export default async function EditRecordPage({
   params,
   searchParams,
 }: {
@@ -18,9 +20,12 @@ export default async function EditEquipmentPage({
   const { id } = await params;
   const sp = await searchParams;
   const backQuery = encodeBackParams(decodeBackParams(sp));
-  const equipment = await getEquipmentById(id);
+  const [record, blocks] = await Promise.all([
+    getIrrigationRecordById(id),
+    getBlocksForIrrigationForm(),
+  ]);
 
-  if (!equipment) {
+  if (!record) {
     notFound();
   }
 
@@ -32,34 +37,39 @@ export default async function EditEquipmentPage({
           size="icon"
           className="shrink-0"
           render={
-            <Link href={`/equipment/${equipment.id}${backQuery}`} aria-label="Back to equipment" />
+            <Link
+              href={`/irrigation/records/${record.id}${backQuery}`}
+              aria-label="Back to record"
+            />
           }
         >
           <ArrowLeft className="size-5" />
         </Button>
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Edit equipment</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Edit record</h2>
           <p className="text-sm text-muted-foreground">
-            {equipment.type} · {equipment.name}
+            {record.block.code} · {record.block.name}
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Equipment details</CardTitle>
+          <CardTitle>Record details</CardTitle>
         </CardHeader>
         <CardContent>
-          <EquipmentForm
-            equipment={{
-              id: equipment.id,
-              name: equipment.name,
-              type: equipment.type,
-              status: equipment.status as EquipmentStatus,
-              serialNumber: equipment.serialNumber,
-              lastServicedAt: equipment.lastServicedAt,
-              nextServiceAt: equipment.nextServiceAt,
-              notes: equipment.notes,
+          <RecordForm
+            blocks={blocks}
+            record={{
+              id: record.id,
+              blockId: record.blockId,
+              appliedAt: record.appliedAt,
+              scheduledAt: record.scheduledAt,
+              volume: record.volume,
+              duration: record.duration,
+              method: record.method,
+              status: record.status,
+              notes: record.notes,
             }}
           />
         </CardContent>

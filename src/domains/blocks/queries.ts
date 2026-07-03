@@ -147,3 +147,31 @@ export async function getVineyardName() {
   });
   return vineyard?.name ?? "Cooper Estate Vineyards";
 }
+
+export async function getOpenTaskEquipmentForBlock(blockId: string) {
+  const tasks = await db.task.findMany({
+    where: {
+      blockId,
+      status: { in: ["PENDING", "IN_PROGRESS"] },
+      equipmentId: { not: null },
+    },
+    select: {
+      equipment: {
+        select: { id: true, name: true, type: true, status: true },
+      },
+    },
+  });
+
+  const seen = new Set<string>();
+  const equipment: { id: string; name: string; type: string; status: string }[] =
+    [];
+
+  for (const task of tasks) {
+    const eq = task.equipment;
+    if (!eq || seen.has(eq.id)) continue;
+    seen.add(eq.id);
+    equipment.push(eq);
+  }
+
+  return equipment;
+}

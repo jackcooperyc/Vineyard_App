@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScheduleActiveToggle } from "@/components/irrigation/schedule-active-toggle";
 import { IRRIGATION_FREQUENCIES } from "@/domains/irrigation/constants";
 import type { ScheduleWithDueHint } from "@/domains/irrigation/queries";
+import { buildDetailHref } from "@/lib/hub-back-href";
+import type { IrrigationHubParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
 
 function frequencyLabel(value: string) {
@@ -44,7 +46,13 @@ function dueHint(schedule: ScheduleWithDueHint) {
   return null;
 }
 
-export function ScheduleListCard({ schedule }: { schedule: ScheduleWithDueHint }) {
+export function ScheduleListCard({
+  schedule,
+  backParams,
+}: {
+  schedule: ScheduleWithDueHint;
+  backParams?: IrrigationHubParams;
+}) {
   const hint = dueHint(schedule);
 
   return (
@@ -56,7 +64,7 @@ export function ScheduleListCard({ schedule }: { schedule: ScheduleWithDueHint }
     >
       <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
         <Link
-          href={`/irrigation/schedules/${schedule.id}`}
+          href={buildDetailHref("/irrigation/schedules", schedule.id, backParams)}
           className="field-tap flex flex-1 items-center gap-3 transition-colors hover:opacity-90"
         >
           <div className="flex-1 space-y-1.5">

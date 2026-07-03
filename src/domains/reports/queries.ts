@@ -105,3 +105,100 @@ export async function getIrrigationVolumeByBlockReport(): Promise<IrrigationRepo
 }
 
 export const REPORT_PERIOD_DAYS = REPORT_DAYS;
+
+export type EquipmentMaintenanceReportRow = {
+  equipmentId: string;
+  equipmentName: string;
+  equipmentType: string;
+  recordCount: number;
+  lastPerformedAt: Date | null;
+};
+
+export type OverdueIrrigationReportRow = {
+  blockId: string;
+  blockCode: string;
+  blockName: string;
+  daysOverdue: number;
+  frequency: string;
+};
+
+export type OpenTasksByTypeReportRow = {
+  type: string;
+  openCount: number;
+};
+
+export async function getEquipmentMaintenanceReport(): Promise<
+  EquipmentMaintenanceReportRow[]
+> {
+  const since = daysAgo(REPORT_DAYS);
+
+  const rows = await db.maintenanceRecord.groupBy({
+    by: ["equipmentId"],
+    where: { performedAt: { gte: since } },
+    _count: { _all: true },
+    _max: { performedAt: true },
+  });
+
+  if (rows.length === 0) return [];
+
+  const equipment = await db.equipment.findMany({
+    where: { id: { in: rows.map((r) => r.equipmentId) } },
+    select: { id: true, name: true, type: true },
+  });
+  const equipmentById = new Map(equipment.map((e) => [e.id, e]));
+
+  return rows
+    .map((row) => {
+      const eq = equipmentById.get(row.equipmentId);
+      if (!eq) return null;
+      return {
+        equipmentId: eq.id,
+        equipmentName: eq.name,
+        equipmentType: eq.type,
+        recordCount: row._count._all,
+        lastPerformedAt: row._max.performedAt,
+      };
+    })
+    .filter((r): r is EquipmentMaintenanceReportRow => r != null)
+    .sort((a, b) => a.equipmentName.localeCompare(b.equipmentName));
+}
+
+export async function getOverdueIrrigationReport(): Promise<
+  OverdueIrrigationReportRow[]
+> {
+  const { getIrrigationAlerts } = await import("@/domains/irrigation/queries");
+  const alerts = await getIrrigationAlerts();
+
+  return alerts
+    .map((alert) => {
+      const daysOverdue =
+        alert.daysSinceLast != null
+          ? Math.max(0, alert.daysSinceLast - alert.expectedDays)
+          : 0;
+      return {
+        blockId: alert.block.id,
+        blockCode: alert.block.code,
+        blockName: alert.block.name,
+        daysOverdue,
+        frequency: alert.frequency,
+      };
+    })
+    .sort((a, b) => b.daysOverdue - a.daysOverdue);
+}
+
+export async function getOpenTasksByTypeReport(): Promise<
+  OpenTasksByTypeReportRow[]
+> {
+  const rows = await db.task.groupBy({
+    by: ["type"],
+    where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+    _count: { _all: true },
+  });
+
+  return rows
+    .map((row) => ({
+      type: row.type,
+      openCount: row._count._all,
+    }))
+    .sort((a, b) => b.openCount - a.openCount);
+}

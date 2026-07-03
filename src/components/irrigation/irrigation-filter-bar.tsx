@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { IrrigationRecordRange } from "@/domains/irrigation/queries";
+import type { IrrigationStatus } from "@/generated/prisma/client";
 
 type BlockFilter = { id: string; code: string; name: string };
 type BlockOption = { id: string; code: string; name: string };
@@ -44,11 +47,54 @@ function buildHref(
   return params.toString() ? `${pathname}?${params}` : pathname;
 }
 
+const recordStatusFilters = [
+  { value: "all", label: "All statuses" },
+  { value: "APPLIED", label: "Applied" },
+  { value: "SCHEDULED", label: "Scheduled" },
+  { value: "MISSED", label: "Missed" },
+  { value: "SKIPPED", label: "Skipped" },
+] as const;
+
 function hasActiveFilters(searchParams: URLSearchParams) {
   return (
     searchParams.has("blockId") ||
     searchParams.has("active") ||
-    searchParams.has("range")
+    searchParams.has("range") ||
+    searchParams.has("status") ||
+    searchParams.has("q")
+  );
+}
+
+function ScheduleSearchInput({ initialQuery }: { initialQuery: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchInput, setSearchInput] = useState(initialQuery);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const trimmed = searchInput.trim();
+      if (trimmed === initialQuery) return;
+      const href = buildHref(pathname, searchParams, {
+        q: trimmed || null,
+      });
+      router.replace(href, { scroll: false });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, initialQuery, pathname, router, searchParams]);
+
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        type="search"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search schedules…"
+        className="h-11 pl-9"
+        aria-label="Search irrigation schedules"
+      />
+    </div>
   );
 }
 
@@ -67,6 +113,8 @@ export function IrrigationFilterBar({
   const currentBlockId = searchParams.get("blockId");
   const currentActive = searchParams.get("active") ?? "all";
   const currentRange = searchParams.get("range") ?? "all";
+  const currentStatus = searchParams.get("status") ?? "all";
+  const currentQuery = searchParams.get("q") ?? "";
 
   const sortedBlocks = [...blocks].sort((a, b) => {
     const aNum = Number.parseInt(a.code, 10);
@@ -110,6 +158,8 @@ export function IrrigationFilterBar({
               blockId: null,
               active: null,
               range: null,
+              status: null,
+              q: null,
             })}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
           >
@@ -138,8 +188,10 @@ export function IrrigationFilterBar({
       )}
 
       {view === "schedules" && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {activeFilters.map((filter) => {
+        <>
+          <ScheduleSearchInput key={currentQuery} initialQuery={currentQuery} />
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {activeFilters.map((filter) => {
             const href = buildHref(pathname, searchParams, {
               active: filter.value === "all" ? null : filter.value,
             });
@@ -162,12 +214,14 @@ export function IrrigationFilterBar({
               </Link>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {view === "records" && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {recordRangeFilters.map((filter) => {
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {recordRangeFilters.map((filter) => {
             const href = buildHref(pathname, searchParams, {
               range: filter.value === "all" ? null : filter.value,
             });
@@ -190,7 +244,33 @@ export function IrrigationFilterBar({
               </Link>
             );
           })}
-        </div>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {recordStatusFilters.map((filter) => {
+              const href = buildHref(pathname, searchParams, {
+                status: filter.value === "all" ? null : filter.value,
+              });
+              const active =
+                currentStatus === filter.value ||
+                (filter.value === "all" && !searchParams.get("status"));
+
+              return (
+                <Link
+                  key={filter.value}
+                  href={href}
+                  className={cn(
+                    "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {filter.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
@@ -210,11 +290,29 @@ export function parseIrrigationRecordRange(
   return undefined;
 }
 
+export function parseIrrigationRecordStatus(
+  value: string | undefined,
+): IrrigationStatus | undefined {
+  if (
+    value === "APPLIED" ||
+    value === "SCHEDULED" ||
+    value === "MISSED" ||
+    value === "SKIPPED"
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
 export function irrigationFiltersAreActive(params: {
   blockId?: string;
   active?: string;
   range?: string;
   view?: string;
+  status?: string;
+  q?: string;
 }) {
-  return Boolean(params.blockId || params.active || params.range);
+  return Boolean(
+    params.blockId || params.active || params.range || params.status || params.q,
+  );
 }

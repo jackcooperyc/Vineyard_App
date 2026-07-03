@@ -26,6 +26,8 @@ const statusFilters = [
 ] as const;
 
 type BlockOption = { id: string; code: string; name: string };
+type UserOption = { id: string; name: string | null; email: string };
+type EquipmentOption = { id: string; name: string; type: string };
 
 function hasActiveFilters(searchParams: URLSearchParams) {
   return (
@@ -35,14 +37,21 @@ function hasActiveFilters(searchParams: URLSearchParams) {
     searchParams.has("q") ||
     searchParams.has("sort") ||
     searchParams.has("due") ||
-    searchParams.has("view")
+    searchParams.has("view") ||
+    searchParams.has("assignee") ||
+    searchParams.has("equipmentId") ||
+    searchParams.has("page")
   );
 }
 
 export function TaskFilterBar({
   blocks = [],
+  users = [],
+  equipment = [],
 }: {
   blocks?: BlockOption[];
+  users?: UserOption[];
+  equipment?: EquipmentOption[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -74,6 +83,22 @@ export function TaskFilterBar({
   function handleSortChange(value: string | null) {
     const href = buildHref(pathname, searchParams, {
       sort: value && value !== "dueDate" ? value : null,
+    });
+    router.push(href);
+  }
+
+  function handleAssigneeChange(value: string | null) {
+    const href = buildHref(pathname, searchParams, {
+      assignee: value && value !== "all" ? value : null,
+      page: null,
+    });
+    router.push(href);
+  }
+
+  function handleEquipmentChange(value: string | null) {
+    const href = buildHref(pathname, searchParams, {
+      equipmentId: value && value !== "all" ? value : null,
+      page: null,
     });
     router.push(href);
   }
@@ -113,6 +138,44 @@ export function TaskFilterBar({
             <SelectItem value="status">Status</SelectItem>
           </SelectContent>
         </Select>
+
+        {users.length > 0 && (
+          <Select
+            value={searchParams.get("assignee") ?? "all"}
+            onValueChange={handleAssigneeChange}
+          >
+            <SelectTrigger className="min-h-11 w-full sm:w-auto sm:min-w-[160px]">
+              <SelectValue placeholder="All assignees" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All assignees</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name ?? user.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {equipment.length > 0 && (
+          <Select
+            value={searchParams.get("equipmentId") ?? "all"}
+            onValueChange={handleEquipmentChange}
+          >
+            <SelectTrigger className="min-h-11 w-full sm:w-auto sm:min-w-[160px]">
+              <SelectValue placeholder="All equipment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All equipment</SelectItem>
+              {equipment.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {hasActiveFilters(searchParams) && (
           <Link
@@ -234,6 +297,9 @@ export function taskFiltersAreActive(params: {
   sort?: string;
   due?: string;
   view?: string;
+  assignee?: string;
+  equipmentId?: string;
+  page?: string;
 }) {
   return Boolean(
     params.status ||
@@ -242,6 +308,9 @@ export function taskFiltersAreActive(params: {
       params.q ||
       (params.sort && params.sort !== "dueDate") ||
       params.due ||
-      (params.view && params.view !== "timeline"),
+      (params.view && params.view !== "timeline") ||
+      params.assignee ||
+      params.equipmentId ||
+      (params.page && params.page !== "1"),
   );
 }

@@ -7,11 +7,22 @@ import {
 } from "@/components/equipment/equipment-status-badge";
 import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
 import type { EquipmentListItem } from "@/domains/equipment/queries";
+import { buildDetailHref } from "@/lib/hub-back-href";
+import type { EquipmentHubParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
 
-export function EquipmentListCard({ item }: { item: EquipmentListItem }) {
+export function EquipmentListCard({
+  item,
+  backParams,
+}: {
+  item: EquipmentListItem;
+  backParams?: EquipmentHubParams;
+}) {
   return (
-    <Link href={`/equipment/${item.id}`} className="block">
+    <Link
+      href={buildDetailHref("/equipment", item.id, backParams)}
+      className="block"
+    >
       <Card className="field-tap transition-colors hover:bg-muted/40 active:bg-muted/60">
         <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
           <div
