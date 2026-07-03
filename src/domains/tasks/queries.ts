@@ -1,10 +1,19 @@
 import { db } from "@/lib/db";
-import type { Prisma, TaskStatus, TaskType } from "@/generated/prisma/client";
+import type { Prisma, TaskStatus } from "@/generated/prisma/client";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
+
+export type TaskTypeSummary = {
+  id: string;
+  slug: string;
+  label: string;
+  iconName: string;
+  colorHex: string | null;
+};
 
 export type TaskListItem = {
   id: string;
   title: string;
-  type: string;
+  taskType: TaskTypeSummary;
   status: TaskStatus;
   dueDate: Date | null;
   completedAt: Date | null;
@@ -19,7 +28,8 @@ export type TaskDueFilter = "overdue" | "today" | "week";
 export type TaskFilters = {
   status?: TaskStatus | "ALL" | "OPEN";
   blockId?: string;
-  type?: TaskType;
+  typeSlug?: string;
+  taskTypeId?: string;
   search?: string;
   sort?: TaskSortOption;
   due?: TaskDueFilter;
@@ -35,6 +45,14 @@ export type TaskHubStats = {
   dueThisWeek: number;
   completedRecently: number;
 };
+
+const taskTypeSelect = {
+  id: true,
+  slug: true,
+  label: true,
+  iconName: true,
+  colorHex: true,
+} as const;
 
 function startOfToday() {
   const d = new Date();
@@ -76,7 +94,7 @@ function taskOrderBy(sort: TaskSortOption = "dueDate"): Prisma.TaskOrderByWithRe
   }
 }
 
-export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[]> {
+function buildTaskWhere(filters: TaskFilters): Prisma.TaskWhereInput {
   const where: Prisma.TaskWhereInput = {};
 
   if (filters.status === "OPEN") {
@@ -89,8 +107,10 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
     where.blockId = filters.blockId;
   }
 
-  if (filters.type) {
-    where.type = filters.type;
+  if (filters.taskTypeId) {
+    where.taskTypeId = filters.taskTypeId;
+  } else if (filters.typeSlug) {
+    where.taskType = { slug: filters.typeSlug };
   }
 
   if (filters.assigneeId) {
@@ -115,11 +135,16 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
     where.dueDate = { gte: today, lte: endOfWeek() };
   }
 
+  return where;
+}
+
+export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[]> {
   return db.task.findMany({
-    where,
+    where: buildTaskWhere(filters),
     include: {
       block: { select: { id: true, code: true, name: true } },
       assignedTo: { select: { name: true } },
+      taskType: { select: taskTypeSelect },
     },
     orderBy: taskOrderBy(filters.sort),
     ...(filters.skip != null ? { skip: filters.skip } : {}),
@@ -128,45 +153,7 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
 }
 
 export async function getTasksCount(filters: TaskFilters = {}): Promise<number> {
-  const where: Prisma.TaskWhereInput = {};
-
-  if (filters.status === "OPEN") {
-    where.status = { in: ["PENDING", "IN_PROGRESS"] };
-  } else if (filters.status && filters.status !== "ALL") {
-    where.status = filters.status;
-  }
-
-  if (filters.blockId) {
-    where.blockId = filters.blockId;
-  }
-
-  if (filters.type) {
-    where.type = filters.type;
-  }
-
-  if (filters.assigneeId) {
-    where.assignedToId = filters.assigneeId;
-  }
-
-  if (filters.equipmentId) {
-    where.equipmentId = filters.equipmentId;
-  }
-
-  const search = filters.search?.trim();
-  if (search) {
-    where.title = { contains: search, mode: "insensitive" };
-  }
-
-  const today = startOfToday();
-  if (filters.due === "overdue") {
-    where.dueDate = { lt: today };
-  } else if (filters.due === "today") {
-    where.dueDate = { gte: today, lt: startOfTomorrow() };
-  } else if (filters.due === "week") {
-    where.dueDate = { gte: today, lte: endOfWeek() };
-  }
-
-  return db.task.count({ where });
+  return db.task.count({ where: buildTaskWhere(filters) });
 }
 
 export async function getTaskHubStats(blockId?: string): Promise<TaskHubStats> {
@@ -209,6 +196,7 @@ export async function getTaskById(id: string) {
       block: {
         select: { id: true, code: true, name: true, vineyard: { select: { name: true } } },
       },
+      taskType: { select: taskTypeSelect },
       assignedTo: { select: { id: true, name: true, email: true } },
       equipment: { select: { id: true, name: true, type: true } },
     },
@@ -249,8 +237,19 @@ export async function getUpcomingTasks(limit = 5) {
     },
     include: {
       block: { select: { id: true, code: true, name: true } },
+      taskType: { select: taskTypeSelect },
     },
     orderBy: { dueDate: "asc" },
     take: limit,
   });
+}
+
+export function toTaskTypeSummary(config: TaskTypeConfig): TaskTypeSummary {
+  return {
+    id: config.id,
+    slug: config.slug,
+    label: config.label,
+    iconName: config.iconName,
+    colorHex: config.colorHex,
+  };
 }

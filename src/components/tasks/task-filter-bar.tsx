@@ -13,9 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TaskSearchInput, buildHref } from "@/components/tasks/task-search-input";
-import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
 import type { TaskSortOption } from "@/domains/tasks/queries";
-import type { TaskType } from "@/generated/prisma/client";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 const statusFilters = [
   { value: "OPEN", label: "Open" },
@@ -48,10 +47,12 @@ export function TaskFilterBar({
   blocks = [],
   users = [],
   equipment = [],
+  taskTypes = [],
 }: {
   blocks?: BlockOption[];
   users?: UserOption[];
   equipment?: EquipmentOption[];
+  taskTypes?: TaskTypeConfig[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -72,6 +73,8 @@ export function TaskFilterBar({
       }),
     [blocks],
   );
+
+  const activeTypes = taskTypes.filter((t) => t.active);
 
   function handleBlockChange(value: string | null) {
     const href = buildHref(pathname, searchParams, {
@@ -214,38 +217,40 @@ export function TaskFilterBar({
         })}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        <Link
-          href={buildHref(pathname, searchParams, { type: null })}
-          className={cn(
-            "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
-            !currentType
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground hover:bg-muted",
-          )}
-        >
-          All types
-        </Link>
-        {TASK_TYPES.map((type) => {
-          const href = buildHref(pathname, searchParams, { type });
-          const active = currentType === type;
+      {activeTypes.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Link
+            href={buildHref(pathname, searchParams, { type: null })}
+            className={cn(
+              "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+              !currentType
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-muted-foreground hover:bg-muted",
+            )}
+          >
+            All types
+          </Link>
+          {activeTypes.map((type) => {
+            const href = buildHref(pathname, searchParams, { type: type.slug });
+            const active = currentType === type.slug;
 
-          return (
-            <Link
-              key={type}
-              href={href}
-              className={cn(
-                "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {TASK_TYPE_LABELS[type as TaskType]}
-            </Link>
-          );
-        })}
-      </div>
+            return (
+              <Link
+                key={type.id}
+                href={href}
+                className={cn(
+                  "inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors",
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {type.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

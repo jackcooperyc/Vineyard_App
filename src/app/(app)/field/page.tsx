@@ -1,11 +1,13 @@
 import { getVineyardBlocksForField } from "@/domains/blocks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
 import { FieldLogPanel } from "@/components/field/field-log-panel";
+import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
 
 export default async function FieldPage() {
-  const [blocks, equipment] = await Promise.all([
+  const [blocks, equipment, quickLogTypes] = await Promise.all([
     getVineyardBlocksForField(),
     getActiveEquipmentForSelect(),
+    getQuickLogTaskTypes(),
   ]);
 
   return (
@@ -17,7 +19,11 @@ export default async function FieldPage() {
           vineyard.
         </p>
       </div>
-      <FieldLogPanel blocks={blocks} equipment={equipment} />
+      <FieldLogPanel
+        blocks={blocks}
+        equipment={equipment}
+        quickLogTypes={quickLogTypes}
+      />
     </div>
   );
 }

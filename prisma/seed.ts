@@ -3,6 +3,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 import { ESTATE_CENTER, seedEstateBlocks } from "./seed-estate";
+import { seedTaskTypes } from "./seed-task-types";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -35,6 +36,7 @@ async function main() {
   });
 
   const estate = await seedEstateBlocks(prisma, vineyard.id, admin.id);
+  const taskTypeBySlug = await seedTaskTypes(prisma);
 
   const now = new Date();
   const daysFromNow = (days: number) => {
@@ -167,7 +169,7 @@ async function main() {
   const sampleTasks = [
     {
       blockCode: "1",
-      type: "PRUNING" as const,
+      typeSlug: "PRUNING" as const,
       status: "IN_PROGRESS" as const,
       title: "Winter cane pruning — 1-CS1",
       dueDate: daysFromNow(3),
@@ -175,7 +177,7 @@ async function main() {
     },
     {
       blockCode: "13",
-      type: "SPRAYING" as const,
+      typeSlug: "SPRAYING" as const,
       status: "PENDING" as const,
       title: "Early season fungicide — 13-MR13",
       dueDate: daysFromNow(1),
@@ -183,14 +185,14 @@ async function main() {
     },
     {
       blockCode: "3",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "PENDING" as const,
       title: "Bud break inspection — 3-MR3",
       dueDate: daysFromNow(5),
     },
     {
       blockCode: "40",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "COMPLETED" as const,
       title: "Canopy health check — 40-CM40",
       dueDate: daysAgo(2),
@@ -198,21 +200,21 @@ async function main() {
     },
     {
       blockCode: "5",
-      type: "PRUNING" as const,
+      typeSlug: "PRUNING" as const,
       status: "PENDING" as const,
       title: "Cane selection — 5-CM5",
       dueDate: daysFromNow(4),
     },
     {
       blockCode: "7",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "PENDING" as const,
       title: "Soil moisture check — 7-CM7",
       dueDate: daysFromNow(2),
     },
     {
       blockCode: "9",
-      type: "SPRAYING" as const,
+      typeSlug: "SPRAYING" as const,
       status: "IN_PROGRESS" as const,
       title: "Sulfur application — 9-CS9",
       dueDate: daysFromNow(1),
@@ -220,21 +222,21 @@ async function main() {
     },
     {
       blockCode: "15",
-      type: "HARVESTING" as const,
+      typeSlug: "HARVESTING" as const,
       status: "PENDING" as const,
       title: "Harvest prep walk-through — 15-CS15",
       dueDate: daysFromNow(14),
     },
     {
       blockCode: "18",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "PENDING" as const,
       title: "Canopy thinning assessment — 18-ZN",
       dueDate: daysFromNow(7),
     },
     {
       blockCode: "20",
-      type: "PRUNING" as const,
+      typeSlug: "PRUNING" as const,
       status: "PENDING" as const,
       title: "Spur pruning — 20-CS20",
       dueDate: daysFromNow(6),
@@ -242,14 +244,14 @@ async function main() {
     },
     {
       blockCode: "22",
-      type: "OTHER" as const,
+      typeSlug: "OTHER" as const,
       status: "PENDING" as const,
       title: "Trellis wire tension check — 22-VN22",
       dueDate: daysFromNow(10),
     },
     {
       blockCode: "25",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "COMPLETED" as const,
       title: "Winter damage survey — 25-NB",
       dueDate: daysAgo(5),
@@ -257,7 +259,7 @@ async function main() {
     },
     {
       blockCode: "2",
-      type: "PRUNING" as const,
+      typeSlug: "PRUNING" as const,
       status: "PENDING" as const,
       title: "Spur pruning — 2-CF2",
       dueDate: daysFromNow(8),
@@ -265,14 +267,14 @@ async function main() {
     },
     {
       blockCode: "4",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "PENDING" as const,
       title: "Bud break count — 4-CH4",
       dueDate: daysFromNow(6),
     },
     {
       blockCode: "10",
-      type: "SPRAYING" as const,
+      typeSlug: "SPRAYING" as const,
       status: "PENDING" as const,
       title: "Pre-bloom sulfur — 10-CS10",
       dueDate: daysFromNow(3),
@@ -280,21 +282,21 @@ async function main() {
     },
     {
       blockCode: "14",
-      type: "INSPECTION" as const,
+      typeSlug: "INSPECTION" as const,
       status: "IN_PROGRESS" as const,
       title: "Canopy assessment — 14-CM14",
       dueDate: daysFromNow(2),
     },
     {
       blockCode: "21",
-      type: "PRUNING" as const,
+      typeSlug: "PRUNING" as const,
       status: "PENDING" as const,
       title: "Cane thinning — 21-CM21",
       dueDate: daysFromNow(9),
     },
     {
       blockCode: "28",
-      type: "HARVESTING" as const,
+      typeSlug: "HARVESTING" as const,
       status: "PENDING" as const,
       title: "Yield estimate walk — 28-SY28",
       dueDate: daysFromNow(21),
@@ -310,10 +312,12 @@ async function main() {
     });
 
     if (!existing) {
+      const taskTypeId = taskTypeBySlug.get(taskData.typeSlug);
+      if (!taskTypeId) continue;
       await prisma.task.create({
         data: {
           blockId,
-          type: taskData.type,
+          taskTypeId,
           status: taskData.status,
           title: taskData.title,
           dueDate: taskData.dueDate,

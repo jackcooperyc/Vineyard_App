@@ -150,7 +150,7 @@ Auth.js user with role for future RBAC.
 
 - `BlockStatus`: ACTIVE, FALLOW, REPLANTING
 - `VarietyColor`: RED, WHITE, ROSE
-- `TaskType`: PRUNING, SPRAYING, HARVESTING, INSPECTION, OTHER
+- `TaskTypeDefinition`: configurable catalog (slug, label, icon, color, quick-log, defaults, sort, active) — replaces legacy `TaskType` enum
 - `TaskStatus`: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
 - `EquipmentStatus`: ACTIVE, IN_MAINTENANCE, RETIRED
 - `IrrigationStatus`: SCHEDULED, APPLIED, MISSED, SKIPPED

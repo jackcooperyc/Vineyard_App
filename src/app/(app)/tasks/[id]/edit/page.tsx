@@ -10,7 +10,7 @@ import {
   getUsersForAssignment,
 } from "@/domains/tasks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
-import type { TaskType } from "@/generated/prisma/client";
+import { getTaskTypes } from "@/domains/tasks/type-queries";
 import { decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 
 export default async function EditTaskPage({
@@ -23,11 +23,12 @@ export default async function EditTaskPage({
   const { id } = await params;
   const sp = await searchParams;
   const backQuery = encodeBackParams(decodeBackParams(sp));
-  const [task, blocks, users, equipment] = await Promise.all([
+  const [task, blocks, users, equipment, taskTypes] = await Promise.all([
     getTaskById(id),
     getBlocksForTaskForm(),
     getUsersForAssignment(),
     getActiveEquipmentForSelect(),
+    getTaskTypes({ activeOnly: true }),
   ]);
 
   if (!task) {
@@ -65,10 +66,11 @@ export default async function EditTaskPage({
             blocks={blocks}
             users={users}
             equipment={equipment}
+            taskTypes={taskTypes}
             task={{
               id: task.id,
               blockId: task.blockId,
-              type: task.type as TaskType,
+              taskTypeId: task.taskTypeId,
               title: task.title,
               description: task.description,
               dueDate: task.dueDate,

@@ -32,14 +32,6 @@ enum VarietyColor {
   ROSE
 }
 
-enum TaskType {
-  PRUNING
-  SPRAYING
-  HARVESTING
-  INSPECTION
-  OTHER
-}
-
 enum TaskStatus {
   PENDING
   IN_PROGRESS
@@ -142,24 +134,45 @@ model Planting {
 
 // ─── Operations ──────────────────────────────────────────────────────────────
 
+model TaskTypeDefinition {
+  id                   String   @id @default(cuid())
+  slug                 String   @unique
+  label                String
+  iconName             String   @default("ListTodo")
+  colorHex             String?
+  sortOrder            Int      @default(0)
+  active               Boolean  @default(true)
+  showInQuickLog       Boolean  @default(true)
+  defaultTitleTemplate String?
+  defaultDueDaysOffset Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  tasks                Task[]
+
+  @@index([active])
+  @@index([sortOrder])
+}
+
 model Task {
-  id           String     @id @default(cuid())
+  id           String             @id @default(cuid())
   blockId      String
-  type         TaskType
-  status       TaskStatus @default(PENDING)
+  taskTypeId   String
+  status       TaskStatus         @default(PENDING)
   title        String
   description  String?
   dueDate      DateTime?
   completedAt  DateTime?
   assignedToId String?
   equipmentId  String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
-  assignedTo   User?      @relation("TaskAssignee", fields: [assignedToId], references: [id])
-  equipment    Equipment? @relation(fields: [equipmentId], references: [id])
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  block        Block              @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  taskType     TaskTypeDefinition @relation(fields: [taskTypeId], references: [id])
+  assignedTo   User?              @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  equipment    Equipment?         @relation(fields: [equipmentId], references: [id])
 
   @@index([blockId])
+  @@index([taskTypeId])
   @@index([status])
   @@index([dueDate])
   @@index([assignedToId])

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
 import { quickLogTask } from "@/domains/tasks/actions";
-import type { TaskType } from "@/generated/prisma/client";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 import { cn } from "@/lib/utils";
 
 type FieldMode = "task" | "irrigation" | "maintenance";
@@ -26,14 +26,20 @@ type EquipmentOption = { id: string; name: string; type: string };
 export function FieldLogPanel({
   blocks,
   equipment = [],
+  quickLogTypes,
 }: {
   blocks: BlockPickerItem[];
   equipment?: EquipmentOption[];
+  quickLogTypes: TaskTypeConfig[];
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<FieldMode>("task");
   const [blockId, setBlockId] = useState<string | null>(null);
-  const [taskType, setTaskType] = useState<TaskType>("INSPECTION");
+  const [taskTypeId, setTaskTypeId] = useState<string>(
+    quickLogTypes.find((t) => t.slug === "INSPECTION")?.id ??
+      quickLogTypes[0]?.id ??
+      "",
+  );
   const [equipmentId, setEquipmentId] = useState<string>(
     equipment[0]?.id ?? "",
   );
@@ -44,7 +50,7 @@ export function FieldLogPanel({
 
   const selectedBlock = blocks.find((b) => b.id === blockId) ?? null;
 
-  function logTask(type: TaskType) {
+  function logTask(typeId: string) {
     if (!blockId) {
       setError("Select a block first.");
       return;
@@ -53,7 +59,7 @@ export function FieldLogPanel({
     setMessage(null);
     const formData = new FormData();
     formData.set("blockId", blockId);
-    formData.set("type", type);
+    formData.set("taskTypeId", typeId);
 
     startTransition(async () => {
       const result = await quickLogTask(formData);
@@ -138,8 +144,9 @@ export function FieldLogPanel({
             2 · Tap task type to log
           </h3>
           <TaskTypeChips
-            value={taskType}
-            onChange={setTaskType}
+            types={quickLogTypes}
+            value={taskTypeId}
+            onChange={setTaskTypeId}
             onSelect={logTask}
             disabled={pending || !blockId}
           />

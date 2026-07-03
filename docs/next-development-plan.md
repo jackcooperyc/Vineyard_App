@@ -1,9 +1,11 @@
 # Next Development Plan
 
-**Date:** 2026-07-01  
+**Date:** 2026-07-03 (updated)  
 **Context:** User feedback that Tasks, Equipment, and Irrigation UIs feel "undeveloped." This audit reconciles that perception with the codebase and proposes sequencing against Sprint 8 (intelligence layer).
 
 **Related docs:** [roadmap.md](./roadmap.md) · [module-scope.md](./module-scope.md) · [sprint-8-plan.md](./sprint-8-plan.md)
+
+**2026-07-03 update:** Configurable task types (`TaskTypeDefinition`, `/tasks/settings`) and bulk task editing on the tasks hub are **shipped**.
 
 ---
 
@@ -13,13 +15,13 @@
 
 | Layer | Built | Missing / thin |
 |-------|-------|----------------|
-| **Routes** | `/tasks` list + status filters, `/tasks/new`, `/tasks/[id]` detail | No edit route; no block-scoped list URL in UI |
-| **Domain** | `queries`, `actions` (create, quick-log, status workflow), `validators`, `constants` | No `updateTask` / `deleteTask`; `getTasks({ blockId })` exists but unused in pages |
-| **Components** | Timeline grouping, filter bar, form, quick-log sheet, status badges/actions, list cards | No edit form; no block/type/search filters |
-| **Integration** | Dashboard upcoming tasks; block detail task list; map drawer quick-log; `/field` one-tap log | Block detail "View all" links to `/tasks?status=ALL` (estate-wide, not block-scoped) |
-| **Seed** | 4 demo tasks across 4 of 35 vineyard blocks | Sparse relative to estate size |
+| **Routes** | `/tasks` hub + filters/pagination, `/tasks/new`, `/tasks/[id]`, `/tasks/[id]/edit`, `/tasks/settings` task-type admin | — |
+| **Domain** | `queries`, `actions` (create, update, delete, quick-log, bulk update), `type-queries`/`type-actions`, configurable `TaskTypeDefinition` | — |
+| **Components** | Timeline/list views, filter bar, form, quick-log sheets, bulk action bar, task-type settings UI | — |
+| **Integration** | Dashboard, block detail, map drawer, `/field` quick-log — all use DB task types | — |
+| **Seed** | 18 demo tasks; five default task types via `seed-task-types.ts` | — |
 
-**Verdict:** Core v1 CRUD + workflow is **shipped**. Gaps are **edit metadata**, **block filtering**, and **data density** — not missing pages.
+**Verdict:** Tasks module is **production-quality** with configurable types and bulk editing. Remaining gaps are mostly **data density** and cross-hub polish.
 
 ---
 

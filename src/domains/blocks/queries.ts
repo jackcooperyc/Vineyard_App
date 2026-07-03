@@ -83,6 +83,9 @@ export async function getBlockById(id: string) {
         take: 5,
         include: {
           assignedTo: { select: { name: true } },
+          taskType: {
+            select: { id: true, slug: true, label: true, iconName: true, colorHex: true },
+          },
         },
       },
       mapFeature: true,

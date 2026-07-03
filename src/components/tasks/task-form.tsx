@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createTask, updateTask } from "@/domains/tasks/actions";
-import { TASK_TYPES, TASK_TYPE_LABELS } from "@/domains/tasks/constants";
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
-import type { TaskType } from "@/generated/prisma/client";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 type BlockOption = { id: string; code: string; name: string };
 type UserOption = { id: string; name: string | null; email: string };
@@ -19,7 +18,7 @@ type EquipmentOption = { id: string; name: string; type: string };
 type TaskValues = {
   id: string;
   blockId: string;
-  type: TaskType;
+  taskTypeId: string;
   title: string;
   description: string | null;
   dueDate: Date | null;
@@ -36,12 +35,14 @@ export function TaskForm({
   blocks,
   users,
   equipment,
+  taskTypes,
   defaultBlockId,
   task,
 }: {
   blocks: BlockOption[];
   users: UserOption[];
   equipment: EquipmentOption[];
+  taskTypes: TaskTypeConfig[];
   defaultBlockId?: string;
   task?: TaskValues;
 }) {
@@ -49,6 +50,10 @@ export function TaskForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const isEdit = Boolean(task);
+  const defaultTypeId =
+    task?.taskTypeId ??
+    taskTypes.find((t) => t.slug === "INSPECTION")?.id ??
+    taskTypes[0]?.id;
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -92,17 +97,17 @@ export function TaskForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Task type</Label>
+        <Label htmlFor="taskTypeId">Task type</Label>
         <select
-          id="type"
-          name="type"
+          id="taskTypeId"
+          name="taskTypeId"
           required
-          defaultValue={task?.type ?? "INSPECTION"}
+          defaultValue={defaultTypeId}
           className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
         >
-          {TASK_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {TASK_TYPE_LABELS[type as TaskType]}
+          {taskTypes.map((type) => (
+            <option key={type.id} value={type.id}>
+              {type.label}
             </option>
           ))}
         </select>

@@ -1,6 +1,5 @@
-import { TASK_TYPES } from "@/domains/tasks/constants";
 import type { TaskDueFilter, TaskSortOption } from "@/domains/tasks/queries";
-import type { TaskStatus, TaskType } from "@/generated/prisma/client";
+import type { TaskStatus } from "@/generated/prisma/client";
 
 export function parseTaskStatusFilter(
   value: string | undefined,
@@ -15,12 +14,9 @@ export function parseTaskStatusFilter(
 
 export function parseTaskTypeFilter(
   value: string | undefined,
-): TaskType | undefined {
+): string | undefined {
   if (!value) return undefined;
-  if (TASK_TYPES.includes(value as TaskType)) {
-    return value as TaskType;
-  }
-  return undefined;
+  return value;
 }
 
 export function parseTaskSortFilter(

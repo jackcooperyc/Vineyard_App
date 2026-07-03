@@ -9,6 +9,7 @@ import { VineyardMap } from "@/components/map/vineyard-map";
 import { MapWeatherChip } from "@/components/weather/map-weather-chip";
 import type { MapViewMode } from "@/domains/map/constants";
 import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 import type { CurrentWeather } from "@/domains/weather/types";
 
 type PumpFeatureCollection = ReturnType<
@@ -22,6 +23,7 @@ export function MapPageClient({
   equipment,
   pumpsGeoJson,
   weather,
+  quickLogTypes,
   token,
 }: {
   blocks: MapBlock[];
@@ -30,6 +32,7 @@ export function MapPageClient({
   equipment: { id: string; name: string; type: string }[];
   pumpsGeoJson: PumpFeatureCollection;
   weather: CurrentWeather;
+  quickLogTypes: TaskTypeConfig[];
   token: string;
 }) {
   const router = useRouter();
@@ -74,6 +77,7 @@ export function MapPageClient({
       <BlockMapDrawer
         block={selectedBlock}
         equipment={equipment}
+        quickLogTypes={quickLogTypes}
         onClose={() => setSelectedBlockId(null)}
       />
     </>

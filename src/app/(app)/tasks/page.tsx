@@ -1,13 +1,10 @@
 import { Suspense } from "react";
 import { TaskFilterBar } from "@/components/tasks/task-filter-bar";
 import { TaskStatsChips } from "@/components/tasks/task-stats-chips";
-import { TaskTimeline } from "@/components/tasks/task-timeline";
-import { TaskListView } from "@/components/tasks/task-list-view";
-import { TaskEmptyState } from "@/components/tasks/task-empty-state";
 import { TaskViewBar } from "@/components/tasks/task-view-bar";
 import { TasksHubActions } from "@/components/tasks/tasks-hub-actions";
 import { TasksMobileFab } from "@/components/tasks/tasks-mobile-fab";
-import { TasksPagination } from "@/components/tasks/tasks-pagination";
+import { TasksHubBody } from "@/components/tasks/tasks-hub-body";
 import { getBlockById, getVineyardBlocksForField } from "@/domains/blocks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
 import { TASKS_PAGE_SIZE } from "@/domains/tasks/constants";
@@ -20,6 +17,7 @@ import {
   taskFiltersAreActive,
 } from "@/domains/tasks/filters";
 import { getTaskHubStats, getTasks, getTasksCount, getUsersForAssignment } from "@/domains/tasks/queries";
+import { getTaskTypes } from "@/domains/tasks/type-queries";
 import { tasksHubParamsFromSearch } from "@/lib/hub-back-href";
 
 export default async function TasksPage({
@@ -55,7 +53,7 @@ export default async function TasksPage({
   const filters = {
     status: statusFilter,
     blockId,
-    type: typeFilter,
+    typeSlug: typeFilter,
     search,
     sort: sortFilter,
     due: dueFilter,
@@ -63,19 +61,22 @@ export default async function TasksPage({
     equipmentId,
   };
 
-  const [tasks, total, stats, block, blocks, users, equipment] = await Promise.all([
-    getTasks({
-      ...filters,
-      skip: (page - 1) * TASKS_PAGE_SIZE,
-      take: TASKS_PAGE_SIZE,
-    }),
-    getTasksCount(filters),
-    getTaskHubStats(blockId),
-    blockId ? getBlockById(blockId) : Promise.resolve(null),
-    getVineyardBlocksForField(),
-    getUsersForAssignment(),
-    getActiveEquipmentForSelect(),
-  ]);
+  const [tasks, total, stats, block, blocks, users, equipment, taskTypes, quickLogTypes] =
+    await Promise.all([
+      getTasks({
+        ...filters,
+        skip: (page - 1) * TASKS_PAGE_SIZE,
+        take: TASKS_PAGE_SIZE,
+      }),
+      getTasksCount(filters),
+      getTaskHubStats(blockId),
+      blockId ? getBlockById(blockId) : Promise.resolve(null),
+      getVineyardBlocksForField(),
+      getUsersForAssignment(),
+      getActiveEquipmentForSelect(),
+      getTaskTypes({ activeOnly: true }),
+      getTaskTypes({ activeOnly: true, quickLogOnly: true }),
+    ]);
 
   const blockFilter =
     block && blockId
@@ -102,7 +103,11 @@ export default async function TasksPage({
               : " · vineyard work by block"}
           </p>
         </div>
-        <TasksHubActions blocks={blocks} blockId={blockId} />
+        <TasksHubActions
+          blocks={blocks}
+          quickLogTypes={quickLogTypes}
+          blockId={blockId}
+        />
       </div>
 
       <TaskStatsChips stats={stats} blockId={blockId} />
@@ -115,27 +120,33 @@ export default async function TasksPage({
         <Suspense
           fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}
         >
-          <TaskFilterBar blocks={blocks} users={users} equipment={equipment} />
+          <TaskFilterBar
+            blocks={blocks}
+            users={users}
+            equipment={equipment}
+            taskTypes={taskTypes}
+          />
         </Suspense>
       </div>
 
-      {view === "timeline" ? (
-        <TaskTimeline tasks={tasks} emptyContext={emptyContext} backParams={backParams} />
-      ) : tasks.length === 0 ? (
-        <TaskEmptyState context={emptyContext} />
-      ) : (
-        <>
-          <TaskListView tasks={tasks} backParams={backParams} />
-          <TasksPagination
-            total={total}
-            page={page}
-            pageSize={TASKS_PAGE_SIZE}
-            hubParams={hubParams}
-          />
-        </>
-      )}
+      <TasksHubBody
+        tasks={tasks}
+        total={total}
+        page={page}
+        pageSize={TASKS_PAGE_SIZE}
+        view={view}
+        emptyContext={emptyContext}
+        backParams={backParams}
+        hubParams={hubParams}
+        taskTypes={taskTypes}
+        users={users}
+      />
 
-      <TasksMobileFab blocks={blocks} blockId={blockId} />
+      <TasksMobileFab
+        blocks={blocks}
+        quickLogTypes={quickLogTypes}
+        blockId={blockId}
+      />
     </div>
   );
 }

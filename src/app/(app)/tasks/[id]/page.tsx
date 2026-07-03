@@ -21,7 +21,6 @@ import {
   getDueUrgency,
 } from "@/domains/tasks/due-date";
 import { getTaskById } from "@/domains/tasks/queries";
-import type { TaskType } from "@/generated/prisma/client";
 import { buildTasksHubHref, decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
 
@@ -62,12 +61,12 @@ export default async function TaskDetailPage({
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
-              <TaskTypeIcon type={task.type as TaskType} className="size-5" />
+              <TaskTypeIcon iconName={task.taskType.iconName} className="size-5" />
             </div>
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
-                  <TaskTypeLabel type={task.type as TaskType} />
+                  <TaskTypeLabel label={task.taskType.label} />
                 </span>
                 <TaskStatusBadge status={task.status} />
                 {urgency === "overdue" && isOpen && (

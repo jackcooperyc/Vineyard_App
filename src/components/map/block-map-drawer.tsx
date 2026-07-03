@@ -14,14 +14,17 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { MapBlock } from "@/domains/map/types";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 export function BlockMapDrawer({
   block,
   equipment,
+  quickLogTypes,
   onClose,
 }: {
   block: MapBlock | null;
   equipment: { id: string; name: string; type: string }[];
+  quickLogTypes: TaskTypeConfig[];
   onClose: () => void;
 }) {
   return (
@@ -112,6 +115,7 @@ export function BlockMapDrawer({
                   blockCode={block.code}
                   blockName={block.name}
                   equipment={equipment}
+                  quickLogTypes={quickLogTypes}
                 />
                 <QuickLogIrrigationSheet
                   blockId={block.id}

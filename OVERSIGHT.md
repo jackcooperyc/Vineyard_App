@@ -2,6 +2,23 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-03 — Configurable task types + bulk task editing
+
+### Completed
+
+- **Schema:** `TaskTypeDefinition` model; `Task.taskTypeId` FK replaces `TaskType` enum; `scripts/migrate-task-types.ts` backfills legacy DBs before `db push`.
+- **Domain:** `type-queries`, `type-actions`, `type-validators`, `type-icons`; task actions use DB defaults for quick-log title/due date; `bulkUpdateTasks` for status, type, assignee, due date.
+- **UI:** All task surfaces read types from DB; `/tasks/settings` CRUD for task types; tasks hub bulk selection bar; gear link from tasks hub.
+- **Seed:** `seed-task-types.ts` with five legacy types; `seed.ts` resolves `taskTypeId` via slug.
+
+### Verification
+
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+- `npm run build` — pass
+
+---
+
 ## 2026-07-03 — Operational modules Op-5 through Op-9
 
 ### Completed

@@ -18,33 +18,41 @@ import {
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
 import { quickLogTask } from "@/domains/tasks/actions";
-import { defaultTitleForType } from "@/domains/tasks/constants";
-import type { TaskType } from "@/generated/prisma/client";
+import { defaultTitleForTypeConfig } from "@/domains/tasks/constants";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 export function QuickLogTaskSheet({
   blockId,
   blockCode,
   blockName,
   equipment = [],
+  quickLogTypes,
 }: {
   blockId: string;
   blockCode: string;
   blockName: string;
   equipment?: { id: string; name: string; type: string }[];
+  quickLogTypes: TaskTypeConfig[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [type, setType] = useState<TaskType>("INSPECTION");
+  const defaultTypeId =
+    quickLogTypes.find((t) => t.slug === "INSPECTION")?.id ??
+    quickLogTypes[0]?.id ??
+    "";
+  const [taskTypeId, setTaskTypeId] = useState(defaultTypeId);
   const [showDetails, setShowDetails] = useState(false);
+
+  const selectedType = quickLogTypes.find((t) => t.id === taskTypeId);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.set("blockId", blockId);
-    formData.set("type", type);
+    formData.set("taskTypeId", taskTypeId);
 
     startTransition(async () => {
       const result = await quickLogTask(formData);
@@ -77,8 +85,12 @@ export function QuickLogTaskSheet({
         <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
           <div className="space-y-2">
             <Label>Task type</Label>
-            <TaskTypeChips value={type} onChange={setType} />
-            <input type="hidden" name="type" value={type} />
+            <TaskTypeChips
+              types={quickLogTypes}
+              value={taskTypeId}
+              onChange={setTaskTypeId}
+            />
+            <input type="hidden" name="taskTypeId" value={taskTypeId} />
           </div>
           <Button
             type="button"
@@ -96,7 +108,15 @@ export function QuickLogTaskSheet({
                   id="quick-title"
                   name="title"
                   className="h-12 text-base"
-                  placeholder={defaultTitleForType(type, blockCode)}
+                  placeholder={
+                    selectedType
+                      ? defaultTitleForTypeConfig(
+                          selectedType.label,
+                          blockCode,
+                          selectedType.defaultTitleTemplate,
+                        )
+                      : undefined
+                  }
                 />
               </div>
               <div className="space-y-2">

@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-export const taskTypeSchema = z.enum([
-  "PRUNING",
-  "SPRAYING",
-  "HARVESTING",
-  "INSPECTION",
-  "OTHER",
-]);
-
 export const taskStatusSchema = z.enum([
   "PENDING",
   "IN_PROGRESS",
@@ -17,7 +9,7 @@ export const taskStatusSchema = z.enum([
 
 export const createTaskSchema = z.object({
   blockId: z.string().min(1, "Block is required"),
-  type: taskTypeSchema,
+  taskTypeId: z.string().min(1, "Task type is required"),
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(2000).optional(),
   dueDate: z.string().optional(),
@@ -27,7 +19,7 @@ export const createTaskSchema = z.object({
 
 export const quickLogTaskSchema = z.object({
   blockId: z.string().min(1),
-  type: taskTypeSchema,
+  taskTypeId: z.string().min(1),
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(500).optional(),
   equipmentId: z.string().optional(),

@@ -189,16 +189,18 @@ export async function getOverdueIrrigationReport(): Promise<
 export async function getOpenTasksByTypeReport(): Promise<
   OpenTasksByTypeReportRow[]
 > {
-  const rows = await db.task.groupBy({
-    by: ["type"],
+  const tasks = await db.task.findMany({
     where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
-    _count: { _all: true },
+    select: { taskType: { select: { label: true } } },
   });
 
-  return rows
-    .map((row) => ({
-      type: row.type,
-      openCount: row._count._all,
-    }))
+  const counts = new Map<string, number>();
+  for (const task of tasks) {
+    const label = task.taskType.label;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([type, openCount]) => ({ type, openCount }))
     .sort((a, b) => b.openCount - a.openCount);
 }

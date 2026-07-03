@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
 import type { TaskListItem } from "@/domains/tasks/queries";
 
 export default async function BlockDetailPage({
@@ -26,10 +27,11 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [block, equipment, blockEquipment] = await Promise.all([
+  const [block, equipment, blockEquipment, quickLogTypes] = await Promise.all([
     getBlockById(id),
     getActiveEquipmentForSelect(),
     getOpenTaskEquipmentForBlock(id),
+    getQuickLogTaskTypes(),
   ]);
 
   if (!block) {
@@ -44,7 +46,7 @@ export default async function BlockDetailPage({
   const taskItems: TaskListItem[] = block.tasks.map((task) => ({
     id: task.id,
     title: task.title,
-    type: task.type,
+    taskType: task.taskType,
     status: task.status,
     dueDate: task.dueDate,
     completedAt: task.completedAt,
@@ -86,6 +88,7 @@ export default async function BlockDetailPage({
           blockId={block.id}
           blockCode={block.code}
           blockName={block.name}
+          quickLogTypes={quickLogTypes}
           equipment={equipment}
         />
         <QuickLogIrrigationSheet

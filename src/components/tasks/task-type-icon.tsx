@@ -1,29 +1,19 @@
-import {
-  Grape,
-  ListTodo,
-  Scissors,
-  Search,
-  SprayCan,
-  type LucideIcon,
-} from "lucide-react";
-import type { TaskType } from "@/generated/prisma/client";
+import { createElement } from "react";
+import { resolveTaskTypeIcon } from "@/domains/tasks/type-icons";
 import { cn } from "@/lib/utils";
 
-const taskTypeIcons: Record<TaskType, LucideIcon> = {
-  PRUNING: Scissors,
-  SPRAYING: SprayCan,
-  HARVESTING: Grape,
-  INSPECTION: Search,
-  OTHER: ListTodo,
-};
-
 export function TaskTypeIcon({
-  type,
+  iconName,
   className,
+  style,
 }: {
-  type: TaskType;
+  iconName: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
-  const Icon = taskTypeIcons[type];
-  return <Icon className={cn("size-4 shrink-0", className)} aria-hidden />;
+  return createElement(resolveTaskTypeIcon(iconName), {
+    className: cn("size-4 shrink-0", className),
+    style,
+    "aria-hidden": true,
+  });
 }

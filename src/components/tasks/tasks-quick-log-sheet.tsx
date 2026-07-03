@@ -15,14 +15,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { quickLogTask } from "@/domains/tasks/actions";
-import type { TaskType } from "@/generated/prisma/client";
+import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 export function TasksQuickLogSheet({
   blocks,
+  quickLogTypes,
   defaultBlockId,
   fab = false,
 }: {
   blocks: BlockPickerItem[];
+  quickLogTypes: TaskTypeConfig[];
   defaultBlockId?: string;
   fab?: boolean;
 }) {
@@ -34,7 +36,7 @@ export function TasksQuickLogSheet({
 
   const selectedBlock = blocks.find((b) => b.id === blockId) ?? null;
 
-  function logTask(type: TaskType) {
+  function logTask(taskTypeId: string) {
     if (!blockId) {
       setError("Select a block first.");
       return;
@@ -42,7 +44,7 @@ export function TasksQuickLogSheet({
     setError(null);
     const formData = new FormData();
     formData.set("blockId", blockId);
-    formData.set("type", type);
+    formData.set("taskTypeId", taskTypeId);
 
     startTransition(async () => {
       const result = await quickLogTask(formData);
@@ -103,7 +105,11 @@ export function TasksQuickLogSheet({
             <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Tap task type to log
             </p>
-            <TaskTypeChips onSelect={logTask} disabled={pending || !blockId} />
+            <TaskTypeChips
+              types={quickLogTypes}
+              onSelect={logTask}
+              disabled={pending || !blockId}
+            />
           </div>
           {error && (
             <p className="text-sm text-destructive" role="alert">

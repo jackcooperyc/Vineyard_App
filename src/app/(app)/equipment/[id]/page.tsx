@@ -191,7 +191,7 @@ export default async function EquipmentDetailPage({
                 task={{
                   id: task.id,
                   title: task.title,
-                  type: task.type,
+                  taskType: task.taskType,
                   status: task.status,
                   dueDate: task.dueDate,
                   completedAt: task.completedAt,

@@ -52,6 +52,9 @@ export function TaskTimeline({
   tasks,
   emptyContext,
   backParams,
+  selectable,
+  selectedIds,
+  onToggle,
 }: {
   tasks: TaskListItem[];
   emptyContext?: {
@@ -61,6 +64,9 @@ export function TaskTimeline({
     search?: string;
   };
   backParams?: TasksHubParams;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggle?: (id: string, selected: boolean) => void;
 }) {
   if (tasks.length === 0) {
     return (
@@ -89,7 +95,14 @@ export function TaskTimeline({
           </h3>
           <div className="space-y-3">
             {group.tasks.map((task) => (
-              <TaskListCard key={task.id} task={task} backParams={backParams} />
+              <TaskListCard
+                key={task.id}
+                task={task}
+                backParams={backParams}
+                selectable={selectable}
+                selected={selectedIds?.has(task.id)}
+                onSelectedChange={(selected) => onToggle?.(task.id, selected)}
+              />
             ))}
           </div>
         </section>

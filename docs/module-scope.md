@@ -11,7 +11,9 @@
 
 ### Tasks — Sprint 2 ✓
 
-- Task types: pruning, spraying, harvesting, inspection, other
+- Configurable task types via `TaskTypeDefinition` (label, icon, color, quick-log defaults) — settings at `/tasks/settings`
+- Bulk task editing on tasks hub (status, type, assignee, due date)
+- Task types: pruning, spraying, harvesting, inspection, other (seed defaults; admin-configurable)
 - Status workflow: pending → in progress → completed (cancel/reopen supported)
 - Task list with filters and timeline grouping by due date
 - Task detail page with status actions

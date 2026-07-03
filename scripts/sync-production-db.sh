@@ -26,6 +26,7 @@ if [[ -f .env ]]; then
   trap 'mv .env.sync-backup .env' EXIT
 fi
 
+npx tsx scripts/migrate-task-types.ts
 npx prisma db push
 npm run db:seed
 

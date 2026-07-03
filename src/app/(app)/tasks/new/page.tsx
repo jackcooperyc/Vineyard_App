@@ -8,6 +8,7 @@ import {
   getUsersForAssignment,
 } from "@/domains/tasks/queries";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
+import { getTaskTypes } from "@/domains/tasks/type-queries";
 
 export default async function NewTaskPage({
   searchParams,
@@ -15,10 +16,11 @@ export default async function NewTaskPage({
   searchParams: Promise<{ blockId?: string }>;
 }) {
   const params = await searchParams;
-  const [blocks, users, equipment] = await Promise.all([
+  const [blocks, users, equipment, taskTypes] = await Promise.all([
     getBlocksForTaskForm(),
     getUsersForAssignment(),
     getActiveEquipmentForSelect(),
+    getTaskTypes({ activeOnly: true }),
   ]);
 
   return (
@@ -49,6 +51,7 @@ export default async function NewTaskPage({
             blocks={blocks}
             users={users}
             equipment={equipment}
+            taskTypes={taskTypes}
             defaultBlockId={params.blockId}
           />
         </CardContent>

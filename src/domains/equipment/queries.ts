@@ -134,6 +134,9 @@ export async function getEquipmentById(id: string) {
         take: 5,
         include: {
           block: { select: { id: true, code: true, name: true } },
+          taskType: {
+            select: { id: true, slug: true, label: true, iconName: true, colorHex: true },
+          },
         },
       },
       _count: { select: { tasks: true, maintenanceRecords: true } },

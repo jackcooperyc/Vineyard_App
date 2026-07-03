@@ -1,12 +1,4 @@
-import type { TaskStatus, TaskType } from "@/generated/prisma/client";
-
-export const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  PRUNING: "Pruning",
-  SPRAYING: "Spraying",
-  HARVESTING: "Harvesting",
-  INSPECTION: "Inspection",
-  OTHER: "Other",
-};
+import type { TaskStatus } from "@/generated/prisma/client";
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   PENDING: "Pending",
@@ -15,23 +7,45 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-export const TASK_TYPES = Object.keys(TASK_TYPE_LABELS) as TaskType[];
-
 export const TASK_STATUSES = Object.keys(TASK_STATUS_LABELS) as TaskStatus[];
 
 export const OPEN_TASK_STATUSES: TaskStatus[] = ["PENDING", "IN_PROGRESS"];
 
-export const QUICK_LOG_TYPES: TaskType[] = [
-  "PRUNING",
-  "SPRAYING",
-  "HARVESTING",
-  "INSPECTION",
-  "OTHER",
-];
+export const TASKS_PAGE_SIZE = 50;
 
-export function defaultTitleForType(type: TaskType, blockCode?: string): string {
-  const label = TASK_TYPE_LABELS[type];
+export function renderTitleTemplate(
+  template: string,
+  vars: { label: string; blockCode?: string },
+): string {
+  return template
+    .replace(/\{\{label\}\}/g, vars.label)
+    .replace(/\{\{blockCode\}\}/g, vars.blockCode ?? "");
+}
+
+export function slugFromLabel(label: string): string {
+  return label
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 64) || "TASK_TYPE";
+}
+
+export function defaultTitleForTypeConfig(
+  label: string,
+  blockCode?: string,
+  template?: string | null,
+): string {
+  if (template) {
+    return renderTitleTemplate(template, { label, blockCode });
+  }
   return blockCode ? `${label} — ${blockCode}` : label;
 }
 
-export const TASKS_PAGE_SIZE = 50;
+export function dueDateFromOffset(days?: number | null): Date | undefined {
+  if (days == null) return undefined;
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
