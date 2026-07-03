@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type TaskReportRow = {
   blockId: string;
@@ -30,6 +31,7 @@ export async function getTasksCompletedByBlockReport(): Promise<TaskReportRow[]>
   const rows = await db.task.groupBy({
     by: ["blockId"],
     where: {
+      ...notDeletedWhere(),
       status: "COMPLETED",
       completedAt: { gte: since },
     },
@@ -64,6 +66,7 @@ export async function getIrrigationVolumeByBlockReport(): Promise<IrrigationRepo
 
   const records = await db.irrigationRecord.findMany({
     where: {
+      ...notDeletedWhere(),
       appliedAt: { gte: since },
       status: "APPLIED",
     },
@@ -134,7 +137,7 @@ export async function getEquipmentMaintenanceReport(): Promise<
 
   const rows = await db.maintenanceRecord.groupBy({
     by: ["equipmentId"],
-    where: { performedAt: { gte: since } },
+    where: { ...notDeletedWhere(), performedAt: { gte: since } },
     _count: { _all: true },
     _max: { performedAt: true },
   });
@@ -190,7 +193,7 @@ export async function getOpenTasksByTypeReport(): Promise<
   OpenTasksByTypeReportRow[]
 > {
   const tasks = await db.task.findMany({
-    where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+    where: { ...notDeletedWhere(), status: { in: ["PENDING", "IN_PROGRESS"] } },
     select: { taskType: { select: { label: true } } },
   });
 

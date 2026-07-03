@@ -10,6 +10,8 @@ import {
   updateRecordSchema,
   updateScheduleSchema,
 } from "@/domains/irrigation/validators";
+import { notDeletedWhere } from "@/lib/soft-delete";
+import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
 
 function parseDate(value?: string): Date | undefined {
   if (!value) return undefined;
@@ -164,8 +166,8 @@ export async function toggleScheduleActive(scheduleId: string, active: boolean) 
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
-  const existing = await db.irrigationSchedule.findUnique({
-    where: { id: scheduleId },
+  const existing = await db.irrigationSchedule.findFirst({
+    where: { id: scheduleId, ...notDeletedWhere() },
     select: { id: true },
   });
 
@@ -206,8 +208,8 @@ export async function updateSchedule(formData: FormData) {
   const start = parseDate(startDate);
   if (!start) return { error: "Invalid start date" };
 
-  const existing = await db.irrigationSchedule.findUnique({
-    where: { id: scheduleId },
+  const existing = await db.irrigationSchedule.findFirst({
+    where: { id: scheduleId, ...notDeletedWhere() },
     select: { id: true },
   });
 
@@ -255,8 +257,8 @@ export async function updateIrrigationRecord(formData: FormData) {
   const appliedAt = parseDate(data.appliedAt);
   if (!appliedAt) return { error: "Invalid application date" };
 
-  const existing = await db.irrigationRecord.findUnique({
-    where: { id: data.recordId },
+  const existing = await db.irrigationRecord.findFirst({
+    where: { id: data.recordId, ...notDeletedWhere() },
     select: { id: true },
   });
 
@@ -282,4 +284,93 @@ export async function updateIrrigationRecord(formData: FormData) {
   revalidatePath(`/irrigation/records/${data.recordId}`);
   revalidatePath(`/irrigation/records/${data.recordId}/edit`);
   return { success: true, recordId: data.recordId };
+}
+
+export async function deleteIrrigationRecord(recordId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  await purgeExpiredSoftDeletes();
+
+  const record = await db.irrigationRecord.findFirst({
+    where: { id: recordId, ...notDeletedWhere() },
+    select: { blockId: true },
+  });
+
+  if (!record) return { error: "Record not found" };
+
+  await db.irrigationRecord.update({
+    where: { id: recordId },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidateIrrigationPaths(record.blockId);
+  revalidatePath(`/irrigation/records/${recordId}`);
+  return { success: true };
+}
+
+export async function restoreIrrigationRecord(recordId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  await purgeExpiredSoftDeletes();
+
+  const record = await db.irrigationRecord.findFirst({
+    where: { id: recordId, deletedAt: { not: null } },
+    select: { blockId: true },
+  });
+
+  if (!record) return { error: "Deleted record not found" };
+
+  await db.irrigationRecord.update({
+    where: { id: recordId },
+    data: { deletedAt: null },
+  });
+
+  revalidateIrrigationPaths(record.blockId);
+  return { success: true };
+}
+
+export async function deleteIrrigationSchedule(scheduleId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  await purgeExpiredSoftDeletes();
+
+  const schedule = await db.irrigationSchedule.findFirst({
+    where: { id: scheduleId, ...notDeletedWhere() },
+    select: { blockId: true },
+  });
+
+  if (!schedule) return { error: "Schedule not found" };
+
+  await db.irrigationSchedule.update({
+    where: { id: scheduleId },
+    data: { deletedAt: new Date(), active: false },
+  });
+
+  revalidateSchedulePaths(scheduleId, schedule.blockId);
+  return { success: true };
+}
+
+export async function restoreIrrigationSchedule(scheduleId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  await purgeExpiredSoftDeletes();
+
+  const schedule = await db.irrigationSchedule.findFirst({
+    where: { id: scheduleId, deletedAt: { not: null } },
+    select: { blockId: true },
+  });
+
+  if (!schedule) return { error: "Deleted schedule not found" };
+
+  await db.irrigationSchedule.update({
+    where: { id: scheduleId },
+    data: { deletedAt: null },
+  });
+
+  revalidateSchedulePaths(scheduleId, schedule.blockId);
+  return { success: true };
 }

@@ -44,6 +44,10 @@ export function parseTaskView(
   return "timeline";
 }
 
+export function parseTaskTrashFilter(value: string | undefined): boolean {
+  return value === "1" || value === "true";
+}
+
 export function taskFiltersAreActive(params: {
   status?: string;
   blockId?: string;

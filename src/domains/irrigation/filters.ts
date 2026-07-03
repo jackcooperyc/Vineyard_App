@@ -3,8 +3,10 @@ import type { IrrigationStatus } from "@/generated/prisma/client";
 
 export function parseIrrigationView(
   value: string | undefined,
-): "schedules" | "records" | "alerts" {
-  if (value === "records" || value === "alerts") return value;
+): "schedules" | "records" | "alerts" | "deleted" {
+  if (value === "records" || value === "alerts" || value === "deleted") {
+    return value;
+  }
   return "schedules";
 }
 

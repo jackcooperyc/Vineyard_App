@@ -9,6 +9,8 @@ import { TasksPagination } from "@/components/tasks/tasks-pagination";
 import type { TaskListItem } from "@/domains/tasks/queries";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 import type { TasksHubParams } from "@/lib/hub-back-href";
+import type { RecentlyDeletedTask } from "@/domains/soft-delete/queries";
+import { TasksRecentlyDeleted } from "@/components/tasks/tasks-recently-deleted";
 
 type UserOption = { id: string; name: string | null; email: string };
 
@@ -23,6 +25,8 @@ export function TasksHubBody({
   hubParams,
   taskTypes,
   users,
+  showTrash = false,
+  deletedTasks = [],
 }: {
   tasks: TaskListItem[];
   total: number;
@@ -39,6 +43,8 @@ export function TasksHubBody({
   hubParams: TasksHubParams;
   taskTypes: TaskTypeConfig[];
   users: UserOption[];
+  showTrash?: boolean;
+  deletedTasks?: RecentlyDeletedTask[];
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -57,7 +63,9 @@ export function TasksHubBody({
 
   return (
     <>
-      {view === "timeline" ? (
+      {showTrash ? (
+        <TasksRecentlyDeleted items={deletedTasks} />
+      ) : view === "timeline" ? (
         <TaskTimeline
           tasks={tasks}
           emptyContext={emptyContext}
@@ -82,12 +90,14 @@ export function TasksHubBody({
         </>
       )}
 
-      <TasksBulkActionBar
-        selectedIds={selectedIds}
-        taskTypes={taskTypes}
-        users={users}
-        onClear={() => setSelectedIds([])}
-      />
+      {!showTrash && (
+        <TasksBulkActionBar
+          selectedIds={selectedIds}
+          taskTypes={taskTypes}
+          users={users}
+          onClear={() => setSelectedIds([])}
+        />
+      )}
     </>
   );
 }

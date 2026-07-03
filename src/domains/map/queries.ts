@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getIrrigationAlerts } from "@/domains/irrigation/queries";
+import { notDeletedWhere } from "@/lib/soft-delete";
 import type {
   MapBlock,
   MapBlockFeatureCollection,
@@ -33,12 +34,14 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
     db.task.groupBy({
       by: ["blockId"],
       where: {
+        ...notDeletedWhere(),
         status: { in: ["PENDING", "IN_PROGRESS"] },
       },
       _count: { _all: true },
     }),
     db.task.findMany({
       where: {
+        ...notDeletedWhere(),
         status: { in: ["PENDING", "IN_PROGRESS"] },
         equipmentId: { not: null },
       },

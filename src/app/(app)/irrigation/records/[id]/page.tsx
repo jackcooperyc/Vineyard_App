@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
+import { DeleteIrrigationRecordDialog } from "@/components/irrigation/delete-irrigation-record-dialog";
 import { getIrrigationRecordById } from "@/domains/irrigation/queries";
 import {
   buildIrrigationHubHref,
@@ -77,6 +78,7 @@ export default async function RecordDetailPage({
           <Pencil className="size-4" />
           Edit record
         </Button>
+        <DeleteIrrigationRecordDialog recordId={id} backParams={backParams} />
       </div>
 
       <Card>

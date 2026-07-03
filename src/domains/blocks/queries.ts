@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { BlockStatus, BlockType } from "@/generated/prisma/client";
 import { countIrrigationAlerts } from "@/domains/irrigation/queries";
+import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type BlockListItem = {
   id: string;
@@ -120,10 +121,10 @@ export async function getDashboardStats() {
     db.block.count(),
     db.block.count({ where: { blockType: "VINEYARD" } }),
     db.task.count({
-      where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+      where: { ...notDeletedWhere(), status: { in: ["PENDING", "IN_PROGRESS"] } },
     }),
     db.irrigationSchedule.count({
-      where: { active: true },
+      where: { ...notDeletedWhere(), active: true },
     }),
     db.equipment.count({
       where: {
@@ -154,6 +155,7 @@ export async function getVineyardName() {
 export async function getOpenTaskEquipmentForBlock(blockId: string) {
   const tasks = await db.task.findMany({
     where: {
+      ...notDeletedWhere(),
       blockId,
       status: { in: ["PENDING", "IN_PROGRESS"] },
       equipmentId: { not: null },

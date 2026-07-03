@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { AlertTriangle, CalendarClock, Droplets } from "lucide-react";
+import { AlertTriangle, CalendarClock, Droplets, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const views = [
   { value: "schedules", label: "Schedules", icon: CalendarClock },
   { value: "records", label: "Records", icon: Droplets },
   { value: "alerts", label: "Alerts", icon: AlertTriangle },
+  { value: "deleted", label: "Recently deleted", icon: Trash2 },
 ] as const;
 
 export function IrrigationViewBar() {

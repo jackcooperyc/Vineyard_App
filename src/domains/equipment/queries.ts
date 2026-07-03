@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { EquipmentStatus } from "@/generated/prisma/client";
+import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type EquipmentListItem = {
   id: string;
@@ -110,9 +111,9 @@ export async function getEquipment(
       _count: {
         select: {
           tasks: {
-            where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+            where: { status: { in: ["PENDING", "IN_PROGRESS"] }, ...notDeletedWhere() },
           },
-          maintenanceRecords: true,
+          maintenanceRecords: { where: notDeletedWhere() },
         },
       },
     },
@@ -125,11 +126,12 @@ export async function getEquipmentById(id: string) {
     where: { id },
     include: {
       maintenanceRecords: {
+        where: notDeletedWhere(),
         orderBy: { performedAt: "desc" },
         take: 10,
       },
       tasks: {
-        where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+        where: { status: { in: ["PENDING", "IN_PROGRESS"] }, ...notDeletedWhere() },
         orderBy: { dueDate: "asc" },
         take: 5,
         include: {

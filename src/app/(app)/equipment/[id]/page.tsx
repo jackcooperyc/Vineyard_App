@@ -17,9 +17,11 @@ import {
 import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
 import { MaintenanceRecordItem } from "@/components/equipment/maintenance-record-item";
+import { EquipmentRecentlyDeletedMaintenance } from "@/components/equipment/equipment-recently-deleted-maintenance";
 import { RetireEquipmentDialog } from "@/components/equipment/retire-equipment-dialog";
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getEquipmentById } from "@/domains/equipment/queries";
+import { getRecentlyDeletedMaintenanceRecords } from "@/domains/soft-delete/queries";
 import {
   buildEquipmentHubHref,
   decodeBackParams,
@@ -43,6 +45,8 @@ export default async function EquipmentDetailPage({
   if (!equipment) {
     notFound();
   }
+
+  const deletedMaintenance = await getRecentlyDeletedMaintenanceRecords(id);
 
   return (
     <div className="field-readable mx-auto max-w-3xl space-y-6">
@@ -171,6 +175,11 @@ export default async function EquipmentDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <EquipmentRecentlyDeletedMaintenance
+        items={deletedMaintenance}
+        equipmentId={equipment.id}
+      />
 
       <Card>
         <CardHeader>

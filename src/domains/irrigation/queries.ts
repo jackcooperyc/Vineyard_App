@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { IrrigationStatus } from "@/generated/prisma/client";
 import { frequencyToDays } from "@/domains/irrigation/constants";
+import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type ScheduleListItem = {
   id: string;
@@ -34,7 +35,7 @@ export type IrrigationAlert = {
   expectedDays: number;
 };
 
-export type IrrigationView = "schedules" | "records" | "alerts";
+export type IrrigationView = "schedules" | "records" | "alerts" | "deleted";
 
 export type IrrigationHubStats = {
   activeSchedules: number;
@@ -80,7 +81,7 @@ export async function getIrrigationHubStats(
   blockId?: string,
 ): Promise<IrrigationHubStats> {
   const weekStart = startOfWeek();
-  const blockWhere = blockId ? { blockId } : {};
+  const blockWhere = { ...notDeletedWhere(), ...(blockId ? { blockId } : {}) };
 
   const [activeSchedules, alerts, recordsThisWeek, volumeAgg] = await Promise.all([
     db.irrigationSchedule.count({
@@ -124,6 +125,7 @@ export async function getSchedulesWithDueHints(filters?: {
   const search = filters?.search?.trim();
   const schedules = await db.irrigationSchedule.findMany({
     where: {
+      ...notDeletedWhere(),
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.activeOnly ? { active: true } : {}),
       ...(filters?.inactiveOnly ? { active: false } : {}),
@@ -150,6 +152,7 @@ export async function getSchedulesWithDueHints(filters?: {
   const lastAppliedRows = await db.irrigationRecord.groupBy({
     by: ["blockId"],
     where: {
+      ...notDeletedWhere(),
       blockId: { in: blockIds },
       status: "APPLIED",
     },
@@ -208,6 +211,7 @@ export async function getIrrigationSchedules(filters?: {
 }) {
   return db.irrigationSchedule.findMany({
     where: {
+      ...notDeletedWhere(),
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.activeOnly ? { active: true } : {}),
       ...(filters?.inactiveOnly ? { active: false } : {}),
@@ -220,8 +224,8 @@ export async function getIrrigationSchedules(filters?: {
 }
 
 export async function getIrrigationScheduleById(id: string) {
-  return db.irrigationSchedule.findUnique({
-    where: { id },
+  return db.irrigationSchedule.findFirst({
+    where: { id, ...notDeletedWhere() },
     include: {
       block: {
         select: {
@@ -244,6 +248,7 @@ export async function getIrrigationRecords(filters?: {
 
   return db.irrigationRecord.findMany({
     where: {
+      ...notDeletedWhere(),
       ...(filters?.blockId ? { blockId: filters.blockId } : {}),
       ...(filters?.status ? { status: filters.status } : {}),
       ...(rangeStart ? { appliedAt: { gte: rangeStart } } : {}),
@@ -256,8 +261,8 @@ export async function getIrrigationRecords(filters?: {
 }
 
 export async function getIrrigationRecordById(id: string) {
-  return db.irrigationRecord.findUnique({
-    where: { id },
+  return db.irrigationRecord.findFirst({
+    where: { id, ...notDeletedWhere() },
     include: {
       block: {
         select: {
@@ -273,7 +278,7 @@ export async function getIrrigationRecordById(id: string) {
 
 export async function getIrrigationAlerts(): Promise<IrrigationAlert[]> {
   const schedules = await db.irrigationSchedule.findMany({
-    where: { active: true },
+    where: { ...notDeletedWhere(), active: true },
     include: { block: { select: { id: true, code: true, name: true } } },
   });
 
@@ -283,7 +288,7 @@ export async function getIrrigationAlerts(): Promise<IrrigationAlert[]> {
   for (const schedule of schedules) {
     const expectedDays = frequencyToDays(schedule.frequency);
     const lastApplied = await db.irrigationRecord.findFirst({
-      where: { blockId: schedule.blockId, status: "APPLIED" },
+      where: { ...notDeletedWhere(), blockId: schedule.blockId, status: "APPLIED" },
       orderBy: { appliedAt: "desc" },
       select: { appliedAt: true },
     });
@@ -322,7 +327,7 @@ export async function countIrrigationAlerts() {
 
 export async function getRecentIrrigationByBlock(blockId: string, limit = 5) {
   return db.irrigationRecord.findMany({
-    where: { blockId },
+    where: { ...notDeletedWhere(), blockId },
     orderBy: { appliedAt: "desc" },
     take: limit,
   });

@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScheduleActiveToggle } from "@/components/irrigation/schedule-active-toggle";
+import { DeleteIrrigationScheduleDialog } from "@/components/irrigation/delete-irrigation-schedule-dialog";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
 import { IRRIGATION_FREQUENCIES } from "@/domains/irrigation/constants";
 import {
@@ -158,6 +159,10 @@ export default async function ScheduleDetailPage({
           <Pencil className="size-4" />
           Edit schedule
         </Button>
+        <DeleteIrrigationScheduleDialog
+          scheduleId={schedule.id}
+          backParams={backParams}
+        />
       </div>
 
       {pumps.length > 0 && (

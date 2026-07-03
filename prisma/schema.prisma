@@ -59,6 +59,28 @@ enum UserRole {
   READ_ONLY
 }
 
+enum NotificationChannel {
+  EMAIL
+}
+
+enum TaskNotificationEventType {
+  ASSIGNED
+  CREATED
+  COMPLETED
+  IN_PROGRESS
+  CANCELLED
+  PAUSED
+  DUE_SOON
+  OVERDUE
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 // ─── Vineyard core ───────────────────────────────────────────────────────────
 
 model Vineyard {
@@ -154,28 +176,34 @@ model TaskTypeDefinition {
 }
 
 model Task {
-  id           String             @id @default(cuid())
-  blockId      String
-  taskTypeId   String
-  status       TaskStatus         @default(PENDING)
-  title        String
-  description  String?
-  dueDate      DateTime?
-  completedAt  DateTime?
-  assignedToId String?
-  equipmentId  String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  block        Block              @relation(fields: [blockId], references: [id], onDelete: Cascade)
-  taskType     TaskTypeDefinition @relation(fields: [taskTypeId], references: [id])
-  assignedTo   User?              @relation("TaskAssignee", fields: [assignedToId], references: [id])
-  equipment    Equipment?         @relation(fields: [equipmentId], references: [id])
+  id                    String                 @id @default(cuid())
+  blockId               String
+  taskTypeId            String
+  status                TaskStatus             @default(PENDING)
+  title                 String
+  description           String?
+  dueDate               DateTime?
+  completedAt           DateTime?
+  assignedToId          String?
+  createdById           String?
+  equipmentId           String?
+  deletedAt             DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  block                 Block                  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  taskType              TaskTypeDefinition     @relation(fields: [taskTypeId], references: [id])
+  assignedTo            User?                  @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  createdBy             User?                  @relation("TaskCreator", fields: [createdById], references: [id])
+  equipment             Equipment?             @relation(fields: [equipmentId], references: [id])
+  notificationDeliveries NotificationDelivery[]
 
   @@index([blockId])
   @@index([taskTypeId])
   @@index([status])
   @@index([dueDate])
   @@index([assignedToId])
+  @@index([createdById])
+  @@index([deletedAt])
 }
 
 model Equipment {
@@ -201,29 +229,33 @@ model MaintenanceRecord {
   performedAt  DateTime
   description  String?
   notes        String?
+  deletedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   equipment    Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
 
   @@index([equipmentId])
   @@index([performedAt])
+  @@index([deletedAt])
 }
 
 model IrrigationSchedule {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   blockId   String
   frequency String
   startDate DateTime
   volume    Float?
   method    String?
-  active    Boolean  @default(true)
+  active    Boolean   @default(true)
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  block     Block     @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
   @@index([blockId])
   @@index([active])
+  @@index([deletedAt])
 }
 
 model IrrigationRecord {
@@ -236,6 +268,7 @@ model IrrigationRecord {
   method      String?
   status      IrrigationStatus @default(APPLIED)
   notes       String?
+  deletedAt   DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   block       Block            @relation(fields: [blockId], references: [id], onDelete: Cascade)
@@ -243,6 +276,7 @@ model IrrigationRecord {
   @@index([blockId])
   @@index([appliedAt])
   @@index([status])
+  @@index([deletedAt])
 }
 
 // ─── Shared ──────────────────────────────────────────────────────────────────
@@ -309,19 +343,64 @@ model ViticultureMetrics {
 // ─── Auth (Auth.js) ──────────────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  role          UserRole  @default(MANAGER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  tasks         Task[]    @relation("TaskAssignee")
-  notes         Note[]
+  id                       String                      @id @default(cuid())
+  name                     String?
+  email                    String                      @unique
+  emailVerified            DateTime?
+  image                    String?
+  passwordHash             String?
+  role                     UserRole                    @default(MANAGER)
+  createdAt                DateTime                    @default(now())
+  updatedAt                DateTime                    @updatedAt
+  accounts                 Account[]
+  sessions                 Session[]
+  tasks                    Task[]                      @relation("TaskAssignee")
+  createdTasks             Task[]                      @relation("TaskCreator")
+  notes                    Note[]
+  notificationPreference   UserNotificationPreference?
+  notificationDeliveries   NotificationDelivery[]
+}
+
+model UserNotificationPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  emailAssigned   Boolean  @default(true)
+  emailCreated    Boolean  @default(false)
+  emailCompleted  Boolean  @default(true)
+  emailInProgress Boolean  @default(true)
+  emailCancelled  Boolean  @default(true)
+  emailPaused     Boolean  @default(true)
+  emailDueSoon    Boolean  @default(true)
+  emailOverdue    Boolean  @default(true)
+  dueSoonHours    Int      @default(24)
+  quietHoursStart Int?
+  quietHoursEnd   Int?
+  timezone        String   @default("America/Los_Angeles")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationDelivery {
+  id              String                     @id @default(cuid())
+  taskId          String?
+  eventType       TaskNotificationEventType
+  channel         NotificationChannel        @default(EMAIL)
+  recipientUserId String
+  status          NotificationDeliveryStatus @default(PENDING)
+  sentAt          DateTime?
+  error           String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  task            Task?                      @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  recipientUser   User                       @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([recipientUserId])
+  @@index([eventType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([taskId, eventType, recipientUserId, createdAt])
 }
 
 model Account {

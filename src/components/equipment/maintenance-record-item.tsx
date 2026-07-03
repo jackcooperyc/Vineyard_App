@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DeleteMaintenanceRecordDialog } from "@/components/equipment/delete-maintenance-record-dialog";
 import { updateMaintenanceRecord } from "@/domains/equipment/actions";
 
 type MaintenanceRecordItemProps = {
@@ -132,6 +133,11 @@ export function MaintenanceRecordItem({
           >
             <Pencil className="size-3.5" />
           </Button>
+          <DeleteMaintenanceRecordDialog
+            recordId={record.id}
+            equipmentId={equipmentId}
+            description={record.description}
+          />
         </div>
       </div>
       {record.notes && (

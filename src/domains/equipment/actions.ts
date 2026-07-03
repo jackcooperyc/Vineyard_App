@@ -11,6 +11,8 @@ import {
   updateEquipmentStatusSchema,
   updateMaintenanceRecordSchema,
 } from "@/domains/equipment/validators";
+import { notDeletedWhere } from "@/lib/soft-delete";
+import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
 
 function parseDate(value?: string): Date | undefined {
   if (!value) return undefined;
@@ -250,7 +252,7 @@ export async function updateMaintenanceRecord(formData: FormData) {
   }
 
   const existing = await db.maintenanceRecord.findFirst({
-    where: { id: recordId, equipmentId },
+    where: { id: recordId, equipmentId, ...notDeletedWhere() },
     select: { id: true },
   });
 
@@ -265,6 +267,64 @@ export async function updateMaintenanceRecord(formData: FormData) {
       description: description || null,
       notes: notes || null,
     },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function deleteMaintenanceRecord(
+  recordId: string,
+  equipmentId: string,
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  await purgeExpiredSoftDeletes();
+
+  const existing = await db.maintenanceRecord.findFirst({
+    where: { id: recordId, equipmentId, ...notDeletedWhere() },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Maintenance record not found" };
+  }
+
+  await db.maintenanceRecord.update({
+    where: { id: recordId },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function restoreMaintenanceRecord(
+  recordId: string,
+  equipmentId: string,
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  await purgeExpiredSoftDeletes();
+
+  const existing = await db.maintenanceRecord.findFirst({
+    where: { id: recordId, equipmentId, deletedAt: { not: null } },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Deleted maintenance record not found" };
+  }
+
+  await db.maintenanceRecord.update({
+    where: { id: recordId },
+    data: { deletedAt: null },
   });
 
   revalidateEquipmentPaths(equipmentId);

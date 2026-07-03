@@ -103,7 +103,7 @@ export function IrrigationFilterBar({
 }: {
   blockFilter?: BlockFilter;
   blocks?: BlockOption[];
-  view?: "schedules" | "records" | "alerts";
+  view?: "schedules" | "records" | "alerts" | "deleted";
 }) {
   const pathname = usePathname();
   const router = useRouter();

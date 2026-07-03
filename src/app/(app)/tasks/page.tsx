@@ -18,7 +18,9 @@ import {
 } from "@/domains/tasks/filters";
 import { getTaskHubStats, getTasks, getTasksCount, getUsersForAssignment } from "@/domains/tasks/queries";
 import { getTaskTypes } from "@/domains/tasks/type-queries";
+import { getRecentlyDeletedTasks } from "@/domains/soft-delete/queries";
 import { tasksHubParamsFromSearch } from "@/lib/hub-back-href";
+import { parseTaskTrashFilter } from "@/domains/tasks/filters";
 
 export default async function TasksPage({
   searchParams,
@@ -34,9 +36,11 @@ export default async function TasksPage({
     page?: string;
     assignee?: string;
     equipmentId?: string;
+    trash?: string;
   }>;
 }) {
   const params = await searchParams;
+  const showTrash = parseTaskTrashFilter(params.trash);
   const statusFilter = parseTaskStatusFilter(params.status);
   const typeFilter = parseTaskTypeFilter(params.type);
   const sortFilter = parseTaskSortFilter(params.sort);
@@ -61,14 +65,16 @@ export default async function TasksPage({
     equipmentId,
   };
 
-  const [tasks, total, stats, block, blocks, users, equipment, taskTypes, quickLogTypes] =
+  const [tasks, total, stats, block, blocks, users, equipment, taskTypes, quickLogTypes, deletedTasks] =
     await Promise.all([
-      getTasks({
-        ...filters,
-        skip: (page - 1) * TASKS_PAGE_SIZE,
-        take: TASKS_PAGE_SIZE,
-      }),
-      getTasksCount(filters),
+      showTrash
+        ? Promise.resolve([])
+        : getTasks({
+            ...filters,
+            skip: (page - 1) * TASKS_PAGE_SIZE,
+            take: TASKS_PAGE_SIZE,
+          }),
+      showTrash ? Promise.resolve(0) : getTasksCount(filters),
       getTaskHubStats(blockId),
       blockId ? getBlockById(blockId) : Promise.resolve(null),
       getVineyardBlocksForField(),
@@ -76,6 +82,7 @@ export default async function TasksPage({
       getActiveEquipmentForSelect(),
       getTaskTypes({ activeOnly: true }),
       getTaskTypes({ activeOnly: true, quickLogOnly: true }),
+      showTrash ? getRecentlyDeletedTasks(blockId) : Promise.resolve([]),
     ]);
 
   const blockFilter =
@@ -97,10 +104,14 @@ export default async function TasksPage({
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Tasks</h2>
           <p className="text-muted-foreground">
-            {total} total · {tasks.length} shown
+            {showTrash
+              ? `${deletedTasks.length} recently deleted`
+              : `${total} total · ${tasks.length} shown`}
             {blockFilter
               ? ` · ${blockFilter.code} ${blockFilter.name}`
-              : " · vineyard work by block"}
+              : showTrash
+                ? ""
+                : " · vineyard work by block"}
           </p>
         </div>
         <TasksHubActions
@@ -140,6 +151,8 @@ export default async function TasksPage({
         hubParams={hubParams}
         taskTypes={taskTypes}
         users={users}
+        showTrash={showTrash}
+        deletedTasks={deletedTasks}
       />
 
       <TasksMobileFab

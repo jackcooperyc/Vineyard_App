@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { Prisma, TaskStatus } from "@/generated/prisma/client";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
+import { notDeletedWhere } from "@/lib/soft-delete";
 
 export type TaskTypeSummary = {
   id: string;
@@ -95,7 +96,7 @@ function taskOrderBy(sort: TaskSortOption = "dueDate"): Prisma.TaskOrderByWithRe
 }
 
 function buildTaskWhere(filters: TaskFilters): Prisma.TaskWhereInput {
-  const where: Prisma.TaskWhereInput = {};
+  const where: Prisma.TaskWhereInput = { ...notDeletedWhere() };
 
   if (filters.status === "OPEN") {
     where.status = { in: ["PENDING", "IN_PROGRESS"] };
@@ -157,7 +158,10 @@ export async function getTasksCount(filters: TaskFilters = {}): Promise<number> 
 }
 
 export async function getTaskHubStats(blockId?: string): Promise<TaskHubStats> {
-  const blockWhere: Prisma.TaskWhereInput = blockId ? { blockId } : {};
+  const blockWhere: Prisma.TaskWhereInput = {
+    ...notDeletedWhere(),
+    ...(blockId ? { blockId } : {}),
+  };
   const openWhere: Prisma.TaskWhereInput = {
     ...blockWhere,
     status: { in: ["PENDING", "IN_PROGRESS"] },
@@ -190,8 +194,8 @@ export async function getTaskHubStats(blockId?: string): Promise<TaskHubStats> {
 }
 
 export async function getTaskById(id: string) {
-  return db.task.findUnique({
-    where: { id },
+  return db.task.findFirst({
+    where: { id, ...notDeletedWhere() },
     include: {
       block: {
         select: { id: true, code: true, name: true, vineyard: { select: { name: true } } },
@@ -221,6 +225,7 @@ export async function getUsersForAssignment() {
 export async function getTaskCountsByStatus() {
   const counts = await db.task.groupBy({
     by: ["status"],
+    where: notDeletedWhere(),
     _count: { status: true },
   });
 
@@ -232,6 +237,7 @@ export async function getTaskCountsByStatus() {
 export async function getUpcomingTasks(limit = 5) {
   return db.task.findMany({
     where: {
+      ...notDeletedWhere(),
       status: { in: ["PENDING", "IN_PROGRESS"] },
       dueDate: { not: null },
     },

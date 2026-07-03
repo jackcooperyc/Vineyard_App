@@ -25,6 +25,11 @@ import {
   getBlocksForIrrigationForm,
 } from "@/domains/irrigation/queries";
 import { countIrrigationPumps } from "@/domains/pumps/queries";
+import {
+  getRecentlyDeletedIrrigationRecords,
+  getRecentlyDeletedIrrigationSchedules,
+} from "@/domains/soft-delete/queries";
+import { IrrigationRecentlyDeleted } from "@/components/irrigation/irrigation-recently-deleted";
 import { irrigationHubParamsFromSearch } from "@/lib/hub-back-href";
 
 export default async function IrrigationPage({
@@ -56,7 +61,7 @@ export default async function IrrigationPage({
     search: view === "schedules" ? scheduleSearch : undefined,
   };
 
-  const [stats, schedules, records, alerts, block, blocks, pumpCount] =
+  const [stats, schedules, records, alerts, block, blocks, pumpCount, deletedRecords, deletedSchedules] =
     await Promise.all([
       getIrrigationHubStats(blockId),
       view === "schedules"
@@ -73,6 +78,12 @@ export default async function IrrigationPage({
       blockId ? getBlockById(blockId) : Promise.resolve(null),
       getBlocksForIrrigationForm(),
       countIrrigationPumps(),
+      view === "deleted"
+        ? getRecentlyDeletedIrrigationRecords(blockId)
+        : Promise.resolve([]),
+      view === "deleted"
+        ? getRecentlyDeletedIrrigationSchedules(blockId)
+        : Promise.resolve([]),
     ]);
 
   const blockFilter =
@@ -85,7 +96,9 @@ export default async function IrrigationPage({
     : alerts;
 
   const subtitle =
-    view === "schedules"
+    view === "deleted"
+      ? `${deletedRecords.length + deletedSchedules.length} recently deleted`
+      : view === "schedules"
       ? `${schedules.length} schedule${schedules.length !== 1 ? "s" : ""}`
       : view === "records"
         ? `${records.length} record${records.length !== 1 ? "s" : ""}`
@@ -124,12 +137,21 @@ export default async function IrrigationPage({
       </Suspense>
 
       <Suspense fallback={null}>
-        <IrrigationFilterBar
-          blockFilter={blockFilter}
-          blocks={blocks}
-          view={view}
-        />
+        {view !== "deleted" && (
+          <IrrigationFilterBar
+            blockFilter={blockFilter}
+            blocks={blocks}
+            view={view}
+          />
+        )}
       </Suspense>
+
+      {view === "deleted" && (
+        <IrrigationRecentlyDeleted
+          records={deletedRecords}
+          schedules={deletedSchedules}
+        />
+      )}
 
       {view === "schedules" &&
         (schedules.length === 0 ? (

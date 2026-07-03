@@ -2,6 +2,26 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-03 — Soft delete with 48-hour recovery
+
+### Completed
+
+- **Schema:** `deletedAt` on `Task`, `IrrigationRecord`, `IrrigationSchedule`, `MaintenanceRecord`.
+- **Domain:** `src/lib/soft-delete.ts` + `soft-delete-purge.ts` (purge on delete/restore/trash list access); restore actions per entity; all list/detail queries filter `deletedAt: null`.
+- **UI:** Tasks hub `?trash=1`; irrigation hub `?view=deleted`; equipment detail recently-deleted maintenance panel; shared `SoftDeleteSheet` + `RecentlyDeletedPanel`; delete on irrigation record/schedule detail and maintenance history.
+- **Deferred:** `Equipment` retire remains status-based (lifecycle, not deletion); `Note`, `TaskTypeDefinition`, blocks/vineyards have no delete UX.
+
+### Verification
+
+- `npx prisma validate` — pass
+- `npx prisma generate` — pass
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+- `npm run build` — compile + TS pass; page data collection blocked locally (`DATABASE_URL` not set in build shell)
+- `prisma db push` — not run (local DB unreachable)
+
+---
+
 ## 2026-07-03 — Configurable task types + bulk task editing
 
 ### Completed
