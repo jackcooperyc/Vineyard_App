@@ -57,6 +57,7 @@ export default async function EditEquipmentPage({
               type: equipment.type,
               status: equipment.status as EquipmentStatus,
               serialNumber: equipment.serialNumber,
+              photoUrl: equipment.photoUrl,
               lastServicedAt: equipment.lastServicedAt,
               nextServiceAt: equipment.nextServiceAt,
               notes: equipment.notes,

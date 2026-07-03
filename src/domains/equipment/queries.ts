@@ -8,6 +8,7 @@ export type EquipmentListItem = {
   type: string;
   status: EquipmentStatus;
   serialNumber: string | null;
+  photoUrl: string | null;
   lastServicedAt: Date | null;
   nextServiceAt: Date | null;
   _count: { tasks: number; maintenanceRecords: number };

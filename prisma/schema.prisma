@@ -239,6 +239,7 @@ model Equipment {
   type               String
   status             EquipmentStatus     @default(ACTIVE)
   serialNumber       String?
+  photoUrl           String?
   lastServicedAt     DateTime?
   nextServiceAt      DateTime?
   notes              String?

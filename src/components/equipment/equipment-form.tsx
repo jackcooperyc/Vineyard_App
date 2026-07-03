@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EquipmentPhoto } from "@/components/equipment/equipment-photo";
 import { createEquipment, updateEquipment } from "@/domains/equipment/actions";
 import {
   EQUIPMENT_STATUSES,
@@ -21,6 +23,7 @@ type EquipmentValues = {
   type: string;
   status: EquipmentStatus;
   serialNumber: string | null;
+  photoUrl: string | null;
   lastServicedAt: Date | null;
   nextServiceAt: Date | null;
   notes: string | null;
@@ -33,14 +36,52 @@ function formatDateInput(date: Date | null): string {
 
 export function EquipmentForm({ equipment }: { equipment?: EquipmentValues }) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    equipment?.photoUrl ?? null,
+  );
+  const [clearPhoto, setClearPhoto] = useState(false);
   const isEdit = Boolean(equipment);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setPreviewUrl(URL.createObjectURL(file));
+    setClearPhoto(false);
+  }
+
+  function handleRemovePhoto() {
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setPreviewUrl(null);
+    setClearPhoto(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    formData.set("clearPhoto", clearPhoto ? "true" : "false");
 
     startTransition(async () => {
       const result = isEdit
@@ -62,6 +103,52 @@ export function EquipmentForm({ equipment }: { equipment?: EquipmentValues }) {
       {equipment && (
         <input type="hidden" name="equipmentId" value={equipment.id} />
       )}
+      <input type="hidden" name="clearPhoto" value={clearPhoto ? "true" : "false"} />
+
+      <div className="space-y-3">
+        <Label htmlFor="photo">Photo (optional)</Label>
+        <div className="flex items-start gap-4">
+          <EquipmentPhoto
+            photoUrl={previewUrl}
+            name={equipment?.name ?? "Equipment"}
+            type={equipment?.type ?? "Tractor"}
+            className="size-24 shrink-0 rounded-xl"
+            iconClassName="size-8"
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Input
+              ref={fileInputRef}
+              id="photo"
+              name="photo"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="h-12 text-base file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium"
+              onChange={handlePhotoChange}
+            />
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, or WebP up to 5 MB
+            </p>
+            {previewUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit gap-1.5"
+                onClick={handleRemovePhoto}
+              >
+                <X className="size-3.5" />
+                Remove photo
+              </Button>
+            )}
+            {!previewUrl && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Camera className="size-3.5" />
+                Add a photo to identify this asset in the field
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, ListTodo, Wrench } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { EquipmentPhoto } from "@/components/equipment/equipment-photo";
 import {
   EquipmentStatusBadge,
   ServiceDueBadge,
@@ -27,25 +28,38 @@ export function EquipmentListCard({
         <CardContent className="flex min-h-[72px] items-center gap-3 p-3 sm:min-h-[80px] sm:p-4">
           <div
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-full",
-              item.status === "IN_MAINTENANCE"
-                ? "bg-amber-50 dark:bg-amber-950/40"
-                : item.status === "RETIRED"
-                  ? "bg-muted"
-                  : "bg-emerald-50 dark:bg-emerald-950/40",
+              "size-10 shrink-0 overflow-hidden rounded-full",
+              !item.photoUrl &&
+                (item.status === "IN_MAINTENANCE"
+                  ? "bg-amber-50 dark:bg-amber-950/40"
+                  : item.status === "RETIRED"
+                    ? "bg-muted"
+                    : "bg-emerald-50 dark:bg-emerald-950/40"),
             )}
           >
-            <EquipmentTypeIcon
-              type={item.type}
-              className={cn(
-                "size-5",
-                item.status === "IN_MAINTENANCE"
-                  ? "text-amber-600"
-                  : item.status === "RETIRED"
-                    ? "text-muted-foreground"
-                    : "text-emerald-600 dark:text-emerald-400",
-              )}
-            />
+            {item.photoUrl ? (
+              <EquipmentPhoto
+                photoUrl={item.photoUrl}
+                name={item.name}
+                type={item.type}
+                className="size-10 rounded-full"
+                iconClassName="size-5"
+              />
+            ) : (
+              <div className="flex size-10 items-center justify-center">
+                <EquipmentTypeIcon
+                  type={item.type}
+                  className={cn(
+                    "size-5",
+                    item.status === "IN_MAINTENANCE"
+                      ? "text-amber-600"
+                      : item.status === "RETIRED"
+                        ? "text-muted-foreground"
+                        : "text-emerald-600 dark:text-emerald-400",
+                  )}
+                />
+              </div>
+            )}
           </div>
           <div className="flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">

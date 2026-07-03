@@ -31,6 +31,10 @@ export const updateEquipmentStatusSchema = z.object({
 
 export const updateEquipmentSchema = createEquipmentSchema.extend({
   equipmentId: z.string().min(1, "Equipment is required"),
+  clearPhoto: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
 });
 
 export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;

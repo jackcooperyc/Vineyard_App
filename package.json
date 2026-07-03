@@ -32,6 +32,7 @@
     "@turf/nearest-point-on-line": "^7.3.5",
     "@turf/simplify": "^7.3.5",
     "@turf/turf": "^7.3.5",
+    "@vercel/blob": "^2.5.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

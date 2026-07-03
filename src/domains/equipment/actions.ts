@@ -13,6 +13,12 @@ import {
 } from "@/domains/equipment/validators";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
+import {
+  deleteEquipmentPhoto,
+  getPhotoFromFormData,
+  uploadEquipmentPhoto,
+  validateEquipmentPhoto,
+} from "@/lib/equipment-photo";
 
 function parseDate(value?: string): Date | undefined {
   if (!value) return undefined;
@@ -50,6 +56,14 @@ export async function createEquipment(formData: FormData) {
   }
 
   const data = parsed.data;
+  const photo = getPhotoFromFormData(formData);
+  if (photo) {
+    const photoError = validateEquipmentPhoto(photo);
+    if (photoError) {
+      return { error: photoError };
+    }
+  }
+
   const equipment = await db.equipment.create({
     data: {
       name: data.name,
@@ -61,6 +75,14 @@ export async function createEquipment(formData: FormData) {
       notes: data.notes,
     },
   });
+
+  if (photo) {
+    const photoUrl = await uploadEquipmentPhoto(photo, equipment.id);
+    await db.equipment.update({
+      where: { id: equipment.id },
+      data: { photoUrl },
+    });
+  }
 
   revalidateEquipmentPaths(equipment.id);
   return { success: true, equipmentId: equipment.id };
@@ -132,6 +154,7 @@ export async function updateEquipment(formData: FormData) {
     lastServicedAt: formData.get("lastServicedAt") || undefined,
     nextServiceAt: formData.get("nextServiceAt") || undefined,
     notes: formData.get("notes") || undefined,
+    clearPhoto: formData.get("clearPhoto") || undefined,
   });
 
   if (!parsed.success) {
@@ -147,15 +170,33 @@ export async function updateEquipment(formData: FormData) {
     lastServicedAt,
     nextServiceAt,
     notes,
+    clearPhoto,
   } = parsed.data;
 
   const existing = await db.equipment.findFirst({
     where: { id: equipmentId, ...notDeletedWhere() },
-    select: { id: true },
+    select: { id: true, photoUrl: true },
   });
 
   if (!existing) {
     return { error: "Equipment not found" };
+  }
+
+  const photo = getPhotoFromFormData(formData);
+  if (photo) {
+    const photoError = validateEquipmentPhoto(photo);
+    if (photoError) {
+      return { error: photoError };
+    }
+  }
+
+  let photoUrl = existing.photoUrl;
+  if (photo) {
+    photoUrl = await uploadEquipmentPhoto(photo, equipmentId);
+    await deleteEquipmentPhoto(existing.photoUrl);
+  } else if (clearPhoto) {
+    await deleteEquipmentPhoto(existing.photoUrl);
+    photoUrl = null;
   }
 
   await db.equipment.update({
@@ -168,6 +209,7 @@ export async function updateEquipment(formData: FormData) {
       lastServicedAt: parseDate(lastServicedAt) ?? null,
       nextServiceAt: parseDate(nextServiceAt) ?? null,
       notes: notes || null,
+      photoUrl,
     },
   });
 

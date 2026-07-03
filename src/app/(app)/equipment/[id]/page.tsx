@@ -15,6 +15,7 @@ import {
   ServiceDueBadge,
 } from "@/components/equipment/equipment-status-badge";
 import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
+import { EquipmentPhoto } from "@/components/equipment/equipment-photo";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
 import { MaintenanceRecordItem } from "@/components/equipment/maintenance-record-item";
 import { EquipmentRecentlyDeletedMaintenance } from "@/components/equipment/equipment-recently-deleted-maintenance";
@@ -51,6 +52,14 @@ export default async function EquipmentDetailPage({
 
   return (
     <div className="field-readable mx-auto max-w-3xl space-y-6">
+      <EquipmentPhoto
+        photoUrl={equipment.photoUrl}
+        name={equipment.name}
+        type={equipment.type}
+        className="aspect-[16/9] w-full rounded-xl"
+        iconClassName="size-12"
+      />
+
       <div className="flex items-start gap-3">
         <Button
           variant="ghost"

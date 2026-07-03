@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local equipment photo uploads (dev fallback when BLOB_READ_WRITE_TOKEN is unset)
+/public/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
