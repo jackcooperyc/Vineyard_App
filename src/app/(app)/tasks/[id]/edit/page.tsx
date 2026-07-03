@@ -70,6 +70,10 @@ export default async function EditTaskPage({
             task={{
               id: task.id,
               blockId: task.blockId,
+              blockIds: task.taskBlocks.map((tb) => tb.blockId),
+              primaryBlockId:
+                task.taskBlocks.find((tb) => tb.isPrimary)?.blockId ??
+                task.blockId,
               taskTypeId: task.taskTypeId,
               title: task.title,
               description: task.description,

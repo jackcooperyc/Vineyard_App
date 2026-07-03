@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatTaskBlockLabel } from "@/components/shared/block-multi-picker";
 import { ChevronRight, Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,15 @@ export function TaskListCard({
   const dueLabel = formatDueLabel(task.dueDate);
   const urgencyStyle = dueUrgencyStyles[urgency];
   const isOpen = task.status === "PENDING" || task.status === "IN_PROGRESS";
+
+  const blockLabel =
+    task.blocks && task.blocks.length > 1
+      ? formatTaskBlockLabel(task.blocks)
+      : task.block.code;
+  const blockName =
+    task.blocks && task.blocks.length > 1
+      ? `${task.blocks.length} blocks`
+      : task.block.name;
 
   const card = (
     <Card
@@ -95,9 +105,9 @@ export function TaskListCard({
           </div>
           <p className="font-medium leading-tight">{task.title}</p>
           <p className="truncate text-sm text-muted-foreground">
-            <span className="font-mono text-xs">{task.block.code}</span>
+            <span className="font-mono text-xs">{blockLabel}</span>
             {" · "}
-            {task.block.name}
+            {blockName}
           </p>
           <div className="flex flex-wrap items-center gap-3 text-xs">
             {dueLabel && (

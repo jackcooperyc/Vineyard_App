@@ -54,6 +54,14 @@
 - Dashboard active sessions widget; reports GPS coverage table
 - Offline queue stub (`src/lib/gps-offline-queue.ts`) — full IndexedDB sync deferred v2
 
+### Multi-block tasks & begin flow ✓
+
+- `TaskBlock` junction: many blocks per task with per-block GPS coverage rollup to `Task.coveragePct`
+- `Task.startedAt` set via **Begin task** on create (full form, quick-log sheets, field log)
+- GPS sessions track `blockId`; field UI block switcher for multi-block tasks
+- Block hub filter matches any assigned `TaskBlock`
+- `BlockMultiPicker` on create/edit with primary block star
+
 ## v2 modules (Sprint 6–8)
 
 ### Mobile polish — Sprint 6 ✓

@@ -28,6 +28,7 @@ fi
 
 npx tsx scripts/migrate-task-types.ts
 npx prisma db push
+npx tsx scripts/migrate-task-blocks.ts
 npm run db:seed
 
 echo "Production database synced."

@@ -4,94 +4,37 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notDeletedWhere } from "@/lib/soft-delete";
-import {
-  GPS_AUTO_COMPLETE_COVERAGE,
-  GPS_DEFAULT_SWATH_M,
-  GPS_MIN_MOVE_M,
-} from "@/domains/task-gps/constants";
-import { computeCoveragePercent } from "@/domains/task-gps/coverage";
-import { countVisitedRows } from "@/domains/task-gps/row-matcher";
+import { GPS_AUTO_COMPLETE_COVERAGE } from "@/domains/task-gps/constants";
 import {
   appendGpsPointsSchema,
   isGpsPointAccurate,
   sessionIdSchema,
   startGpsSessionSchema,
+  switchGpsSessionBlockSchema,
 } from "@/domains/task-gps/validators";
 import { emitTaskEvent } from "@/domains/notifications/delivery";
 import {
   getActiveGpsSessionForUser,
   getOpenGpsEligibleTasks,
 } from "@/domains/task-gps/queries";
+import { GPS_MIN_MOVE_M } from "@/domains/task-gps/constants";
+import {
+  createGpsSessionForTask,
+  haversineM,
+  refreshSessionProgress,
+} from "@/domains/task-gps/session-progress";
 
-function haversineM(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-async function refreshSessionProgress(sessionId: string) {
-  const session = await db.taskGpsSession.findUnique({
-    where: { id: sessionId },
-    include: {
-      points: { orderBy: { recordedAt: "asc" } },
-      task: {
-        include: {
-          block: { include: { mapFeature: true, blockRows: true } },
-        },
-      },
-    },
-  });
-  if (!session?.task.block.mapFeature) return;
-
-  const coords = session.points.map((p) => ({ lat: p.lat, lng: p.lng }));
-  const swath = session.swathWidthM ?? GPS_DEFAULT_SWATH_M;
-  const coveragePct =
-    computeCoveragePercent(coords, session.task.block.mapFeature.geometry, swath) ??
-    session.coveragePct;
-
-  const rowGeoms = session.task.block.blockRows.map((r) => ({
-    rowIndex: r.rowIndex,
-    geometry: r.geometry,
-    lengthM: r.lengthM,
-  }));
-  const { visited, total } = countVisitedRows(coords, rowGeoms);
-
-  await db.taskGpsSession.update({
-    where: { id: sessionId },
-    data: {
-      coveragePct,
-      rowsVisited: total > 0 ? visited : null,
-      pointCount: session.points.length,
-    },
-  });
-
-  const last = session.points[session.points.length - 1];
-  await db.task.update({
-    where: { id: session.taskId },
-    data: {
-      coveragePct,
-      rowsCompleted: total > 0 ? visited : null,
-      rowsTotal: total > 0 ? total : null,
-      ...(last
-        ? { lastKnownLat: last.lat, lastKnownLng: last.lng }
-        : {}),
-    },
-  });
+function revalidateGpsPaths(taskId: string) {
+  revalidatePath("/field");
+  revalidatePath("/tasks");
+  revalidatePath(`/tasks/${taskId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/map");
 }
 
 export async function startGpsSession(input: {
   taskId: string;
+  blockId?: string;
   swathWidthM?: number;
 }) {
   const session = await auth();
@@ -102,65 +45,80 @@ export async function startGpsSession(input: {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const existing = await db.taskGpsSession.findFirst({
+  const result = await createGpsSessionForTask({
+    taskId: parsed.data.taskId,
+    userId: session.user.id,
+    blockId: parsed.data.blockId,
+    swathWidthM: parsed.data.swathWidthM,
+  });
+
+  if ("error" in result) {
+    return { error: result.error };
+  }
+
+  revalidateGpsPaths(result.taskId);
+  return { success: true, sessionId: result.sessionId };
+}
+
+export async function switchGpsSessionBlock(input: {
+  sessionId: string;
+  blockId: string;
+}) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = switchGpsSessionBlockSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const row = await db.taskGpsSession.findFirst({
     where: {
+      id: parsed.data.sessionId,
       userId: session.user.id,
       status: { in: ["ACTIVE", "PAUSED"] },
     },
-  });
-  if (existing) {
-    return { error: "You already have an active GPS session. End it first." };
-  }
-
-  const task = await db.task.findFirst({
-    where: {
-      id: parsed.data.taskId,
-      ...notDeletedWhere(),
-      taskType: { tracksGpsProgress: true, active: true },
-    },
     include: {
-      taskType: { select: { defaultSwathWidthM: true } },
+      task: {
+        select: {
+          id: true,
+          taskBlocks: { select: { blockId: true } },
+        },
+      },
     },
   });
-  if (!task) return { error: "Task not found or not GPS-eligible" };
+  if (!row) return { error: "Active session not found" };
 
-  const swathWidthM =
-    parsed.data.swathWidthM ??
-    task.taskType.defaultSwathWidthM ??
-    GPS_DEFAULT_SWATH_M;
-
-  const gpsSession = await db.taskGpsSession.create({
-    data: {
-      taskId: task.id,
-      userId: session.user.id,
-      swathWidthM,
-      status: "ACTIVE",
-    },
-  });
-
-  if (task.status === "PENDING") {
-    await db.task.update({
-      where: { id: task.id },
-      data: { status: "IN_PROGRESS" },
-    });
-    const recipients = [
-      task.assignedToId ?? session.user.id,
-    ].filter(Boolean) as string[];
-    await emitTaskEvent({
-      taskId: task.id,
-      eventType: "IN_PROGRESS",
-      recipientUserIds: recipients,
-      actorUserId: session.user.id,
-    });
+  const taskBlockIds = row.task.taskBlocks.map((tb) => tb.blockId);
+  if (taskBlockIds.length > 1 && !taskBlockIds.includes(parsed.data.blockId)) {
+    return { error: "Block is not assigned to this task" };
   }
 
-  revalidatePath("/field");
-  revalidatePath("/tasks");
-  revalidatePath(`/tasks/${task.id}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/map");
+  if (row.blockId === parsed.data.blockId) {
+    return { success: true, sessionId: row.id };
+  }
 
-  return { success: true, sessionId: gpsSession.id };
+  await refreshSessionProgress(row.id);
+
+  await db.taskGpsSession.update({
+    where: { id: row.id },
+    data: { status: "COMPLETED", endedAt: new Date() },
+  });
+
+  const next = await createGpsSessionForTask({
+    taskId: row.taskId,
+    userId: session.user.id,
+    blockId: parsed.data.blockId,
+    swathWidthM: row.swathWidthM ?? undefined,
+    skipStatusTransition: true,
+  });
+
+  if ("error" in next) {
+    return { error: next.error };
+  }
+
+  revalidateGpsPaths(row.taskId);
+  return { success: true, sessionId: next.sessionId };
 }
 
 export async function pauseGpsSession(sessionId: string) {
@@ -231,10 +189,15 @@ export async function endGpsSession(
     data: { status: "COMPLETED", endedAt: new Date() },
   });
 
+  const taskCoverage = await db.task.findUnique({
+    where: { id: row.task.id },
+    select: { coveragePct: true },
+  });
+
   const shouldComplete =
     options?.markComplete ||
-    (updated?.coveragePct != null &&
-      updated.coveragePct / 100 >= GPS_AUTO_COMPLETE_COVERAGE);
+    (taskCoverage?.coveragePct != null &&
+      taskCoverage.coveragePct / 100 >= GPS_AUTO_COMPLETE_COVERAGE);
 
   if (shouldComplete && row.task.status !== "COMPLETED") {
     await db.task.update({
@@ -252,11 +215,7 @@ export async function endGpsSession(
     });
   }
 
-  revalidatePath("/field");
-  revalidatePath("/tasks");
-  revalidatePath(`/tasks/${row.task.id}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/map");
+  revalidateGpsPaths(row.task.id);
 
   return {
     success: true,

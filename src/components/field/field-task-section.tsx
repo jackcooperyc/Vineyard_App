@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { BlockPicker, type BlockPickerItem } from "@/components/shared/block-picker";
+import { BlockMultiPicker, formatTaskBlockLabel } from "@/components/shared/block-multi-picker";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
+import { Button } from "@/components/ui/button";
 import {
   TaskGpsTracker,
   type GpsActiveSession,
@@ -20,10 +22,30 @@ type FieldGpsData = Awaited<ReturnType<typeof fetchGpsFieldData>>;
 function toActiveSession(
   session: FieldGpsData["activeSession"],
 ): GpsActiveSession | null {
-  if (session?.status === "ACTIVE" || session?.status === "PAUSED") {
-    return session as GpsActiveSession;
+  if (session?.status !== "ACTIVE" && session?.status !== "PAUSED") {
+    return null;
   }
-  return null;
+  return {
+    id: session.id,
+    status: session.status,
+    blockId: session.blockId,
+    coveragePct: session.coveragePct,
+    rowsVisited: session.rowsVisited,
+    swathWidthM: session.swathWidthM,
+    sessionBlock: session.block,
+    task: {
+      id: session.task.id,
+      title: session.task.title,
+      coveragePct: session.task.coveragePct,
+      block: session.task.block,
+      taskType: session.task.taskType,
+      taskBlocks: session.task.taskBlocks?.map((tb) => ({
+        blockId: tb.blockId,
+        block: tb.block,
+        isPrimary: tb.isPrimary,
+      })),
+    },
+  };
 }
 
 export function FieldTaskSection({
@@ -42,7 +64,14 @@ export function FieldTaskSection({
   onBlockIdChange: (id: string | null) => void;
   taskTypeId: string;
   onTaskTypeIdChange: (id: string) => void;
-  onQuickLog: (typeId: string) => void;
+  onQuickLog: (
+    typeId: string,
+    options?: {
+      begin?: boolean;
+      blockIds?: string[];
+      primaryBlockId?: string;
+    },
+  ) => void;
   quickLogPending: boolean;
 }) {
   const router = useRouter();
@@ -51,10 +80,14 @@ export function FieldTaskSection({
     eligibleTasks: [],
   });
   const [gpsLoading, setGpsLoading] = useState(true);
+  const [showExtraBlocks, setShowExtraBlocks] = useState(false);
+  const [extraBlockIds, setExtraBlockIds] = useState<string[]>([]);
+  const [extraPrimaryId, setExtraPrimaryId] = useState<string | null>(null);
 
   const selectedBlock = blocks.find((b) => b.id === blockId) ?? null;
   const activeSession = toActiveSession(gpsData.activeSession);
   const hasGpsTypes = quickLogTypes.some((t) => t.tracksGpsProgress);
+  const selectedType = quickLogTypes.find((t) => t.id === taskTypeId);
 
   async function reloadGps() {
     setGpsLoading(true);
@@ -77,19 +110,24 @@ export function FieldTaskSection({
     };
   }, [blockId]);
 
+  useEffect(() => {
+    if (blockId) {
+      setExtraBlockIds([blockId]);
+      setExtraPrimaryId(blockId);
+    }
+  }, [blockId]);
+
   function handleBlockChange(id: string) {
     onBlockIdChange(id);
   }
 
-  function handleQuickLog(typeId: string) {
-    onQuickLog(typeId);
-  }
+  const sessionBlockCode =
+    activeSession?.sessionBlock?.code ?? activeSession?.task.block.code;
 
   const sessionBlockMismatch =
     activeSession &&
     blockId &&
-    activeSession.task.block.code !==
-      blocks.find((b) => b.id === blockId)?.code;
+    sessionBlockCode !== blocks.find((b) => b.id === blockId)?.code;
 
   return (
     <div className="space-y-6">
@@ -121,16 +159,86 @@ export function FieldTaskSection({
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           2 · Quick log
         </h3>
+        {blockId && blocks.length > 1 && (
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto p-0 text-sm text-muted-foreground"
+              onClick={() => setShowExtraBlocks((v) => !v)}
+            >
+              {showExtraBlocks ? "Hide additional blocks" : "Add additional blocks"}
+            </Button>
+            {showExtraBlocks && (
+              <BlockMultiPicker
+                blocks={blocks}
+                selectedIds={extraBlockIds}
+                primaryId={extraPrimaryId}
+                onChange={(ids, primary) => {
+                  setExtraBlockIds(ids);
+                  setExtraPrimaryId(primary);
+                }}
+              />
+            )}
+          </div>
+        )}
         <TaskTypeChips
           types={quickLogTypes}
           value={taskTypeId}
           onChange={onTaskTypeIdChange}
-          onSelect={handleQuickLog}
           disabled={quickLogPending || !blockId}
         />
+        {selectedType?.tracksGpsProgress && blockId ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              size="touch"
+              variant="outline"
+              disabled={quickLogPending}
+              onClick={() =>
+                onQuickLog(taskTypeId, {
+                  begin: false,
+                  blockIds: extraBlockIds,
+                  primaryBlockId: extraPrimaryId ?? blockId,
+                })
+              }
+            >
+              Log only
+            </Button>
+            <Button
+              type="button"
+              size="touch"
+              disabled={quickLogPending}
+              onClick={() =>
+                onQuickLog(taskTypeId, {
+                  begin: true,
+                  blockIds: extraBlockIds,
+                  primaryBlockId: extraPrimaryId ?? blockId,
+                })
+              }
+            >
+              Log & begin
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            size="touch"
+            className="w-full"
+            disabled={quickLogPending || !blockId || !taskTypeId}
+            onClick={() =>
+              onQuickLog(taskTypeId, {
+                blockIds: extraBlockIds,
+                primaryBlockId: extraPrimaryId ?? blockId ?? undefined,
+              })
+            }
+          >
+            {quickLogPending ? "Saving…" : "Log task"}
+          </Button>
+        )}
         <p className="text-sm text-muted-foreground">
-          Tap a task type to log a completed task instantly. For spraying,
-          weeding, or mowing in progress, use GPS tracking below.
+          For spraying, weeding, or mowing in progress, use Log & begin to start
+          GPS tracking on the primary block.
         </p>
       </section>
 
@@ -184,6 +292,7 @@ export function FieldTaskSection({
             <TaskGpsTracker
               activeSession={null}
               eligibleTasks={gpsData.eligibleTasks}
+              filterBlockId={blockId}
               onSessionChange={() => void reloadGps()}
             />
           )}
@@ -191,4 +300,14 @@ export function FieldTaskSection({
       )}
     </div>
   );
+}
+
+export function formatEligibleTaskBlocks(
+  task: {
+    block: { code: string };
+    taskBlocks?: { block: { code: string } }[];
+  },
+): string {
+  const blocks = task.taskBlocks?.map((tb) => tb.block) ?? [task.block];
+  return formatTaskBlockLabel(blocks);
 }

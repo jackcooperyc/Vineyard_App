@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { BlockMultiPicker } from "@/components/shared/block-multi-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,19 +19,24 @@ import {
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
 import { quickLogTask } from "@/domains/tasks/actions";
+import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
 import { defaultTitleForTypeConfig } from "@/domains/tasks/constants";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
+
+type BlockOption = { id: string; code: string; name: string };
 
 export function QuickLogTaskSheet({
   blockId,
   blockCode,
   blockName,
+  blocks = [],
   equipment = [],
   quickLogTypes,
 }: {
   blockId: string;
   blockCode: string;
   blockName: string;
+  blocks?: BlockOption[];
   equipment?: { id: string; name: string; type: string }[];
   quickLogTypes: TaskTypeConfig[];
 }) {
@@ -44,15 +50,25 @@ export function QuickLogTaskSheet({
     "";
   const [taskTypeId, setTaskTypeId] = useState(defaultTypeId);
   const [showDetails, setShowDetails] = useState(false);
+  const [showExtraBlocks, setShowExtraBlocks] = useState(false);
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([blockId]);
+  const [primaryBlockId, setPrimaryBlockId] = useState<string>(blockId);
+  const [beginTask, setBeginTask] = useState(false);
 
   const selectedType = quickLogTypes.find((t) => t.id === taskTypeId);
+  const allBlocks =
+    blocks.length > 0
+      ? blocks
+      : [{ id: blockId, code: blockCode, name: blockName }];
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
-    formData.set("blockId", blockId);
+    formData.set("blockIds", JSON.stringify(selectedBlockIds));
+    formData.set("primaryBlockId", primaryBlockId);
     formData.set("taskTypeId", taskTypeId);
+    if (beginTask) formData.set("beginTask", "true");
 
     startTransition(async () => {
       const result = await quickLogTask(formData);
@@ -61,6 +77,9 @@ export function QuickLogTaskSheet({
         return;
       }
       setOpen(false);
+      if (result.taskId) {
+        router.push(redirectAfterTaskCreate(result));
+      }
       router.refresh();
     });
   }
@@ -88,10 +107,38 @@ export function QuickLogTaskSheet({
             <TaskTypeChips
               types={quickLogTypes}
               value={taskTypeId}
-              onChange={setTaskTypeId}
+              onChange={(id) => {
+                setTaskTypeId(id);
+                const type = quickLogTypes.find((t) => t.id === id);
+                if (!type?.tracksGpsProgress) setBeginTask(false);
+              }}
             />
-            <input type="hidden" name="taskTypeId" value={taskTypeId} />
           </div>
+
+          {allBlocks.length > 1 && (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-auto p-0 text-sm text-muted-foreground"
+                onClick={() => setShowExtraBlocks((v) => !v)}
+              >
+                {showExtraBlocks ? "Hide additional blocks" : "Add additional blocks"}
+              </Button>
+              {showExtraBlocks && (
+                <BlockMultiPicker
+                  blocks={allBlocks}
+                  selectedIds={selectedBlockIds}
+                  primaryId={primaryBlockId}
+                  onChange={(ids, primary) => {
+                    setSelectedBlockIds(ids);
+                    setPrimaryBlockId(primary);
+                  }}
+                />
+              )}
+            </div>
+          )}
+
           <Button
             type="button"
             variant="ghost"
@@ -140,13 +187,35 @@ export function QuickLogTaskSheet({
               )}
             </>
           )}
+
+          {selectedType?.tracksGpsProgress && (
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3">
+              <input
+                type="checkbox"
+                checked={beginTask}
+                onChange={(e) => setBeginTask(e.target.checked)}
+                className="size-5 rounded border-input"
+              />
+              <div>
+                <p className="font-medium">Begin task & start GPS</p>
+                <p className="text-sm text-muted-foreground">
+                  Opens field view with GPS tracking on the primary block.
+                </p>
+              </div>
+            </label>
+          )}
+
           {error && (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
           )}
           <Button type="submit" size="touch" className="w-full" disabled={pending}>
-            {pending ? "Saving…" : "Save task"}
+            {pending
+              ? "Saving…"
+              : beginTask
+                ? "Log & begin"
+                : "Save task"}
           </Button>
         </form>
       </SheetContent>

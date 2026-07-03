@@ -17,7 +17,13 @@ export const appendGpsPointsSchema = z.object({
 
 export const startGpsSessionSchema = z.object({
   taskId: z.string().min(1),
+  blockId: z.string().min(1).optional(),
   swathWidthM: z.coerce.number().min(0.5).max(50).optional(),
+});
+
+export const switchGpsSessionBlockSchema = z.object({
+  sessionId: z.string().min(1),
+  blockId: z.string().min(1),
 });
 
 export const sessionIdSchema = z.object({

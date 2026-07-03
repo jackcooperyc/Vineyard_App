@@ -1,11 +1,19 @@
 import { db } from "@/lib/db";
 import { notDeletedWhere } from "@/lib/soft-delete";
 
+const taskBlockSelect = {
+  orderBy: { sortOrder: "asc" as const },
+  include: {
+    block: { select: { id: true, code: true, name: true } },
+  },
+};
+
 export async function getTaskGpsSessions(taskId: string) {
   return db.taskGpsSession.findMany({
     where: { taskId },
     include: {
       user: { select: { id: true, name: true, email: true } },
+      block: { select: { id: true, code: true, name: true } },
     },
     orderBy: { startedAt: "desc" },
   });
@@ -15,6 +23,7 @@ export async function getActiveGpsSessionForUser(userId: string) {
   return db.taskGpsSession.findFirst({
     where: { userId, status: { in: ["ACTIVE", "PAUSED"] } },
     include: {
+      block: { select: { id: true, code: true, name: true } },
       task: {
         select: {
           id: true,
@@ -23,6 +32,7 @@ export async function getActiveGpsSessionForUser(userId: string) {
           coveragePct: true,
           taskType: { select: { label: true, tracksGpsProgress: true } },
           block: { select: { code: true, name: true } },
+          taskBlocks: taskBlockSelect,
         },
       },
     },
@@ -37,6 +47,7 @@ export async function getActiveFieldSessions(limit = 10) {
     },
     include: {
       user: { select: { name: true } },
+      block: { select: { code: true, name: true } },
       task: {
         select: {
           id: true,
@@ -44,6 +55,7 @@ export async function getActiveFieldSessions(limit = 10) {
           coveragePct: true,
           block: { select: { code: true, name: true } },
           taskType: { select: { label: true } },
+          taskBlocks: taskBlockSelect,
         },
       },
     },
@@ -98,6 +110,7 @@ export async function getActiveGpsTracksGeoJson(): Promise<GpsTrackFeatureCollec
     select: {
       id: true,
       taskId: true,
+      blockId: true,
       coveragePct: true,
       task: { select: { blockId: true, title: true } },
     },
@@ -134,7 +147,7 @@ export async function getActiveGpsTracksGeoJson(): Promise<GpsTrackFeatureCollec
       properties: {
         sessionId: session.id,
         taskId: session.taskId,
-        blockId: session.task.blockId,
+        blockId: session.blockId ?? session.task.blockId,
         title: session.task.title,
         coveragePct: session.coveragePct,
       },
@@ -148,11 +161,15 @@ export async function getOpenGpsEligibleTasks(blockId: string) {
   return db.task.findMany({
     where: {
       ...notDeletedWhere(),
-      blockId,
       status: { in: ["PENDING", "IN_PROGRESS"] },
       taskType: { tracksGpsProgress: true, active: true },
+      OR: [
+        { blockId },
+        { taskBlocks: { some: { blockId } } },
+      ],
     },
     include: {
+      block: { select: { code: true } },
       taskType: {
         select: {
           label: true,
@@ -160,6 +177,7 @@ export async function getOpenGpsEligibleTasks(blockId: string) {
           tracksGpsProgress: true,
         },
       },
+      taskBlocks: taskBlockSelect,
     },
     orderBy: { dueDate: "asc" },
   });

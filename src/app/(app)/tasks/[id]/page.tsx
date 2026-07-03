@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatTaskBlockLabel } from "@/components/shared/block-multi-picker";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, MapPin, Pencil, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,9 @@ export default async function TaskDetailPage({
   const backHref = buildTasksHubHref(backParams);
   const editHref = `/tasks/${task.id}/edit${encodeBackParams(backParams)}`;
 
+  const taskBlocks = task.taskBlocks ?? [];
+  const multiBlock = taskBlocks.length > 1;
+
   return (
     <div className="field-readable mx-auto max-w-3xl space-y-6">
       <div className="flex items-start gap-3">
@@ -80,12 +84,22 @@ export default async function TaskDetailPage({
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            <Link
-              href={`/blocks/${task.block.id}`}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              {task.block.code} · {task.block.name}
-            </Link>
+            {multiBlock ? (
+              <span>
+                <span className="font-mono text-xs">
+                  {formatTaskBlockLabel(taskBlocks.map((tb) => tb.block))}
+                </span>
+                {" · "}
+                {taskBlocks.length} blocks
+              </span>
+            ) : (
+              <Link
+                href={`/blocks/${task.block.id}`}
+                className="text-primary underline-offset-4 hover:underline"
+              >
+                {task.block.code} · {task.block.name}
+              </Link>
+            )}
           </p>
         </div>
       </div>
@@ -158,6 +172,17 @@ export default async function TaskDetailPage({
                 </div>
               </div>
             )}
+            {task.startedAt && (
+              <div className="flex items-center gap-2">
+                <Clock className="size-4 text-muted-foreground" />
+                <div>
+                  <dt className="text-muted-foreground">Started</dt>
+                  <dd className="font-medium">
+                    {task.startedAt.toLocaleString()}
+                  </dd>
+                </div>
+              </div>
+            )}
             {task.completedAt && (
               <div>
                 <dt className="text-muted-foreground">Completed</dt>
@@ -182,9 +207,9 @@ export default async function TaskDetailPage({
             )}
             {task.taskType.tracksGpsProgress && task.coveragePct != null && (
               <div>
-                <dt className="text-muted-foreground">GPS coverage</dt>
+                <dt className="text-muted-foreground">GPS coverage (rollup)</dt>
                 <dd className="font-medium tabular-nums">
-                  {Math.round(task.coveragePct)}% of block
+                  {Math.round(task.coveragePct)}%
                   {task.rowsTotal != null && task.rowsTotal > 0 && (
                     <span className="text-muted-foreground">
                       {" "}
@@ -195,6 +220,49 @@ export default async function TaskDetailPage({
               </div>
             )}
           </dl>
+
+          {multiBlock && (
+            <div className="space-y-2 border-t pt-4">
+              <h4 className="text-sm font-semibold">Per-block progress</h4>
+              <ul className="space-y-2 text-sm">
+                {taskBlocks.map((tb) => (
+                  <li
+                    key={tb.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+                  >
+                    <div>
+                      <Link
+                        href={`/blocks/${tb.block.id}`}
+                        className="font-mono text-xs text-primary underline-offset-4 hover:underline"
+                      >
+                        {tb.block.code}
+                      </Link>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {tb.block.name}
+                      </span>
+                      {tb.isPrimary && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          Primary
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="tabular-nums text-muted-foreground">
+                      {tb.coveragePct != null
+                        ? `${Math.round(tb.coveragePct)}%`
+                        : "—"}
+                      {tb.rowsTotal != null && tb.rowsTotal > 0 && (
+                        <span>
+                          {" "}
+                          · {tb.rowsCompleted ?? 0}/{tb.rowsTotal} rows
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -211,9 +279,22 @@ export default async function TaskDetailPage({
             View on map
           </Button>
         )}
-        <Button variant="outline" className="min-h-11" render={<Link href={`/blocks/${task.block.id}`} />}>
-          View block
-        </Button>
+        {multiBlock ? (
+          taskBlocks.map((tb) => (
+            <Button
+              key={tb.blockId}
+              variant="outline"
+              className="min-h-11"
+              render={<Link href={`/blocks/${tb.block.id}`} />}
+            >
+              {tb.block.code}
+            </Button>
+          ))
+        ) : (
+          <Button variant="outline" className="min-h-11" render={<Link href={`/blocks/${task.block.id}`} />}>
+            View block
+          </Button>
+        )}
       </div>
     </div>
   );

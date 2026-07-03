@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Pause, Play, Square, X } from "lucide-react";
+import { formatTaskBlockLabel } from "@/components/shared/block-multi-picker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,21 +15,32 @@ import {
   pauseGpsSession,
   resumeGpsSession,
   startGpsSession,
+  switchGpsSessionBlock,
 } from "@/domains/task-gps/actions";
 import { GPS_MIN_MOVE_M } from "@/domains/task-gps/constants";
+import { cn } from "@/lib/utils";
+
+type TaskBlockChip = {
+  blockId: string;
+  block: { id: string; code: string; name: string };
+  isPrimary: boolean;
+};
 
 type GpsActiveSession = {
   id: string;
   status: "ACTIVE" | "PAUSED";
+  blockId: string | null;
   coveragePct: number | null;
   rowsVisited: number | null;
   swathWidthM: number | null;
+  sessionBlock?: { id: string; code: string; name: string } | null;
   task: {
     id: string;
     title: string;
     coveragePct: number | null;
     block: { code: string; name: string };
     taskType: { label: string };
+    taskBlocks?: TaskBlockChip[];
   };
 };
 
@@ -40,6 +52,8 @@ type GpsTask = {
   coveragePct: number | null;
   rowsCompleted: number | null;
   rowsTotal: number | null;
+  block?: { code: string };
+  taskBlocks?: { block: { code: string }; isPrimary: boolean }[];
   taskType: { label: string; defaultSwathWidthM: number | null };
 };
 
@@ -48,13 +62,23 @@ function formatPct(value: number | null | undefined): string {
   return `${Math.round(value)}%`;
 }
 
+function taskBlockLabel(task: GpsTask): string {
+  const blocks =
+    task.taskBlocks?.map((tb) => tb.block) ??
+    (task.block ? [task.block] : []);
+  if (blocks.length === 0) return "";
+  return formatTaskBlockLabel(blocks);
+}
+
 export function TaskGpsTracker({
   activeSession,
   eligibleTasks,
+  filterBlockId,
   onSessionChange,
 }: {
   activeSession: GpsActiveSession | null;
   eligibleTasks: GpsTask[];
+  filterBlockId?: string | null;
   onSessionChange?: () => void;
 }) {
   const router = useRouter();
@@ -81,7 +105,10 @@ export function TaskGpsTracker({
 
   useEffect(() => {
     sessionIdRef.current = activeSession?.id ?? null;
-  }, [activeSession?.id]);
+    setLiveCoverage(
+      activeSession?.coveragePct ?? activeSession?.task.coveragePct ?? null,
+    );
+  }, [activeSession?.id, activeSession?.coveragePct, activeSession?.task.coveragePct]);
 
   const flushPoints = useCallback(async () => {
     const sessionId = sessionIdRef.current;
@@ -167,10 +194,35 @@ export function TaskGpsTracker({
     return stopWatching;
   }, [activeSession?.id, activeSession?.status, startWatching, stopWatching]);
 
-  async function handleStart(taskId: string, swathWidthM?: number) {
+  async function handleStart(
+    taskId: string,
+    options?: { swathWidthM?: number; blockId?: string },
+  ) {
     setError(null);
     setBusy(true);
-    const result = await startGpsSession({ taskId, swathWidthM });
+    const result = await startGpsSession({
+      taskId,
+      blockId: options?.blockId,
+      swathWidthM: options?.swathWidthM,
+    });
+    setBusy(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+    onSessionChange?.();
+  }
+
+  async function handleSwitchBlock(blockId: string) {
+    if (!activeSession || activeSession.blockId === blockId) return;
+    setError(null);
+    setBusy(true);
+    await flushPoints();
+    const result = await switchGpsSessionBlock({
+      sessionId: activeSession.id,
+      blockId,
+    });
     setBusy(false);
     if (result.error) {
       setError(result.error);
@@ -227,6 +279,10 @@ export function TaskGpsTracker({
       activeSession.rowsVisited != null
         ? `${activeSession.rowsVisited} rows`
         : null;
+    const taskBlocks = activeSession.task.taskBlocks ?? [];
+    const activeBlockId = activeSession.blockId ?? activeSession.sessionBlock?.id;
+    const trackingCode =
+      activeSession.sessionBlock?.code ?? activeSession.task.block.code;
 
     return (
       <div className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -241,13 +297,34 @@ export function TaskGpsTracker({
             </div>
             <p className="text-sm font-medium">{activeSession.task.title}</p>
             <p className="text-xs text-muted-foreground">
-              {activeSession.task.block.code} · {activeSession.task.taskType.label}
+              {trackingCode} · {activeSession.task.taskType.label}
             </p>
           </div>
           <p className="text-2xl font-bold tabular-nums text-primary">
             {formatPct(liveCoverage)}
           </p>
         </div>
+
+        {taskBlocks.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {taskBlocks.map((tb) => (
+              <button
+                key={tb.blockId}
+                type="button"
+                disabled={busy}
+                onClick={() => void handleSwitchBlock(tb.blockId)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-mono touch-manipulation",
+                  activeBlockId === tb.blockId
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background hover:bg-muted",
+                )}
+              >
+                {tb.block.code}
+              </button>
+            ))}
+          </div>
+        )}
 
         {rowsLabel && (
           <p className="text-sm text-muted-foreground">{rowsLabel} visited</p>
@@ -324,16 +401,21 @@ export function TaskGpsTracker({
           type="button"
           disabled={busy}
           onClick={() =>
-            void handleStart(
-              task.id,
-              task.taskType.defaultSwathWidthM ?? undefined,
-            )
+            void handleStart(task.id, {
+              swathWidthM: task.taskType.defaultSwathWidthM ?? undefined,
+              blockId: filterBlockId ?? undefined,
+            })
           }
           className="field-tap flex w-full items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-left touch-manipulation hover:bg-muted/40 disabled:opacity-50"
         >
           <div>
             <p className="font-medium">{task.title}</p>
-            <p className="text-xs text-muted-foreground">{task.taskType.label}</p>
+            <p className="text-xs text-muted-foreground">
+              {task.taskType.label}
+              {(task.taskBlocks?.length ?? 0) > 1 && (
+                <span> · {taskBlockLabel(task)}</span>
+              )}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold tabular-nums text-primary">

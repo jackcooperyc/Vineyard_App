@@ -17,12 +17,14 @@ export type TaskListItem = {
   taskType: TaskTypeSummary & { tracksGpsProgress?: boolean };
   status: TaskStatus;
   dueDate: Date | null;
+  startedAt?: Date | null;
   completedAt: Date | null;
   createdAt?: Date;
   coveragePct?: number | null;
   rowsCompleted?: number | null;
   rowsTotal?: number | null;
   block: { id: string; code: string; name: string };
+  blocks?: { id: string; code: string; name: string }[];
   assignedTo: { name: string | null } | null;
 };
 
@@ -109,7 +111,10 @@ function buildTaskWhere(filters: TaskFilters): Prisma.TaskWhereInput {
   }
 
   if (filters.blockId) {
-    where.blockId = filters.blockId;
+    where.OR = [
+      { blockId: filters.blockId },
+      { taskBlocks: { some: { blockId: filters.blockId } } },
+    ];
   }
 
   if (filters.taskTypeId) {
@@ -144,10 +149,14 @@ function buildTaskWhere(filters: TaskFilters): Prisma.TaskWhereInput {
 }
 
 export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[]> {
-  return db.task.findMany({
+  const rows = await db.task.findMany({
     where: buildTaskWhere(filters),
     include: {
       block: { select: { id: true, code: true, name: true } },
+      taskBlocks: {
+        orderBy: { sortOrder: "asc" },
+        include: { block: { select: { id: true, code: true, name: true } } },
+      },
       assignedTo: { select: { name: true } },
       taskType: { select: taskTypeSelect },
     },
@@ -155,6 +164,11 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskListItem[
     ...(filters.skip != null ? { skip: filters.skip } : {}),
     ...(filters.take != null ? { take: filters.take } : {}),
   });
+
+  return rows.map((task) => ({
+    ...task,
+    blocks: task.taskBlocks.map((tb) => tb.block),
+  }));
 }
 
 export async function getTasksCount(filters: TaskFilters = {}): Promise<number> {
@@ -164,7 +178,14 @@ export async function getTasksCount(filters: TaskFilters = {}): Promise<number> 
 export async function getTaskHubStats(blockId?: string): Promise<TaskHubStats> {
   const blockWhere: Prisma.TaskWhereInput = {
     ...notDeletedWhere(),
-    ...(blockId ? { blockId } : {}),
+    ...(blockId
+      ? {
+          OR: [
+            { blockId },
+            { taskBlocks: { some: { blockId } } },
+          ],
+        }
+      : {}),
   };
   const openWhere: Prisma.TaskWhereInput = {
     ...blockWhere,
@@ -203,6 +224,14 @@ export async function getTaskById(id: string) {
     include: {
       block: {
         select: { id: true, code: true, name: true, vineyard: { select: { name: true } } },
+      },
+      taskBlocks: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          block: {
+            select: { id: true, code: true, name: true },
+          },
+        },
       },
       taskType: { select: taskTypeSelect },
       assignedTo: { select: { id: true, name: true, email: true } },

@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BlockMultiPicker } from "@/components/shared/block-multi-picker";
 import { createTask, updateTask } from "@/domains/tasks/actions";
+import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
@@ -18,6 +20,8 @@ type EquipmentOption = { id: string; name: string; type: string };
 type TaskValues = {
   id: string;
   blockId: string;
+  blockIds?: string[];
+  primaryBlockId?: string;
   taskTypeId: string;
   title: string;
   description: string | null;
@@ -50,15 +54,36 @@ export function TaskForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const isEdit = Boolean(task);
+  const initialBlockIds =
+    task?.blockIds?.length ? task.blockIds : [task?.blockId ?? defaultBlockId ?? blocks[0]?.id].filter(Boolean) as string[];
+  const initialPrimary =
+    task?.primaryBlockId ?? task?.blockId ?? defaultBlockId ?? initialBlockIds[0] ?? null;
+
+  const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>(initialBlockIds);
+  const [primaryBlockId, setPrimaryBlockId] = useState<string | null>(initialPrimary);
+  const [beginTask, setBeginTask] = useState(false);
+
   const defaultTypeId =
     task?.taskTypeId ??
     taskTypes.find((t) => t.slug === "INSPECTION")?.id ??
     taskTypes[0]?.id;
 
+  function handleBlockChange(ids: string[], primary: string) {
+    setSelectedBlockIds(ids);
+    setPrimaryBlockId(primary);
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    formData.set("blockIds", JSON.stringify(selectedBlockIds));
+    if (primaryBlockId) {
+      formData.set("primaryBlockId", primaryBlockId);
+    }
+    if (beginTask) {
+      formData.set("beginTask", "true");
+    }
 
     startTransition(async () => {
       const result = isEdit
@@ -69,7 +94,9 @@ export function TaskForm({
         return;
       }
       if (result.taskId) {
-        router.push(`/tasks/${result.taskId}`);
+        router.push(
+          isEdit ? `/tasks/${result.taskId}` : redirectAfterTaskCreate(result),
+        );
         router.refresh();
       }
     });
@@ -80,20 +107,13 @@ export function TaskForm({
       {task && <input type="hidden" name="taskId" value={task.id} />}
 
       <div className="space-y-2">
-        <Label htmlFor="blockId">Block</Label>
-        <select
-          id="blockId"
-          name="blockId"
-          required
-          defaultValue={task?.blockId ?? defaultBlockId ?? blocks[0]?.id}
-          className="flex h-12 w-full rounded-lg border border-input bg-background px-3 text-base"
-        >
-          {blocks.map((block) => (
-            <option key={block.id} value={block.id}>
-              {block.code} — {block.name}
-            </option>
-          ))}
-        </select>
+        <Label>Blocks</Label>
+        <BlockMultiPicker
+          blocks={blocks}
+          selectedIds={selectedBlockIds}
+          primaryId={primaryBlockId}
+          onChange={handleBlockChange}
+        />
       </div>
 
       <div className="space-y-2">
@@ -173,6 +193,23 @@ export function TaskForm({
         </select>
       </div>
 
+      {!isEdit && (
+        <label className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3">
+          <input
+            type="checkbox"
+            checked={beginTask}
+            onChange={(e) => setBeginTask(e.target.checked)}
+            className="size-5 rounded border-input"
+          />
+          <div>
+            <p className="font-medium">Begin task now</p>
+            <p className="text-sm text-muted-foreground">
+              Marks in progress and starts GPS tracking for eligible task types.
+            </p>
+          </div>
+        </label>
+      )}
+
       {error && (
         <p className="text-sm text-destructive" role="alert">
           {error}
@@ -184,10 +221,14 @@ export function TaskForm({
           {pending
             ? isEdit
               ? "Saving…"
-              : "Creating…"
+              : beginTask
+                ? "Creating & starting…"
+                : "Creating…"
             : isEdit
               ? "Save changes"
-              : "Create task"}
+              : beginTask
+                ? "Create & begin"
+                : "Create task"}
         </Button>
         <Button
           type="button"

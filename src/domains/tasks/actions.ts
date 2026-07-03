@@ -11,11 +11,16 @@ import {
 import { getTaskTypeById } from "@/domains/tasks/type-queries";
 import { bulkUpdateTasksSchema } from "@/domains/tasks/type-validators";
 import {
-  createTaskSchema,
-  quickLogTaskSchema,
-  updateTaskSchema,
+  parseCreateTaskFromForm,
+  parseQuickLogTaskFromForm,
+  parseUpdateTaskFromForm,
   updateTaskStatusSchema,
 } from "@/domains/tasks/validators";
+import {
+  resolvePrimaryBlockId,
+  syncTaskBlocks,
+} from "@/domains/tasks/task-blocks";
+import { createGpsSessionForTask } from "@/domains/task-gps/start-session-core";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
 import {
@@ -29,14 +34,85 @@ function parseDueDate(value?: string): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-function revalidateTaskPaths(blockId?: string) {
+function revalidateTaskPaths(blockIds?: string[]) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/field");
   revalidatePath("/map");
-  if (blockId) {
-    revalidatePath(`/blocks/${blockId}`);
+  if (blockIds) {
+    for (const blockId of blockIds) {
+      revalidatePath(`/blocks/${blockId}`);
+    }
   }
+}
+
+export async function beginTask(
+  taskId: string,
+  options?: { actorUserId?: string; autoStartGps?: boolean },
+) {
+  const session = await auth();
+  const actorUserId = options?.actorUserId ?? session?.user?.id;
+  if (!actorUserId) {
+    return { error: "Unauthorized" };
+  }
+
+  const task = await db.task.findFirst({
+    where: { id: taskId, ...notDeletedWhere() },
+    include: {
+      taskType: { select: { tracksGpsProgress: true } },
+      taskBlocks: { select: { blockId: true, isPrimary: true } },
+    },
+  });
+
+  if (!task) {
+    return { error: "Task not found" };
+  }
+
+  const now = new Date();
+  const wasPending = task.status === "PENDING";
+
+  await db.task.update({
+    where: { id: taskId },
+    data: {
+      status: "IN_PROGRESS",
+      startedAt: task.startedAt ?? now,
+    },
+  });
+
+  if (wasPending) {
+    const recipients = [task.assignedToId ?? actorUserId].filter(
+      Boolean,
+    ) as string[];
+    await emitTaskEvent({
+      taskId,
+      eventType: "IN_PROGRESS",
+      recipientUserIds: recipients,
+      actorUserId,
+    });
+  }
+
+  let sessionId: string | undefined;
+  const shouldStartGps =
+    options?.autoStartGps !== false && task.taskType.tracksGpsProgress;
+
+  if (shouldStartGps) {
+    const primaryBlock =
+      task.taskBlocks.find((tb) => tb.isPrimary)?.blockId ?? task.blockId;
+    const gpsResult = await createGpsSessionForTask({
+      taskId,
+      userId: actorUserId,
+      blockId: primaryBlock,
+      skipStatusTransition: true,
+    });
+    if ("sessionId" in gpsResult && gpsResult.sessionId) {
+      sessionId = gpsResult.sessionId;
+    }
+  }
+
+  revalidateTaskPaths(task.taskBlocks.map((tb) => tb.blockId));
+  revalidatePath(`/tasks/${taskId}`);
+
+  return { success: true, taskId, sessionId, tracksGps: shouldStartGps };
 }
 
 export async function createTask(formData: FormData) {
@@ -45,47 +121,47 @@ export async function createTask(formData: FormData) {
     return { error: "Unauthorized" };
   }
 
-  const parsed = createTaskSchema.safeParse({
-    blockId: formData.get("blockId"),
-    taskTypeId: formData.get("taskTypeId"),
-    title: formData.get("title"),
-    description: formData.get("description") || undefined,
-    dueDate: formData.get("dueDate") || undefined,
-    assignedToId: formData.get("assignedToId") || undefined,
-    equipmentId: formData.get("equipmentId") || undefined,
-  });
-
+  const parsed = parseCreateTaskFromForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
   const {
-    blockId,
+    blockIds,
+    primaryBlockId,
     taskTypeId,
     title,
     description,
     dueDate,
     assignedToId,
     equipmentId,
+    beginTask: shouldBegin,
   } = parsed.data;
+
+  const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
 
   const taskType = await getTaskTypeById(taskTypeId);
   if (!taskType?.active) {
     return { error: "Invalid task type" };
   }
 
-  const task = await db.task.create({
-    data: {
-      blockId,
-      taskTypeId,
-      title,
-      description,
-      dueDate: parseDueDate(dueDate),
-      assignedToId: assignedToId || session.user.id,
-      createdById: session.user.id,
-      equipmentId: equipmentId || null,
-      status: "PENDING",
-    },
+  const task = await db.$transaction(async (tx) => {
+    const created = await tx.task.create({
+      data: {
+        blockId: primary,
+        taskTypeId,
+        title,
+        description,
+        dueDate: parseDueDate(dueDate),
+        assignedToId: assignedToId || session.user.id,
+        createdById: session.user.id,
+        equipmentId: equipmentId || null,
+        status: "PENDING",
+      },
+    });
+
+    await syncTaskBlocks(created.id, blockIds, primary, tx);
+    return created;
   });
 
   const assigneeId = assignedToId || session.user.id;
@@ -104,8 +180,27 @@ export async function createTask(formData: FormData) {
     });
   }
 
-  revalidateTaskPaths(blockId);
-  return { success: true, taskId: task.id };
+  let sessionId: string | undefined;
+  let tracksGps = false;
+
+  if (shouldBegin) {
+    tracksGps = taskType.tracksGpsProgress;
+    const beginResult = await beginTask(task.id, {
+      actorUserId: session.user.id,
+    });
+    if ("sessionId" in beginResult && beginResult.sessionId) {
+      sessionId = beginResult.sessionId;
+    }
+  }
+
+  revalidateTaskPaths(blockIds);
+  return {
+    success: true,
+    taskId: task.id,
+    sessionId,
+    tracksGps,
+    began: !!shouldBegin,
+  };
 }
 
 export async function quickLogTask(formData: FormData) {
@@ -114,52 +209,67 @@ export async function quickLogTask(formData: FormData) {
     return { error: "Unauthorized" };
   }
 
-  const blockId = formData.get("blockId") as string;
-  const block = await db.block.findUnique({
-    where: { id: blockId },
-    select: { code: true },
-  });
-
-  if (!block) {
-    return { error: "Block not found" };
-  }
-
-  const parsed = quickLogTaskSchema.safeParse({
-    blockId,
-    taskTypeId: formData.get("taskTypeId"),
-    title: formData.get("title") || undefined,
-    description: formData.get("description") || undefined,
-    equipmentId: formData.get("equipmentId") || undefined,
-  });
-
+  const fallbackBlockId = formData.get("blockId") as string | null;
+  const parsed = parseQuickLogTaskFromForm(formData, fallbackBlockId ?? undefined);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { taskTypeId, title, description, equipmentId } = parsed.data;
-  const taskType = await getTaskTypeById(taskTypeId);
+  const {
+    blockIds,
+    primaryBlockId,
+    taskTypeId,
+    title,
+    description,
+    equipmentId,
+    beginTask: shouldBegin,
+  } = parsed.data;
+
+  const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
+  const primaryBlock = await db.block.findUnique({
+    where: { id: primary },
+    select: { code: true },
+  });
+
+  if (!primaryBlock) {
+    return { error: "Block not found" };
+  }
+
+  const { taskTypeId: typeId, title: taskTitle, description: taskDesc, equipmentId: equipId } = {
+    taskTypeId,
+    title,
+    description,
+    equipmentId,
+  };
+
+  const taskType = await getTaskTypeById(typeId);
   if (!taskType?.active) {
     return { error: "Invalid task type" };
   }
 
-  const task = await db.task.create({
-    data: {
-      blockId,
-      taskTypeId,
-      title:
-        title ??
-        defaultTitleForTypeConfig(
-          taskType.label,
-          block.code,
-          taskType.defaultTitleTemplate,
-        ),
-      description,
-      dueDate: dueDateFromOffset(taskType.defaultDueDaysOffset) ?? null,
-      assignedToId: session.user.id,
-      createdById: session.user.id,
-      equipmentId: equipmentId || null,
-      status: "PENDING",
-    },
+  const task = await db.$transaction(async (tx) => {
+    const created = await tx.task.create({
+      data: {
+        blockId: primary,
+        taskTypeId: typeId,
+        title:
+          taskTitle ??
+          defaultTitleForTypeConfig(
+            taskType.label,
+            primaryBlock.code,
+            taskType.defaultTitleTemplate,
+          ),
+        description: taskDesc,
+        dueDate: dueDateFromOffset(taskType.defaultDueDaysOffset) ?? null,
+        assignedToId: session.user.id,
+        createdById: session.user.id,
+        equipmentId: equipId || null,
+        status: "PENDING",
+      },
+    });
+
+    await syncTaskBlocks(created.id, blockIds, primary, tx);
+    return created;
   });
 
   await emitTaskEvent({
@@ -175,8 +285,27 @@ export async function quickLogTask(formData: FormData) {
     actorUserId: session.user.id,
   });
 
-  revalidateTaskPaths(blockId);
-  return { success: true, taskId: task.id };
+  let sessionId: string | undefined;
+  let tracksGps = false;
+
+  if (shouldBegin) {
+    tracksGps = taskType.tracksGpsProgress;
+    const beginResult = await beginTask(task.id, {
+      actorUserId: session.user.id,
+    });
+    if ("sessionId" in beginResult && beginResult.sessionId) {
+      sessionId = beginResult.sessionId;
+    }
+  }
+
+  revalidateTaskPaths(blockIds);
+  return {
+    success: true,
+    taskId: task.id,
+    sessionId,
+    tracksGps,
+    began: !!shouldBegin,
+  };
 }
 
 export async function updateTaskStatus(taskId: string, status: TaskStatus) {
@@ -192,7 +321,13 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
 
   const task = await db.task.findFirst({
     where: { id: taskId, ...notDeletedWhere() },
-    select: { blockId: true, status: true, assignedToId: true },
+    select: {
+      blockId: true,
+      status: true,
+      assignedToId: true,
+      startedAt: true,
+      taskBlocks: { select: { blockId: true } },
+    },
   });
 
   if (!task) {
@@ -206,6 +341,9 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
     data: {
       status,
       completedAt: status === "COMPLETED" ? new Date() : null,
+      ...(status === "IN_PROGRESS" && !task.startedAt
+        ? { startedAt: new Date() }
+        : {}),
     },
   });
 
@@ -219,7 +357,7 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
     });
   }
 
-  revalidateTaskPaths(task.blockId);
+  revalidateTaskPaths(task.taskBlocks.map((tb) => tb.blockId));
   revalidatePath(`/tasks/${taskId}`);
   return { success: true };
 }
@@ -230,24 +368,15 @@ export async function updateTask(formData: FormData) {
     return { error: "Unauthorized" };
   }
 
-  const parsed = updateTaskSchema.safeParse({
-    taskId: formData.get("taskId"),
-    blockId: formData.get("blockId"),
-    taskTypeId: formData.get("taskTypeId"),
-    title: formData.get("title"),
-    description: formData.get("description") || undefined,
-    dueDate: formData.get("dueDate") || undefined,
-    assignedToId: formData.get("assignedToId") || undefined,
-    equipmentId: formData.get("equipmentId") || undefined,
-  });
-
+  const parsed = parseUpdateTaskFromForm(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
   const {
     taskId,
-    blockId,
+    blockIds,
+    primaryBlockId,
     taskTypeId,
     title,
     description,
@@ -255,6 +384,8 @@ export async function updateTask(formData: FormData) {
     assignedToId,
     equipmentId,
   } = parsed.data;
+
+  const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
 
   const existing = await db.task.findFirst({
     where: { id: taskId, ...notDeletedWhere() },
@@ -272,17 +403,21 @@ export async function updateTask(formData: FormData) {
 
   const nextAssigneeId = assignedToId || session.user.id;
 
-  await db.task.update({
-    where: { id: taskId },
-    data: {
-      blockId,
-      taskTypeId,
-      title,
-      description: description || null,
-      dueDate: parseDueDate(dueDate) ?? null,
-      assignedToId: nextAssigneeId,
-      equipmentId: equipmentId || null,
-    },
+  await db.$transaction(async (tx) => {
+    await tx.task.update({
+      where: { id: taskId },
+      data: {
+        blockId: primary,
+        taskTypeId,
+        title,
+        description: description || null,
+        dueDate: parseDueDate(dueDate) ?? null,
+        assignedToId: nextAssigneeId,
+        equipmentId: equipmentId || null,
+      },
+    });
+
+    await syncTaskBlocks(taskId, blockIds, primary, tx);
   });
 
   if (nextAssigneeId !== existing.assignedToId) {
@@ -294,7 +429,7 @@ export async function updateTask(formData: FormData) {
     });
   }
 
-  revalidateTaskPaths(blockId);
+  revalidateTaskPaths(blockIds);
   revalidatePath(`/tasks/${taskId}`);
   revalidatePath(`/tasks/${taskId}/edit`);
   return { success: true, taskId };
@@ -305,7 +440,7 @@ export async function markTaskComplete(taskId: string) {
 }
 
 export async function startTask(taskId: string) {
-  return updateTaskStatus(taskId, "IN_PROGRESS");
+  return beginTask(taskId);
 }
 
 export async function deleteTask(taskId: string) {
@@ -318,7 +453,7 @@ export async function deleteTask(taskId: string) {
 
   const task = await db.task.findFirst({
     where: { id: taskId, ...notDeletedWhere() },
-    select: { blockId: true },
+    select: { blockId: true, taskBlocks: { select: { blockId: true } } },
   });
 
   if (!task) {
@@ -330,7 +465,7 @@ export async function deleteTask(taskId: string) {
     data: { deletedAt: new Date() },
   });
 
-  revalidateTaskPaths(task.blockId);
+  revalidateTaskPaths(task.taskBlocks.map((tb) => tb.blockId));
   revalidatePath(`/tasks/${taskId}`);
   return { success: true };
 }
@@ -345,7 +480,11 @@ export async function restoreTask(taskId: string) {
 
   const task = await db.task.findFirst({
     where: { id: taskId, deletedAt: { not: null } },
-    select: { blockId: true, deletedAt: true },
+    select: {
+      blockId: true,
+      deletedAt: true,
+      taskBlocks: { select: { blockId: true } },
+    },
   });
 
   if (!task?.deletedAt) {
@@ -357,7 +496,7 @@ export async function restoreTask(taskId: string) {
     data: { deletedAt: null },
   });
 
-  revalidateTaskPaths(task.blockId);
+  revalidateTaskPaths(task.taskBlocks.map((tb) => tb.blockId));
   revalidatePath(`/tasks/${taskId}`);
   return { success: true };
 }
@@ -392,11 +531,15 @@ export async function bulkUpdateTasks(input: {
     taskTypeId?: string;
     dueDate?: Date | null;
     completedAt?: Date | null;
+    startedAt?: Date;
   } = {};
 
   if (status) {
     data.status = status;
     data.completedAt = status === "COMPLETED" ? new Date() : null;
+    if (status === "IN_PROGRESS") {
+      data.startedAt = new Date();
+    }
   }
   if (assignedToId !== undefined) {
     data.assignedToId = assignedToId || null;
@@ -416,7 +559,7 @@ export async function bulkUpdateTasks(input: {
 
   const tasksBefore = await db.task.findMany({
     where: { id: { in: taskIds }, ...notDeletedWhere() },
-    select: { id: true, status: true, assignedToId: true },
+    select: { id: true, status: true, assignedToId: true, startedAt: true },
   });
 
   const result = await db.task.updateMany({

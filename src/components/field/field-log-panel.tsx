@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
 import { quickLogTask } from "@/domains/tasks/actions";
+import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 import { cn } from "@/lib/utils";
 
@@ -50,21 +51,34 @@ export function FieldLogPanel({
 
   const selectedBlock = blocks.find((b) => b.id === blockId) ?? null;
 
-  function logTask(typeId: string) {
+  function logTask(
+    typeId: string,
+    options?: { begin?: boolean; blockIds?: string[]; primaryBlockId?: string },
+  ) {
     if (!blockId) {
       setError("Select a block first.");
       return;
     }
     setError(null);
     setMessage(null);
+    const blockIds = options?.blockIds?.length
+      ? options.blockIds
+      : [blockId];
+    const primary = options?.primaryBlockId ?? blockId;
     const formData = new FormData();
-    formData.set("blockId", blockId);
+    formData.set("blockIds", JSON.stringify(blockIds));
+    formData.set("primaryBlockId", primary);
     formData.set("taskTypeId", typeId);
+    if (options?.begin) formData.set("beginTask", "true");
 
     startTransition(async () => {
       const result = await quickLogTask(formData);
       if (result.error) {
         setError(result.error);
+        return;
+      }
+      if (result.taskId && options?.begin) {
+        router.push(redirectAfterTaskCreate({ ...result, began: true }));
         return;
       }
       setMessage(`Task logged for ${selectedBlock?.name ?? "block"}.`);
