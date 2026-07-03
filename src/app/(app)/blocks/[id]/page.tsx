@@ -23,6 +23,10 @@ import { getBlocksForTaskForm } from "@/domains/tasks/queries";
 import type { TaskListItem } from "@/domains/tasks/queries";
 import { BlockRowLayoutPanel } from "@/components/blocks/block-row-layout-panel";
 import { getBlockRowLayoutStatus } from "@/domains/block-rows/actions";
+import {
+  VarietyColorRow,
+  WineTypeBadge,
+} from "@/components/varieties/variety-color-row";
 
 export default async function BlockDetailPage({
   params,
@@ -170,24 +174,44 @@ export default async function BlockDetailPage({
         </CardHeader>
         <CardContent className="space-y-4">
           {block.plantings.map((planting) => (
-            <div
-              key={planting.id}
-              className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-4 last:border-0 last:pb-0"
-            >
-              <div>
-                <p className="font-medium">{planting.variety.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {planting.yearPlanted != null
-                    ? `Planted ${planting.yearPlanted}`
-                    : "Year planted not recorded"}
-                  {planting.rootstock && ` · ${planting.rootstock}`}
+            <div key={planting.id} className="space-y-3 border-b pb-4 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {planting.variety.colorHex && (
+                      <span
+                        className="size-3.5 shrink-0 rounded-sm ring-1 ring-black/20"
+                        style={{ backgroundColor: planting.variety.colorHex }}
+                        aria-hidden
+                      />
+                    )}
+                    <p className="font-medium">{planting.variety.name}</p>
+                    <WineTypeBadge color={planting.variety.color} />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {planting.yearPlanted != null
+                      ? `Planted ${planting.yearPlanted}`
+                      : "Year planted not recorded"}
+                    {planting.rootstock && ` · ${planting.rootstock}`}
+                  </p>
+                </div>
+                <p className="text-sm font-medium">
+                  {planting.vineCount != null
+                    ? `${planting.vineCount.toLocaleString()} vines`
+                    : "Vine count not recorded"}
                 </p>
               </div>
-              <p className="text-sm font-medium">
-                {planting.vineCount != null
-                  ? `${planting.vineCount.toLocaleString()} vines`
-                  : "Vine count not recorded"}
-              </p>
+              <VarietyColorRow
+                variety={{
+                  id: planting.variety.id,
+                  name: planting.variety.name,
+                  color: planting.variety.color,
+                  colorHex: planting.variety.colorHex,
+                }}
+                compact
+                hideHeader
+                showPlantingCount={false}
+              />
             </div>
           ))}
         </CardContent>

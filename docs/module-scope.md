@@ -43,7 +43,7 @@
 - 3D extrusion aligned to Mapbox terrain DEM (`queryTerrainElevation` at block centroids; vineyard cap `BLOCK_EXTRUSION_CAP_M`)
 - Tap block → slide-up drawer with quick actions
 - Status overlays (tasks, irrigation)
-- Varietal color mode toggle (`?color=varietal`) with per-variety `colorHex` at `/settings/varieties`
+- Varietal color mode toggle (`?color=varietal`) with per-variety `colorHex` edited on `/blocks` (Map colors by variety)
 - Irrigation pump markers with serviced-block highlighting (`?pump=id` deep links)
 - Block drawer shows pumps servicing the selected block
 

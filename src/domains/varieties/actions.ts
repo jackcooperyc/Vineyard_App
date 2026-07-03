@@ -26,7 +26,7 @@ export async function updateVarietyColor(formData: FormData) {
     data: { colorHex: parsed.data.colorHex },
   });
 
-  revalidatePath("/settings/varieties");
+  revalidatePath("/blocks", "layout");
   revalidatePath("/map");
   return { success: true };
 }
@@ -47,6 +47,6 @@ export async function updateVineyardMapColorMode(mapColorMode: "STATUS" | "VARIE
   });
 
   revalidatePath("/map");
-  revalidatePath("/settings/varieties");
+  revalidatePath("/blocks");
   return { success: true };
 }

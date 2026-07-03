@@ -1,8 +1,13 @@
-import { getBlocks } from "@/domains/blocks/queries";
 import { BlockListWithFilter } from "@/components/blocks/block-list-with-filter";
+import { VarietyColorsSection } from "@/components/varieties/variety-colors-section";
+import { getBlocks } from "@/domains/blocks/queries";
+import { getVarietiesForSettings } from "@/domains/varieties/queries";
 
 export default async function BlocksPage() {
-  const blocks = await getBlocks();
+  const [blocks, varieties] = await Promise.all([
+    getBlocks(),
+    getVarietiesForSettings(),
+  ]);
   const vineyardCount = blocks.filter((b) => b.blockType === "VINEYARD").length;
   const infrastructureCount = blocks.filter(
     (b) => b.blockType === "INFRASTRUCTURE",
@@ -23,6 +28,8 @@ export default async function BlocksPage() {
         vineyardCount={vineyardCount}
         infrastructureCount={infrastructureCount}
       />
+
+      <VarietyColorsSection varieties={varieties} />
     </div>
   );
 }
