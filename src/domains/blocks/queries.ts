@@ -82,10 +82,25 @@ export async function getBlockById(id: string) {
       tasks: {
         orderBy: { dueDate: "asc" },
         take: 5,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          dueDate: true,
+          completedAt: true,
+          coveragePct: true,
+          rowsCompleted: true,
+          rowsTotal: true,
           assignedTo: { select: { name: true } },
           taskType: {
-            select: { id: true, slug: true, label: true, iconName: true, colorHex: true },
+            select: {
+              id: true,
+              slug: true,
+              label: true,
+              iconName: true,
+              colorHex: true,
+              tracksGpsProgress: true,
+            },
           },
         },
       },

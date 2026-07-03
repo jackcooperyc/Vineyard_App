@@ -50,6 +50,8 @@ export default async function EditTaskTypePage({
               showInQuickLog: taskType.showInQuickLog,
               defaultTitleTemplate: taskType.defaultTitleTemplate,
               defaultDueDaysOffset: taskType.defaultDueDaysOffset,
+              tracksGpsProgress: taskType.tracksGpsProgress,
+              defaultSwathWidthM: taskType.defaultSwathWidthM,
               active: taskType.active,
             }}
           />

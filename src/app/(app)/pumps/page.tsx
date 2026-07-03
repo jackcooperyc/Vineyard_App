@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Droplets, Plus } from "lucide-react";
+import { Droplets, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +22,10 @@ export default async function PumpsPage() {
             Pump locations and serviced blocks for map overlays
           </p>
         </div>
+        <Button size="touch" variant="outline" render={<Link href="/map" />}>
+          <MapPin className="size-4" />
+          Map view
+        </Button>
         <Button size="touch" render={<Link href="/pumps/new" />}>
           <Plus className="size-4" />
           Add pump
@@ -58,11 +62,19 @@ export default async function PumpsPage() {
                     ` · ${pump.servicedBlocks.length} block${pump.servicedBlocks.length !== 1 ? "s" : ""}`}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex items-center justify-between gap-3">
                 <p className="font-mono text-xs text-muted-foreground">
                   {pump.gpsPoint.coordinates[1].toFixed(5)},{" "}
                   {pump.gpsPoint.coordinates[0].toFixed(5)}
                 </p>
+                <Button
+                  variant="link"
+                  className="h-auto shrink-0 p-0 text-sm"
+                  render={<Link href={`/map?pump=${pump.id}`} />}
+                >
+                  <MapPin className="size-3.5" />
+                  Map
+                </Button>
               </CardContent>
             </Card>
           ))}

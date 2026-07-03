@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/card";
 import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
 import type { TaskListItem } from "@/domains/tasks/queries";
+import { BlockRowLayoutPanel } from "@/components/blocks/block-row-layout-panel";
+import { getBlockRowLayoutStatus } from "@/domains/block-rows/actions";
 
 export default async function BlockDetailPage({
   params,
@@ -27,11 +29,13 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [block, equipment, blockEquipment, quickLogTypes] = await Promise.all([
+  const [block, equipment, blockEquipment, quickLogTypes, rowLayoutStatus] =
+    await Promise.all([
     getBlockById(id),
     getActiveEquipmentForSelect(),
     getOpenTaskEquipmentForBlock(id),
     getQuickLogTaskTypes(),
+    getBlockRowLayoutStatus(id),
   ]);
 
   if (!block) {
@@ -50,9 +54,14 @@ export default async function BlockDetailPage({
     status: task.status,
     dueDate: task.dueDate,
     completedAt: task.completedAt,
+    coveragePct: task.coveragePct ?? null,
+    rowsCompleted: task.rowsCompleted ?? null,
+    rowsTotal: task.rowsTotal ?? null,
     block: { id: block.id, code: block.code, name: block.name },
     assignedTo: task.assignedTo,
   }));
+
+  const primaryPlanting = block.plantings[0];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -107,7 +116,7 @@ export default async function BlockDetailPage({
           <Button
             variant="outline"
             className="min-h-11"
-            render={<Link href="/map" />}
+            render={<Link href={`/map?block=${block.id}`} />}
           >
             <MapPin className="size-4" />
             View on map
@@ -130,6 +139,25 @@ export default async function BlockDetailPage({
         }}
         viticultureMetrics={block.viticultureMetrics}
       />
+
+      {block.blockType === "VINEYARD" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Row layout</CardTitle>
+            <CardDescription>
+              Row spacing and GIS row data for GPS row progress
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BlockRowLayoutPanel
+              blockId={block.id}
+              initialStatus={rowLayoutStatus}
+              initialRowSpacing={primaryPlanting?.rowSpacing ?? null}
+              initialVineSpacing={primaryPlanting?.vineSpacing ?? null}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {block.blockType === "VINEYARD" && (
       <Card>

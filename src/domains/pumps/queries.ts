@@ -1,4 +1,13 @@
 import { db } from "@/lib/db";
+import {
+  getPumpsForBlock as getPumpsForBlockGeo,
+  mapPumpsToGeoJSON as mapPumpsToGeoJSONGeo,
+} from "@/domains/pumps/map-geo";
+
+export {
+  mapPumpsToGeoJSONGeo as mapPumpsToGeoJSON,
+  getPumpsForBlockGeo as getPumpsForBlock,
+};
 
 export type PumpListItem = {
   id: string;
@@ -14,6 +23,7 @@ export type MapPump = {
   id: string;
   name: string | null;
   coordinates: [number, number];
+  servicedBlockIds: string[];
 };
 
 function parseGpsPoint(
@@ -92,7 +102,7 @@ export async function getIrrigationPumpById(id: string) {
 
 export async function getMapPumps(): Promise<MapPump[]> {
   const pumps = await db.irrigationPump.findMany({
-    select: { id: true, name: true, gpsPoint: true },
+    select: { id: true, name: true, gpsPoint: true, servicedBlockIds: true },
   });
 
   return pumps
@@ -103,6 +113,7 @@ export async function getMapPumps(): Promise<MapPump[]> {
         id: pump.id,
         name: pump.name,
         coordinates: parsed.coordinates,
+        servicedBlockIds: pump.servicedBlockIds,
       };
     })
     .filter((p): p is MapPump => p != null);
@@ -118,22 +129,4 @@ export async function getVineyardBlocksForPumpForm() {
 
 export async function countIrrigationPumps() {
   return db.irrigationPump.count();
-}
-
-export function mapPumpsToGeoJSON(pumps: MapPump[]) {
-  return {
-    type: "FeatureCollection" as const,
-    features: pumps.map((pump) => ({
-      type: "Feature" as const,
-      id: pump.id,
-      geometry: {
-        type: "Point" as const,
-        coordinates: pump.coordinates,
-      },
-      properties: {
-        pumpId: pump.id,
-        name: pump.name ?? "Pump",
-      },
-    })),
-  };
 }

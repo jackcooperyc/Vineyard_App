@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Droplets, ListTodo, Wrench } from "lucide-react";
+import { CheckCircle2, Droplets, ListTodo, MapPin, Wrench } from "lucide-react";
 import { BlockPicker, type BlockPickerItem } from "@/components/shared/block-picker";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
+import { FieldGpsWorkPanel } from "@/components/field/field-gps-work-panel";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -19,7 +20,7 @@ import { quickLogTask } from "@/domains/tasks/actions";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 import { cn } from "@/lib/utils";
 
-type FieldMode = "task" | "irrigation" | "maintenance";
+type FieldMode = "task" | "irrigation" | "maintenance" | "gps";
 
 type EquipmentOption = { id: string; name: string; type: string };
 
@@ -98,12 +99,13 @@ export function FieldLogPanel({
   const tabs = [
     { id: "task" as const, label: "Task", icon: ListTodo },
     { id: "irrigation" as const, label: "Irrigation", icon: Droplets },
+    { id: "gps" as const, label: "GPS", icon: MapPin },
     { id: "maintenance" as const, label: "Service", icon: Wrench },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -173,6 +175,13 @@ export function FieldLogPanel({
             Records drip irrigation for today. Add volume and duration from the
             block detail page if needed.
           </p>
+        </section>
+      ) : mode === "gps" ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            2 · GPS field work
+          </h3>
+          <FieldGpsWorkPanel blockId={blockId} />
         </section>
       ) : (
         <section className="space-y-3">

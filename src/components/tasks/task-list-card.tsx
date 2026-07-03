@@ -117,6 +117,16 @@ export function TaskListCard({
                 {task.assignedTo.name}
               </span>
             )}
+            {task.taskType.tracksGpsProgress && task.coveragePct != null && (
+              <Badge variant="secondary" className="text-xs tabular-nums">
+                {Math.round(task.coveragePct)}% covered
+              </Badge>
+            )}
+            {task.rowsTotal != null && task.rowsTotal > 0 && (
+              <span className="text-muted-foreground">
+                {task.rowsCompleted ?? 0}/{task.rowsTotal} rows
+              </span>
+            )}
           </div>
         </div>
         {!selectable && (

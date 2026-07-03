@@ -31,6 +31,8 @@ export async function createTaskType(formData: FormData) {
       formData.get("showInQuickLog") === "on",
     defaultTitleTemplate: formData.get("defaultTitleTemplate") || undefined,
     defaultDueDaysOffset: formData.get("defaultDueDaysOffset") || undefined,
+    tracksGpsProgress: formData.get("tracksGpsProgress") === "true",
+    defaultSwathWidthM: formData.get("defaultSwathWidthM") || undefined,
     active:
       formData.get("active") === "true" || formData.get("active") === "on",
   });
@@ -57,6 +59,8 @@ export async function createTaskType(formData: FormData) {
       showInQuickLog: data.showInQuickLog ?? true,
       defaultTitleTemplate: data.defaultTitleTemplate || null,
       defaultDueDaysOffset: data.defaultDueDaysOffset ?? null,
+      tracksGpsProgress: data.tracksGpsProgress ?? false,
+      defaultSwathWidthM: data.defaultSwathWidthM ?? null,
       active: data.active ?? true,
       sortOrder,
     },
@@ -81,6 +85,8 @@ export async function updateTaskType(formData: FormData) {
       formData.get("showInQuickLog") === "on",
     defaultTitleTemplate: formData.get("defaultTitleTemplate") || undefined,
     defaultDueDaysOffset: formData.get("defaultDueDaysOffset") || undefined,
+    tracksGpsProgress: formData.get("tracksGpsProgress") === "true",
+    defaultSwathWidthM: formData.get("defaultSwathWidthM") || undefined,
     active:
       formData.get("active") === "true" || formData.get("active") === "on",
   });
@@ -111,6 +117,8 @@ export async function updateTaskType(formData: FormData) {
       showInQuickLog: data.showInQuickLog ?? true,
       defaultTitleTemplate: data.defaultTitleTemplate || null,
       defaultDueDaysOffset: data.defaultDueDaysOffset ?? null,
+      tracksGpsProgress: data.tracksGpsProgress ?? false,
+      defaultSwathWidthM: data.defaultSwathWidthM ?? null,
       active: data.active ?? true,
     },
   });

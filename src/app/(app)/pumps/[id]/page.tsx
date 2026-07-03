@@ -48,7 +48,11 @@ export default async function PumpDetailPage({
         </div>
       </div>
 
-      <Button variant="outline" className="min-h-11" render={<Link href="/map" />}>
+      <Button
+        variant="outline"
+        className="min-h-11"
+        render={<Link href={`/map?pump=${pump.id}`} />}
+      >
         <MapPin className="size-4" />
         View on map
       </Button>

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { EquipmentListCard } from "@/components/equipment/equipment-list-card";
 import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
 import { TaskListCard } from "@/components/tasks/task-list-card";
+import { ActiveGpsSessionsCard } from "@/components/dashboard/active-gps-sessions-card";
 import { DashboardWeatherCard } from "@/components/weather/dashboard-weather-card";
 import { getDashboardStats } from "@/domains/blocks/queries";
 import { getEnvironmentalThresholds } from "@/domains/environment/queries";
@@ -131,6 +132,8 @@ export default async function DashboardPage() {
         forecast={weatherForecast}
         thresholds={thresholds}
       />
+
+      <ActiveGpsSessionsCard />
 
       <Card>
         <CardHeader>

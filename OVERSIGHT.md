@@ -2,6 +2,27 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-03 — GPS task progress + irrigation pump map
+
+### Completed
+
+- **GPS schema:** `TaskGpsSession`, `TaskGpsPoint`, `BlockRow`; task coverage fields; `tracksGpsProgress` on task types.
+- **GPS domain:** `src/domains/task-gps/` — Turf.js coverage, row matcher, sessions, field actions.
+- **GPS UI:** Field log GPS tab, task detail sessions, coverage chips, dashboard active sessions, reports table, row layout admin on block detail.
+- **Pump map:** Serviced-block highlighting, pump drawer, `?pump=id` deep links from irrigation hub and pump pages.
+- **Offline:** `src/lib/gps-offline-queue.ts` stub only (v2).
+
+### Production DB
+
+- Run `npx prisma db push` against Neon (new tables: `TaskGpsSession`, `TaskGpsPoint`, `BlockRow`; new columns on `Task`, `TaskTypeDefinition`).
+- Re-seed or update task types for GPS-enabled spraying/weeding/mowing if needed (`prisma/seed-task-types.ts`).
+
+### New packages
+
+- `@turf/turf` and related Turf modules for coverage geometry.
+
+---
+
 ## 2026-07-03 — Soft delete with 48-hour recovery
 
 ### Completed

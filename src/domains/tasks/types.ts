@@ -9,5 +9,7 @@ export type TaskTypeConfig = {
   showInQuickLog: boolean;
   defaultTitleTemplate: string | null;
   defaultDueDaysOffset: number | null;
+  tracksGpsProgress: boolean;
+  defaultSwathWidthM: number | null;
   _count?: { tasks: number };
 };

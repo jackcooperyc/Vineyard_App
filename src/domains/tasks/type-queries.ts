@@ -15,6 +15,8 @@ const taskTypeSelect = {
   showInQuickLog: true,
   defaultTitleTemplate: true,
   defaultDueDaysOffset: true,
+  tracksGpsProgress: true,
+  defaultSwathWidthM: true,
 } as const;
 
 const getCachedTaskTypes = unstable_cache(

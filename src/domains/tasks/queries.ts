@@ -14,11 +14,14 @@ export type TaskTypeSummary = {
 export type TaskListItem = {
   id: string;
   title: string;
-  taskType: TaskTypeSummary;
+  taskType: TaskTypeSummary & { tracksGpsProgress?: boolean };
   status: TaskStatus;
   dueDate: Date | null;
   completedAt: Date | null;
   createdAt?: Date;
+  coveragePct?: number | null;
+  rowsCompleted?: number | null;
+  rowsTotal?: number | null;
   block: { id: string; code: string; name: string };
   assignedTo: { name: string | null } | null;
 };
@@ -53,6 +56,7 @@ const taskTypeSelect = {
   label: true,
   iconName: true,
   colorHex: true,
+  tracksGpsProgress: true,
 } as const;
 
 function startOfToday() {

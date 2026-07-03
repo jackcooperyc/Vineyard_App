@@ -19,6 +19,8 @@ type TaskTypeFormValues = {
   showInQuickLog: boolean;
   defaultTitleTemplate: string | null;
   defaultDueDaysOffset: number | null;
+  tracksGpsProgress: boolean;
+  defaultSwathWidthM: number | null;
   active: boolean;
 };
 
@@ -35,6 +37,7 @@ export function TaskTypeForm({
   const [slug, setSlug] = useState(taskType?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(isEdit);
   const [iconName, setIconName] = useState(taskType?.iconName ?? "ListTodo");
+  const [tracksGps, setTracksGps] = useState(taskType?.tracksGpsProgress ?? false);
 
   function handleLabelChange(value: string) {
     setLabel(value);
@@ -48,6 +51,7 @@ export function TaskTypeForm({
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.set("iconName", iconName);
+    formData.set("tracksGpsProgress", tracksGps ? "true" : "false");
     if (isEdit && taskType?.id) {
       formData.set("taskTypeId", taskType.id);
     }
@@ -152,6 +156,37 @@ export function TaskTypeForm({
           className="h-12 text-base"
           defaultValue={taskType?.defaultDueDaysOffset ?? ""}
         />
+      </div>
+
+      <div className="space-y-3 rounded-lg border p-4">
+        <label className="flex items-center gap-3 text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={tracksGps}
+            onChange={(e) => setTracksGps(e.target.checked)}
+            className="size-4"
+          />
+          Track GPS progress
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Enable field GPS sessions, block coverage %, and row progress for this task type.
+        </p>
+        {tracksGps && (
+          <div className="space-y-2">
+            <Label htmlFor="defaultSwathWidthM">Default swath width (m)</Label>
+            <Input
+              id="defaultSwathWidthM"
+              name="defaultSwathWidthM"
+              type="number"
+              min={0.5}
+              max={50}
+              step={0.1}
+              className="h-12 text-base"
+              placeholder="2.5"
+              defaultValue={taskType?.defaultSwathWidthM ?? ""}
+            />
+          </div>
+        )}
       </div>
 
       <label className="flex items-center gap-3 text-sm">

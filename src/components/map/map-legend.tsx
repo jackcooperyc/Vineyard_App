@@ -22,6 +22,14 @@ export function MapLegend({ className }: { className?: string }) {
           <span className="size-3 rounded-sm bg-blue-500/70 ring-1 ring-blue-700" />
           Irrigation overdue
         </li>
+        <li className="flex items-center gap-2">
+          <span className="size-3 rounded-full bg-sky-500 ring-2 ring-white" />
+          Irrigation pump
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="h-0.5 w-3 rounded bg-amber-500" />
+          Active GPS track
+        </li>
       </ul>
     </div>
   );

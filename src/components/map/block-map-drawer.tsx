@@ -14,17 +14,20 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { MapBlock } from "@/domains/map/types";
+import type { MapPumpGeo } from "@/domains/pumps/map-geo";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 export function BlockMapDrawer({
   block,
   equipment,
   quickLogTypes,
+  pumps = [],
   onClose,
 }: {
   block: MapBlock | null;
   equipment: { id: string; name: string; type: string }[];
   quickLogTypes: TaskTypeConfig[];
+  pumps?: MapPumpGeo[];
   onClose: () => void;
 }) {
   return (
@@ -103,6 +106,25 @@ export function BlockMapDrawer({
                           {item.name}
                         </Link>
                         <span>· {item.type}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {pumps.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Irrigation pumps</p>
+                  <ul className="space-y-1 text-sm">
+                    {pumps.map((pump) => (
+                      <li key={pump.id}>
+                        <Link
+                          href={`/map?pump=${pump.id}`}
+                          className="flex items-center gap-2 text-primary hover:underline"
+                        >
+                          <Droplets className="size-4 shrink-0 text-sky-500" />
+                          {pump.name ?? "Unnamed pump"}
+                        </Link>
                       </li>
                     ))}
                   </ul>

@@ -2,21 +2,19 @@ import { Suspense } from "react";
 import { MapPageClient } from "@/components/map/map-page-client";
 import { MapPlaceholder } from "@/components/map/map-placeholder";
 import { getActiveEquipmentForSelect } from "@/domains/equipment/queries";
-import {
-  getMapBlocks,
-  getMapBounds,
-  mapBlocksToGeoJSON,
-} from "@/domains/map/queries";
-import { getMapPumps, mapPumpsToGeoJSON } from "@/domains/pumps/queries";
+import { getMapBlocks, getMapBounds, mapBlocksToGeoJSON } from "@/domains/map/queries";
+import { getMapPumps } from "@/domains/pumps/queries";
+import { getActiveGpsTracksGeoJson } from "@/domains/task-gps/queries";
 import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
 import { getCurrentWeather } from "@/domains/weather/queries";
 
 export default async function MapPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
-  const [blocks, equipment, pumps, currentWeather, quickLogTypes] = await Promise.all([
+  const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes] = await Promise.all([
     getMapBlocks(),
     getActiveEquipmentForSelect(),
     getMapPumps(),
+    getActiveGpsTracksGeoJson(),
     getCurrentWeather(),
     getQuickLogTaskTypes(),
   ]);
@@ -43,7 +41,8 @@ export default async function MapPage() {
             geoJson={mapBlocksToGeoJSON(blocks)}
             bounds={getMapBounds(blocks)}
             equipment={equipment}
-            pumpsGeoJson={mapPumpsToGeoJSON(pumps)}
+            pumps={pumps}
+            gpsTracks={gpsTracks}
             weather={currentWeather}
             quickLogTypes={quickLogTypes}
             token={mapboxToken}

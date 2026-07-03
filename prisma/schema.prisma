@@ -39,6 +39,13 @@ enum TaskStatus {
   CANCELLED
 }
 
+enum TaskGpsSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
 enum EquipmentStatus {
   ACTIVE
   IN_MAINTENANCE
@@ -120,6 +127,7 @@ model Block {
   notes_records       Note[]
   mapFeature          MapFeature?
   viticultureMetrics  ViticultureMetrics?
+  blockRows           BlockRow[]
 
   @@unique([vineyardId, code])
   @@index([vineyardId])
@@ -167,6 +175,8 @@ model TaskTypeDefinition {
   showInQuickLog       Boolean  @default(true)
   defaultTitleTemplate String?
   defaultDueDaysOffset Int?
+  tracksGpsProgress    Boolean  @default(false)
+  defaultSwathWidthM Float?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   tasks                Task[]
@@ -187,6 +197,11 @@ model Task {
   assignedToId          String?
   createdById           String?
   equipmentId           String?
+  lastKnownLat          Float?
+  lastKnownLng          Float?
+  coveragePct           Float?
+  rowsCompleted         Int?
+  rowsTotal             Int?
   deletedAt             DateTime?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -196,6 +211,7 @@ model Task {
   createdBy             User?                  @relation("TaskCreator", fields: [createdById], references: [id])
   equipment             Equipment?             @relation(fields: [equipmentId], references: [id])
   notificationDeliveries NotificationDelivery[]
+  gpsSessions           TaskGpsSession[]
 
   @@index([blockId])
   @@index([taskTypeId])
@@ -306,6 +322,56 @@ model MapFeature {
   block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
 }
 
+model BlockRow {
+  id        String   @id @default(cuid())
+  blockId   String
+  rowIndex  Int
+  geometry  Json
+  lengthM   Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  block     Block    @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@unique([blockId, rowIndex])
+  @@index([blockId])
+}
+
+model TaskGpsSession {
+  id          String               @id @default(cuid())
+  taskId      String
+  userId      String
+  startedAt   DateTime             @default(now())
+  endedAt     DateTime?
+  swathWidthM Float?
+  status      TaskGpsSessionStatus @default(ACTIVE)
+  coveragePct Float?
+  rowsVisited Int?
+  pointCount  Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  task        Task                 @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User                 @relation(fields: [userId], references: [id])
+  points      TaskGpsPoint[]
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([status])
+}
+
+model TaskGpsPoint {
+  id         String         @id @default(cuid())
+  sessionId  String
+  lat        Float
+  lng        Float
+  accuracyM  Float?
+  speedMps   Float?
+  heading    Float?
+  recordedAt DateTime
+  session    TaskGpsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, recordedAt])
+}
+
 model IrrigationPump {
   id               String   @id @default(cuid())
   name             String?
@@ -359,6 +425,7 @@ model User {
   notes                    Note[]
   notificationPreference   UserNotificationPreference?
   notificationDeliveries   NotificationDelivery[]
+  taskGpsSessions          TaskGpsSession[]
 }
 
 model UserNotificationPreference {

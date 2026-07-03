@@ -22,6 +22,8 @@ export const createTaskTypeSchema = z.object({
   showInQuickLog: z.coerce.boolean().optional(),
   defaultTitleTemplate: z.string().max(200).optional(),
   defaultDueDaysOffset: z.coerce.number().int().min(0).max(365).optional(),
+  tracksGpsProgress: z.coerce.boolean().optional(),
+  defaultSwathWidthM: z.coerce.number().min(0.5).max(50).optional().nullable(),
   active: z.coerce.boolean().optional(),
 });
 

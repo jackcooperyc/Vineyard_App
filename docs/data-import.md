@@ -35,3 +35,23 @@ Audited GIS centroid: `{ lat: 46.26513, lng: -119.45518 }` — used in map defau
 ## Known gaps
 
 See [OVERSIGHT.md](../OVERSIGHT.md) for missing polygons (Blake's House, Cowboy's Place), unmapped KML placemark, and fields intentionally left null (vine counts, year planted, rootstock).
+
+## Block row GIS import (GPS row progress)
+
+Row polylines for GPS row-level progress can be imported via `importBlockRows` (`src/domains/block-rows/actions.ts`).
+
+GeoJSON template per block:
+
+```json
+{
+  "blockId": "<cuid>",
+  "rows": [
+    {
+      "rowIndex": 1,
+      "coordinates": [[-119.455, 46.265], [-119.454, 46.266]]
+    }
+  ]
+}
+```
+
+Coordinates are `[lng, lat]` LineString vertices. Row spacing can also be entered on the block detail page without full GIS (spacing-only mode).

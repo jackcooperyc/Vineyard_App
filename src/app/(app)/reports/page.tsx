@@ -11,18 +11,20 @@ import {
   getIrrigationVolumeByBlockReport,
   getOpenTasksByTypeReport,
   getOverdueIrrigationReport,
+  getGpsCoverageReport,
   getTasksCompletedByBlockReport,
   REPORT_PERIOD_DAYS,
 } from "@/domains/reports/queries";
 
 export default async function ReportsPage() {
-  const [tasks, irrigation, maintenance, overdueIrrigation, openTasksByType] =
+  const [tasks, irrigation, maintenance, overdueIrrigation, openTasksByType, gpsCoverage] =
     await Promise.all([
       getTasksCompletedByBlockReport(),
       getIrrigationVolumeByBlockReport(),
       getEquipmentMaintenanceReport(),
       getOverdueIrrigationReport(),
       getOpenTasksByTypeReport(),
+      getGpsCoverageReport(),
     ]);
 
   const taskTotal = tasks.reduce((sum, row) => sum + row.completedCount, 0);
@@ -236,6 +238,54 @@ export default async function ReportsPage() {
                         {row.daysOverdue}
                       </td>
                       <td className="py-2">{row.frequency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>GPS task coverage</CardTitle>
+          <CardDescription>
+            Block coverage from GPS-tracked field work (last {REPORT_PERIOD_DAYS} days + open)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {gpsCoverage.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No GPS coverage data yet. Start a session from Field log → GPS.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="pb-2 pr-4 font-medium">Block</th>
+                    <th className="pb-2 pr-4 font-medium">Type</th>
+                    <th className="pb-2 pr-4 font-medium">Worker</th>
+                    <th className="pb-2 font-medium text-right">Coverage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gpsCoverage.map((row, i) => (
+                    <tr key={`${row.blockId}-${i}`} className="border-b last:border-0">
+                      <td className="py-2 pr-4">
+                        <span className="font-mono text-muted-foreground">
+                          {row.blockCode}
+                        </span>{" "}
+                        {row.blockName}
+                      </td>
+                      <td className="py-2 pr-4">{row.taskType}</td>
+                      <td className="py-2 pr-4">{row.worker}</td>
+                      <td className="py-2 text-right tabular-nums">
+                        {row.coveragePct != null
+                          ? `${Math.round(row.coveragePct)}%`
+                          : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

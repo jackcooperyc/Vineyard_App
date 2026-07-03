@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Clock, Pencil, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Pencil, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import {
   formatDueLabel,
   getDueUrgency,
 } from "@/domains/tasks/due-date";
+import { TaskGpsSessions } from "@/components/tasks/task-gps-sessions";
 import { getTaskById } from "@/domains/tasks/queries";
 import { buildTasksHubHref, decodeBackParams, encodeBackParams } from "@/lib/hub-back-href";
 import { cn } from "@/lib/utils";
@@ -179,13 +180,41 @@ export default async function TaskDetailPage({
                 </dd>
               </div>
             )}
+            {task.taskType.tracksGpsProgress && task.coveragePct != null && (
+              <div>
+                <dt className="text-muted-foreground">GPS coverage</dt>
+                <dd className="font-medium tabular-nums">
+                  {Math.round(task.coveragePct)}% of block
+                  {task.rowsTotal != null && task.rowsTotal > 0 && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {task.rowsCompleted ?? 0}/{task.rowsTotal} rows
+                    </span>
+                  )}
+                </dd>
+              </div>
+            )}
           </dl>
         </CardContent>
       </Card>
 
-      <Button variant="outline" className="min-h-11" render={<Link href={`/blocks/${task.block.id}`} />}>
-        View block
-      </Button>
+      <TaskGpsSessions taskId={task.id} blockId={task.block.id} />
+
+      <div className="flex flex-wrap gap-2">
+        {task.taskType.tracksGpsProgress && (
+          <Button
+            variant="outline"
+            className="min-h-11 gap-2"
+            render={<Link href={`/map?block=${task.block.id}`} />}
+          >
+            <MapPin className="size-4" />
+            View on map
+          </Button>
+        )}
+        <Button variant="outline" className="min-h-11" render={<Link href={`/blocks/${task.block.id}`} />}>
+          View block
+        </Button>
+      </div>
     </div>
   );
 }

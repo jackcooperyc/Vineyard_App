@@ -116,13 +116,22 @@ export default async function IrrigationPage({
               : " · schedules, records, and alerts"}
           </p>
           {pumpCount > 0 && (
-            <Button
-              variant="link"
-              className="mt-1 h-auto p-0 text-sm"
-              render={<Link href="/pumps" />}
-            >
-              {pumpCount} pump{pumpCount !== 1 ? "s" : ""} on estate →
-            </Button>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Button
+                variant="link"
+                className="h-auto p-0 text-sm"
+                render={<Link href="/pumps" />}
+              >
+                {pumpCount} pump{pumpCount !== 1 ? "s" : ""} on estate →
+              </Button>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-sm"
+                render={<Link href="/map" />}
+              >
+                View pumps on map →
+              </Button>
+            </div>
           )}
         </div>
         <IrrigationHubActions blocks={blocks} blockId={blockId} />

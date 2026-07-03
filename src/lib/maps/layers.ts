@@ -6,11 +6,13 @@ import {
 
 export const MAP_SOURCE_ID = "blocks";
 export const PUMP_SOURCE_ID = "pumps";
+export const GPS_TRACK_SOURCE_ID = "gps-tracks";
 export const TERRAIN_SOURCE_ID = "mapbox-dem";
 export const FILL_LAYER_ID = "blocks-fill";
 export const EXTRUSION_LAYER_ID = "blocks-extrusion";
 export const OUTLINE_LAYER_ID = "blocks-outline";
 export const PUMP_LAYER_ID = "pumps-circle";
+export const GPS_TRACK_LAYER_ID = "gps-tracks-line";
 
 export const BLOCK_LAYER_IDS = [
   FILL_LAYER_ID,

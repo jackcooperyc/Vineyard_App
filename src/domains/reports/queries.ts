@@ -203,7 +203,52 @@ export async function getOpenTasksByTypeReport(): Promise<
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
 
-  return [...counts.entries()]
+  return Array.from(counts.entries())
     .map(([type, openCount]) => ({ type, openCount }))
     .sort((a, b) => b.openCount - a.openCount);
+}
+
+export type GpsCoverageReportRow = {
+  blockId: string;
+  blockCode: string;
+  blockName: string;
+  taskType: string;
+  worker: string;
+  coveragePct: number | null;
+  completedAt: Date | null;
+};
+
+export async function getGpsCoverageReport(): Promise<GpsCoverageReportRow[]> {
+  const since = daysAgo(REPORT_DAYS);
+
+  const tasks = await db.task.findMany({
+    where: {
+      ...notDeletedWhere(),
+      coveragePct: { not: null },
+      taskType: { tracksGpsProgress: true },
+      OR: [
+        { completedAt: { gte: since } },
+        { status: { in: ["PENDING", "IN_PROGRESS"] } },
+      ],
+    },
+    select: {
+      coveragePct: true,
+      completedAt: true,
+      block: { select: { id: true, code: true, name: true } },
+      taskType: { select: { label: true } },
+      assignedTo: { select: { name: true, email: true } },
+    },
+    orderBy: [{ coveragePct: "desc" }],
+    take: 50,
+  });
+
+  return tasks.map((task) => ({
+    blockId: task.block.id,
+    blockCode: task.block.code,
+    blockName: task.block.name,
+    taskType: task.taskType.label,
+    worker: task.assignedTo?.name ?? task.assignedTo?.email ?? "Unassigned",
+    coveragePct: task.coveragePct,
+    completedAt: task.completedAt,
+  }));
 }

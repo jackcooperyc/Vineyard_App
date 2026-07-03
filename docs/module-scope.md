@@ -36,12 +36,23 @@
 - Quick log from block detail
 - Dashboard irrigation alerts
 
-### Map — Sprint 5
+### Map — Sprint 5 ✓
 
-- Mapbox GL JS 2D view
+- Mapbox GL JS 2D/3D view
 - Block polygon overlays from `MapFeature`
 - Tap block → slide-up drawer with quick actions
 - Status overlays (tasks, irrigation)
+- Irrigation pump markers with serviced-block highlighting (`?pump=id` deep links)
+- Block drawer shows pumps servicing the selected block
+
+### GPS task progress — post-Sprint 8 ✓
+
+- `TaskGpsSession` / `TaskGpsPoint` models; `TaskTypeDefinition.tracksGpsProgress` + `defaultSwathWidthM`
+- Field log GPS tab: start/pause/resume/end sessions; Turf.js block coverage %
+- Row progress when `BlockRow` GIS data or planting spacing exists
+- Coverage chips on task list cards; GPS sessions on task detail
+- Dashboard active sessions widget; reports GPS coverage table
+- Offline queue stub (`src/lib/gps-offline-queue.ts`) — full IndexedDB sync deferred v2
 
 ## v2 modules (Sprint 6–8)
 
