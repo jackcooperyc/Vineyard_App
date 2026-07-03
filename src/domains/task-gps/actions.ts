@@ -15,7 +15,7 @@ import {
 import { emitTaskEvent } from "@/domains/notifications/delivery";
 import {
   getActiveGpsSessionForUser,
-  getOpenGpsEligibleTasks,
+  getOpenGpsEligibleTasksForBlocks,
 } from "@/domains/task-gps/queries";
 import { GPS_MIN_MOVE_M } from "@/domains/task-gps/constants";
 import {
@@ -316,18 +316,23 @@ export async function cancelGpsSession(sessionId: string) {
   return { success: true };
 }
 
-export async function fetchGpsFieldData(blockId: string | null) {
+export async function fetchGpsFieldData(blockIds: string[] | null) {
   const session = await auth();
   if (!session?.user) {
     return {
       activeSession: null,
-      eligibleTasks: [] as Awaited<ReturnType<typeof getOpenGpsEligibleTasks>>,
+      eligibleTasks: [] as Awaited<
+        ReturnType<typeof getOpenGpsEligibleTasksForBlocks>
+      >,
     };
   }
 
+  const ids = blockIds?.filter(Boolean) ?? [];
   const [activeSession, eligibleTasks] = await Promise.all([
     getActiveGpsSessionForUser(session.user.id),
-    blockId ? getOpenGpsEligibleTasks(blockId) : Promise.resolve([]),
+    ids.length > 0
+      ? getOpenGpsEligibleTasksForBlocks(ids)
+      : Promise.resolve([]),
   ]);
 
   return { activeSession, eligibleTasks };

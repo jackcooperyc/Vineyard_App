@@ -149,8 +149,8 @@ export async function updateEquipment(formData: FormData) {
     notes,
   } = parsed.data;
 
-  const existing = await db.equipment.findUnique({
-    where: { id: equipmentId },
+  const existing = await db.equipment.findFirst({
+    where: { id: equipmentId, ...notDeletedWhere() },
     select: { id: true },
   });
 
@@ -190,6 +190,15 @@ export async function updateEquipmentStatus(
     return { error: "Invalid status update" };
   }
 
+  const existing = await db.equipment.findFirst({
+    where: { id: equipmentId, ...notDeletedWhere() },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Equipment not found" };
+  }
+
   await db.equipment.update({
     where: { id: equipmentId },
     data: { status },
@@ -205,8 +214,8 @@ export async function retireEquipment(equipmentId: string) {
     return { error: "Unauthorized" };
   }
 
-  const existing = await db.equipment.findUnique({
-    where: { id: equipmentId },
+  const existing = await db.equipment.findFirst({
+    where: { id: equipmentId, ...notDeletedWhere() },
     select: { id: true, status: true },
   });
 
@@ -296,6 +305,58 @@ export async function deleteMaintenanceRecord(
   await db.maintenanceRecord.update({
     where: { id: recordId },
     data: { deletedAt: new Date() },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function deleteEquipment(equipmentId: string) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  await purgeExpiredSoftDeletes();
+
+  const existing = await db.equipment.findFirst({
+    where: { id: equipmentId, ...notDeletedWhere() },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Equipment not found" };
+  }
+
+  await db.equipment.update({
+    where: { id: equipmentId },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidateEquipmentPaths(equipmentId);
+  return { success: true };
+}
+
+export async function restoreEquipment(equipmentId: string) {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: "Unauthorized" };
+  }
+
+  await purgeExpiredSoftDeletes();
+
+  const existing = await db.equipment.findFirst({
+    where: { id: equipmentId, deletedAt: { not: null } },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return { error: "Deleted equipment not found" };
+  }
+
+  await db.equipment.update({
+    where: { id: equipmentId },
+    data: { deletedAt: null },
   });
 
   revalidateEquipmentPaths(equipmentId);

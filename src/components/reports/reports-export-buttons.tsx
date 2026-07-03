@@ -8,27 +8,7 @@ import type {
   OverdueIrrigationReportRow,
   TaskReportRow,
 } from "@/domains/reports/queries";
-
-function downloadCsv(filename: string, rows: string[][]) {
-  const csv = rows
-    .map((row) =>
-      row
-        .map((cell) => {
-          const escaped = String(cell).replace(/"/g, '""');
-          return `"${escaped}"`;
-        })
-        .join(","),
-    )
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
+import { buildCsvFilename, downloadCsv, formatCsvDateValue } from "@/lib/csv-export";
 
 export function ReportsExportButtons({
   tasks,
@@ -53,7 +33,7 @@ export function ReportsExportButtons({
         size="sm"
         className="min-h-10"
         onClick={() =>
-          downloadCsv(`cev-tasks-completed-${periodDays}d.csv`, [
+          downloadCsv(buildCsvFilename(`cev-tasks-completed-${periodDays}d`), [
             ["Block code", "Block name", "Tasks completed"],
             ...tasks.map((row) => [
               row.blockCode,
@@ -72,7 +52,7 @@ export function ReportsExportButtons({
         size="sm"
         className="min-h-10"
         onClick={() =>
-          downloadCsv(`cev-irrigation-volume-${periodDays}d.csv`, [
+          downloadCsv(buildCsvFilename(`cev-irrigation-volume-${periodDays}d`), [
             ["Block code", "Block name", "Record count", "Total volume (gal)"],
             ...irrigation.map((row) => [
               row.blockCode,
@@ -92,13 +72,13 @@ export function ReportsExportButtons({
         size="sm"
         className="min-h-10"
         onClick={() =>
-          downloadCsv(`cev-equipment-maintenance-${periodDays}d.csv`, [
+          downloadCsv(buildCsvFilename(`cev-equipment-maintenance-${periodDays}d`), [
             ["Equipment", "Type", "Records", "Last service"],
             ...maintenance.map((row) => [
               row.equipmentName,
               row.equipmentType,
               String(row.recordCount),
-              row.lastPerformedAt?.toISOString().split("T")[0] ?? "",
+              formatCsvDateValue(row.lastPerformedAt),
             ]),
           ])
         }
@@ -112,7 +92,7 @@ export function ReportsExportButtons({
         size="sm"
         className="min-h-10"
         onClick={() =>
-          downloadCsv("cev-overdue-irrigation.csv", [
+          downloadCsv(buildCsvFilename("cev-overdue-irrigation"), [
             ["Block code", "Block name", "Days overdue", "Frequency"],
             ...overdueIrrigation.map((row) => [
               row.blockCode,
@@ -132,7 +112,7 @@ export function ReportsExportButtons({
         size="sm"
         className="min-h-10"
         onClick={() =>
-          downloadCsv("cev-open-tasks-by-type.csv", [
+          downloadCsv(buildCsvFilename("cev-open-tasks-by-type"), [
             ["Task type", "Open count"],
             ...openTasksByType.map((row) => [row.type, String(row.openCount)]),
           ])

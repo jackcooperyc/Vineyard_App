@@ -3,7 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { BlockMultiPicker } from "@/components/shared/block-multi-picker";
+import {
+  BlockMultiPicker,
+  formatTaskBlockLabel,
+} from "@/components/shared/block-multi-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +27,23 @@ import { defaultTitleForTypeConfig } from "@/domains/tasks/constants";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 type BlockOption = { id: string; code: string; name: string };
+
+function resetSheetState(
+  blockId: string,
+  setters: {
+    setSelectedBlockIds: (ids: string[]) => void;
+    setPrimaryBlockId: (id: string) => void;
+    setShowDetails: (v: boolean) => void;
+    setBeginTask: (v: boolean) => void;
+    setError: (v: string | null) => void;
+  },
+) {
+  setters.setSelectedBlockIds([blockId]);
+  setters.setPrimaryBlockId(blockId);
+  setters.setShowDetails(false);
+  setters.setBeginTask(false);
+  setters.setError(null);
+}
 
 export function QuickLogTaskSheet({
   blockId,
@@ -50,7 +70,6 @@ export function QuickLogTaskSheet({
     "";
   const [taskTypeId, setTaskTypeId] = useState(defaultTypeId);
   const [showDetails, setShowDetails] = useState(false);
-  const [showExtraBlocks, setShowExtraBlocks] = useState(false);
   const [selectedBlockIds, setSelectedBlockIds] = useState<string[]>([blockId]);
   const [primaryBlockId, setPrimaryBlockId] = useState<string>(blockId);
   const [beginTask, setBeginTask] = useState(false);
@@ -61,8 +80,30 @@ export function QuickLogTaskSheet({
       ? blocks
       : [{ id: blockId, code: blockCode, name: blockName }];
 
+  const primaryBlock =
+    allBlocks.find((b) => b.id === primaryBlockId) ??
+    allBlocks.find((b) => b.id === blockId);
+  const primaryCode = primaryBlock?.code ?? blockCode;
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      resetSheetState(blockId, {
+        setSelectedBlockIds,
+        setPrimaryBlockId,
+        setShowDetails,
+        setBeginTask,
+        setError,
+      });
+    }
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (selectedBlockIds.length === 0) {
+      setError("Select at least one block.");
+      return;
+    }
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.set("blockIds", JSON.stringify(selectedBlockIds));
@@ -84,8 +125,16 @@ export function QuickLogTaskSheet({
     });
   }
 
+  const selectedBlocksForLabel = allBlocks.filter((b) =>
+    selectedBlockIds.includes(b.id),
+  );
+  const blockSummary =
+    selectedBlocksForLabel.length > 0
+      ? formatTaskBlockLabel(selectedBlocksForLabel, primaryBlock)
+      : `${blockCode} · ${blockName}`;
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger
         render={
           <Button size="touch" className="gap-2">
@@ -97,11 +146,24 @@ export function QuickLogTaskSheet({
       <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-xl">
         <SheetHeader>
           <SheetTitle>Quick log task</SheetTitle>
-          <SheetDescription>
-            {blockCode} · {blockName}
-          </SheetDescription>
+          <SheetDescription>{blockSummary}</SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6">
+          {allBlocks.length > 1 && (
+            <div className="space-y-2">
+              <Label>Blocks</Label>
+              <BlockMultiPicker
+                blocks={allBlocks}
+                selectedIds={selectedBlockIds}
+                primaryId={primaryBlockId}
+                onChange={(ids, primary) => {
+                  setSelectedBlockIds(ids);
+                  setPrimaryBlockId(primary);
+                }}
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Task type</Label>
             <TaskTypeChips
@@ -114,30 +176,6 @@ export function QuickLogTaskSheet({
               }}
             />
           </div>
-
-          {allBlocks.length > 1 && (
-            <div className="space-y-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-auto p-0 text-sm text-muted-foreground"
-                onClick={() => setShowExtraBlocks((v) => !v)}
-              >
-                {showExtraBlocks ? "Hide additional blocks" : "Add additional blocks"}
-              </Button>
-              {showExtraBlocks && (
-                <BlockMultiPicker
-                  blocks={allBlocks}
-                  selectedIds={selectedBlockIds}
-                  primaryId={primaryBlockId}
-                  onChange={(ids, primary) => {
-                    setSelectedBlockIds(ids);
-                    setPrimaryBlockId(primary);
-                  }}
-                />
-              )}
-            </div>
-          )}
 
           <Button
             type="button"
@@ -159,7 +197,7 @@ export function QuickLogTaskSheet({
                     selectedType
                       ? defaultTitleForTypeConfig(
                           selectedType.label,
-                          blockCode,
+                          primaryCode,
                           selectedType.defaultTitleTemplate,
                         )
                       : undefined
@@ -199,7 +237,8 @@ export function QuickLogTaskSheet({
               <div>
                 <p className="font-medium">Begin task & start GPS</p>
                 <p className="text-sm text-muted-foreground">
-                  Opens field view with GPS tracking on the primary block.
+                  Opens field view with GPS tracking on the primary block (
+                  {primaryCode}).
                 </p>
               </div>
             </label>

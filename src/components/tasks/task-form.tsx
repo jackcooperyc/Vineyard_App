@@ -75,6 +75,10 @@ export function TaskForm({
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (selectedBlockIds.length === 0) {
+      setError("Select at least one block.");
+      return;
+    }
     setError(null);
     const formData = new FormData(e.currentTarget);
     formData.set("blockIds", JSON.stringify(selectedBlockIds));

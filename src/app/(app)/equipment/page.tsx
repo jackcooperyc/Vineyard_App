@@ -4,6 +4,7 @@ import { EquipmentStatsChips } from "@/components/equipment/equipment-stats-chip
 import { EquipmentEmptyState } from "@/components/equipment/equipment-empty-state";
 import { EquipmentHubActions } from "@/components/equipment/equipment-hub-actions";
 import { EquipmentListCard } from "@/components/equipment/equipment-list-card";
+import { EquipmentRecentlyDeleted } from "@/components/equipment/equipment-recently-deleted";
 import { EquipmentServiceCalendar } from "@/components/equipment/equipment-service-calendar";
 import { EquipmentMobileFab } from "@/components/equipment/equipment-mobile-fab";
 import {
@@ -19,6 +20,7 @@ import {
   parseEquipmentView,
 } from "@/domains/equipment/filters";
 import { equipmentHubParamsFromSearch } from "@/lib/hub-back-href";
+import { getRecentlyDeletedEquipment } from "@/domains/soft-delete/queries";
 
 export default async function EquipmentPage({
   searchParams,
@@ -40,15 +42,18 @@ export default async function EquipmentPage({
   const hasFilters = equipmentFiltersAreActive(params);
   const backParams = equipmentHubParamsFromSearch(params);
 
-  const [stats, items, equipmentForSelect] = await Promise.all([
+  const [stats, items, equipmentForSelect, deletedEquipment] = await Promise.all([
     getEquipmentHubStats(),
-    getEquipment({
-      status: statusFilter,
-      type: typeFilter,
-      search,
-      due: dueFilter,
-    }),
+    view === "deleted"
+      ? Promise.resolve([])
+      : getEquipment({
+          status: statusFilter,
+          type: typeFilter,
+          search,
+          due: dueFilter,
+        }),
     getActiveEquipmentForSelect(),
+    view === "deleted" ? getRecentlyDeletedEquipment() : Promise.resolve([]),
   ]);
 
   const statusLabel =
@@ -64,11 +69,17 @@ export default async function EquipmentPage({
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Equipment</h2>
           <p className="text-muted-foreground">
-            {items.length} asset{items.length !== 1 ? "s" : ""}
-            {hasFilters ? ` · ${statusLabel}` : " · tractors, sprayers, and tools"}
+            {view === "deleted"
+              ? `${deletedEquipment.length} recently deleted`
+              : `${items.length} asset${items.length !== 1 ? "s" : ""}`}
+            {view !== "deleted" && hasFilters
+              ? ` · ${statusLabel}`
+              : view !== "deleted"
+                ? " · tractors, sprayers, and tools"
+                : ""}
           </p>
         </div>
-        <EquipmentHubActions equipment={equipmentForSelect} />
+        <EquipmentHubActions equipment={equipmentForSelect} exportItems={items} />
       </div>
 
       <EquipmentStatsChips stats={stats} />
@@ -79,7 +90,9 @@ export default async function EquipmentPage({
         <EquipmentFilterBar />
       </Suspense>
 
-      {items.length === 0 ? (
+      {view === "deleted" ? (
+        <EquipmentRecentlyDeleted items={deletedEquipment} />
+      ) : items.length === 0 ? (
         <EquipmentEmptyState
           context={{
             hasFilters,

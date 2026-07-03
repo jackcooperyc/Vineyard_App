@@ -15,6 +15,8 @@ export type MapBlock = {
   blockType: BlockType;
   infrastructureType: string | null;
   primaryVariety: string | null;
+  primaryVarietyId: string | null;
+  varietyColorHex: string | null;
   totalVines: number;
   acreage: number | null;
   elevMin: number | null;
@@ -39,7 +41,11 @@ export type MapBlockFeatureProperties = {
   openTasks: number;
   irrigationOverdue: boolean;
   elevMed: number | null;
+  /** Client-side: Mapbox DEM elevation at block centroid (m MSL) */
+  terrainBaseM?: number;
   colorHex: string | null;
+  varietyColorHex: string | null;
+  varietyName: string | null;
 };
 
 export type MapBlockFeatureCollection = {

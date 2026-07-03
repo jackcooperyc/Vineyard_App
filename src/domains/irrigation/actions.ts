@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
@@ -10,10 +11,12 @@ import {
   createRecordSchema,
   createScheduleSchema,
   dismissIrrigationAlertSchema,
+  parseIrrigationBlockIdsFromForm,
   quickLogRecordSchema,
   updateRecordSchema,
   updateScheduleSchema,
 } from "@/domains/irrigation/validators";
+import { validateBlockIds } from "@/domains/tasks/task-blocks";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import { purgeExpiredSoftDeletes } from "@/lib/soft-delete-purge";
 import {
@@ -55,8 +58,12 @@ function revalidateSchedulePaths(scheduleId: string, blockId: string) {
   revalidatePath(`/irrigation/schedules/${scheduleId}/edit`);
 }
 
-async function resetAlertDismissalsForBlock(blockId: string) {
-  await db.irrigationSchedule.updateMany({
+async function resetAlertDismissalsForBlock(
+  blockId: string,
+  tx?: Prisma.TransactionClient,
+) {
+  const client = tx ?? db;
+  await client.irrigationSchedule.updateMany({
     where: {
       blockId,
       ...notDeletedWhere(),
@@ -151,10 +158,13 @@ export async function quickLogIrrigation(formData: FormData) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
-  const blockId = formData.get("blockId") as string;
+  const blockIds = parseIrrigationBlockIdsFromForm(
+    formData.get("blockIds"),
+    formData.get("blockId"),
+  );
 
   const parsed = quickLogRecordSchema.safeParse({
-    blockId,
+    blockIds,
     appliedAt: formData.get("appliedAt") || undefined,
     volume: formData.get("volume") || undefined,
     duration: formData.get("duration") || undefined,
@@ -166,25 +176,46 @@ export async function quickLogIrrigation(formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const uniqueBlockIds = [...new Set(parsed.data.blockIds)];
+  const blockValidation = await validateBlockIds(uniqueBlockIds);
+  if (blockValidation.error) {
+    return { error: blockValidation.error };
+  }
+
   const { volume, duration, method, notes } = parsed.data;
   const appliedAt = parseDate(parsed.data.appliedAt) ?? new Date();
 
-  const record = await db.irrigationRecord.create({
-    data: {
-      blockId,
-      appliedAt,
-      volume: parseFloatOrNull(volume),
-      duration: parseIntOrNull(duration),
-      method: method || "Drip",
-      status: "APPLIED",
-      notes,
-    },
+  const records = await db.$transaction(async (tx) => {
+    const created = [];
+    for (const blockId of uniqueBlockIds) {
+      const record = await tx.irrigationRecord.create({
+        data: {
+          blockId,
+          appliedAt,
+          volume: parseFloatOrNull(volume),
+          duration: parseIntOrNull(duration),
+          method: method || "Drip",
+          status: "APPLIED",
+          notes,
+        },
+      });
+      await resetAlertDismissalsForBlock(blockId, tx);
+      created.push(record);
+    }
+    return created;
   });
 
-  await resetAlertDismissalsForBlock(blockId);
+  for (const blockId of uniqueBlockIds) {
+    revalidateIrrigationPaths(blockId);
+  }
 
-  revalidateIrrigationPaths(blockId);
-  return { success: true, recordId: record.id };
+  const primaryRecord = records[0]!;
+  return {
+    success: true,
+    recordId: primaryRecord.id,
+    recordIds: records.map((record) => record.id),
+    count: records.length,
+  };
 }
 
 export async function toggleScheduleActive(scheduleId: string, active: boolean) {

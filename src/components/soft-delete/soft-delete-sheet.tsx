@@ -24,6 +24,7 @@ export function SoftDeleteSheet({
   confirmLabel = "Delete",
   pendingLabel = "Deleting…",
   variant = "ghost",
+  iconOnly = false,
   onDelete,
   onSuccess,
 }: {
@@ -33,6 +34,7 @@ export function SoftDeleteSheet({
   confirmLabel?: string;
   pendingLabel?: string;
   variant?: "ghost" | "outline" | "destructive";
+  iconOnly?: boolean;
   onDelete: () => Promise<{ error?: string; success?: boolean }>;
   onSuccess?: () => void;
 }) {
@@ -61,14 +63,18 @@ export function SoftDeleteSheet({
         render={
           <Button
             variant={variant}
+            size={iconOnly ? "icon-sm" : undefined}
+            aria-label={iconOnly ? triggerLabel : undefined}
             className={
-              variant === "ghost"
-                ? "min-h-11 gap-2 text-destructive"
-                : "min-h-11 gap-2"
+              iconOnly
+                ? "text-destructive"
+                : variant === "ghost"
+                  ? "min-h-11 gap-2 text-destructive"
+                  : "min-h-11 gap-2"
             }
           >
-            <Trash2 className="size-4" />
-            {triggerLabel}
+            <Trash2 className={iconOnly ? "size-3.5" : "size-4"} />
+            {!iconOnly && triggerLabel}
           </Button>
         }
       />

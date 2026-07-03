@@ -10,5 +10,6 @@ export async function purgeExpiredSoftDeletes() {
     db.irrigationRecord.deleteMany({ where }),
     db.irrigationSchedule.deleteMany({ where }),
     db.maintenanceRecord.deleteMany({ where }),
+    db.equipment.deleteMany({ where }),
   ]);
 }

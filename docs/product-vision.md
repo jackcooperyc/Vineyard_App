@@ -37,4 +37,5 @@ Cooper Estate Vineyard Management is the operational command center for Cooper W
 - Full offline/PWA sync
 - Public or multi-tenant access
 
-See [roadmap.md](./roadmap.md) for phased delivery.
+See [roadmap.md](./roadmap.md) for phased delivery.  
+**Stakeholders:** see [stakeholder-timeline.md](./stakeholder-timeline.md) for a plain-language history of shipped features and workflow benefits.

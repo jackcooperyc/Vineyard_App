@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BlockMapDrawer } from "@/components/map/block-map-drawer";
+import { MapColorModeToggle } from "@/components/map/map-color-mode-toggle";
 import { MapLegend } from "@/components/map/map-legend";
 import { MapViewToggle } from "@/components/map/map-view-toggle";
 import { PumpMapDrawer } from "@/components/map/pump-map-drawer";
 import { VineyardMap } from "@/components/map/vineyard-map";
 import { MapWeatherChip } from "@/components/weather/map-weather-chip";
-import type { MapViewMode } from "@/domains/map/constants";
+import type { MapColorMode, MapViewMode } from "@/domains/map/constants";
 import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
 import {
   getPumpsForBlock,
@@ -17,7 +18,19 @@ import {
 } from "@/domains/pumps/map-geo";
 import type { GpsTrackFeatureCollection } from "@/domains/task-gps/queries";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
+import { updateVineyardMapColorMode } from "@/domains/varieties/actions";
+import type { VarietyLegendItem } from "@/domains/varieties/queries";
 import type { CurrentWeather } from "@/domains/weather/types";
+import type { MapColorMode as PrismaMapColorMode } from "@/generated/prisma/client";
+
+function resolveColorMode(
+  colorParam: string | null,
+  persistedMode: PrismaMapColorMode,
+): MapColorMode {
+  if (colorParam === "varietal") return "varietal";
+  if (colorParam === "status") return "status";
+  return persistedMode === "VARIETAL" ? "varietal" : "status";
+}
 
 export function MapPageClient({
   blocks,
@@ -28,6 +41,8 @@ export function MapPageClient({
   gpsTracks,
   weather,
   quickLogTypes,
+  varieties,
+  defaultMapColorMode,
   token,
 }: {
   blocks: MapBlock[];
@@ -38,15 +53,23 @@ export function MapPageClient({
   gpsTracks: GpsTrackFeatureCollection;
   weather: CurrentWeather;
   quickLogTypes: TaskTypeConfig[];
+  varieties: VarietyLegendItem[];
+  defaultMapColorMode: PrismaMapColorMode;
   token: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [, startPersistTransition] = useTransition();
 
   const pumpsGeoJson = mapPumpsToGeoJSON(pumps);
 
   const viewMode: MapViewMode =
     searchParams.get("view") === "3d" ? "3d" : "2d";
+
+  const colorMode = resolveColorMode(
+    searchParams.get("color"),
+    defaultMapColorMode,
+  );
 
   const pumpParam = searchParams.get("pump");
   const blockParam = searchParams.get("block");
@@ -69,6 +92,26 @@ export function MapPageClient({
       router.replace(query ? `/map?${query}` : "/map", { scroll: false });
     },
     [router, searchParams],
+  );
+
+  const setColorMode = useCallback(
+    (mode: MapColorMode) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (mode === "varietal") {
+        params.set("color", "varietal");
+      } else {
+        params.delete("color");
+      }
+      const query = params.toString();
+      router.replace(query ? `/map?${query}` : "/map", { scroll: false });
+
+      startPersistTransition(() => {
+        void updateVineyardMapColorMode(
+          mode === "varietal" ? "VARIETAL" : "STATUS",
+        );
+      });
+    },
+    [router, searchParams, startPersistTransition],
   );
 
   const replaceParams = useCallback(
@@ -122,6 +165,10 @@ export function MapPageClient({
     });
   }
 
+  const vineyardBlocks = blocks
+    .filter((b) => b.blockType === "VINEYARD")
+    .map((b) => ({ id: b.id, code: b.code, name: b.name }));
+
   return (
     <>
       <div className="relative h-[calc(100dvh-12rem)] min-h-[400px] overflow-hidden rounded-lg border">
@@ -133,19 +180,28 @@ export function MapPageClient({
           bounds={bounds}
           token={token}
           viewMode={viewMode}
+          colorMode={colorMode}
           highlightedBlockIds={highlightedBlockIds}
           selectedPumpId={selectedPumpId}
           onBlockSelect={handleBlockSelect}
           onPumpSelect={handlePumpSelect}
         />
         <MapWeatherChip weather={weather} />
-        <MapViewToggle mode={viewMode} onChange={setViewMode} className="top-14" />
-        <MapLegend className={viewMode === "3d" ? "bottom-14" : undefined} />
+        <div className="pointer-events-auto absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
+          <MapColorModeToggle mode={colorMode} onChange={setColorMode} />
+          <MapViewToggle mode={viewMode} onChange={setViewMode} className="static" />
+        </div>
+        <MapLegend
+          colorMode={colorMode}
+          varietyLegendItems={varieties}
+          className={viewMode === "3d" ? "bottom-14" : undefined}
+        />
       </div>
       <BlockMapDrawer
         block={selectedBlock}
         equipment={equipment}
         quickLogTypes={quickLogTypes}
+        vineyardBlocks={vineyardBlocks}
         pumps={blockPumps}
         onClose={closeBlockDrawer}
       />

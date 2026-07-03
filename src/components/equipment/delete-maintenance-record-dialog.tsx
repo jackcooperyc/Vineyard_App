@@ -17,8 +17,9 @@ export function DeleteMaintenanceRecordDialog({
   return (
     <SoftDeleteSheet
       title={`Delete "${label}"?`}
-      triggerLabel="Delete"
-      variant="outline"
+      triggerLabel="Delete maintenance record"
+      variant="ghost"
+      iconOnly
       onDelete={() => deleteMaintenanceRecord(recordId, equipmentId)}
     />
   );

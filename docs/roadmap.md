@@ -1,5 +1,8 @@
 # Roadmap
 
+> **Stakeholders (Neil Cooper, vineyard team):** see [stakeholder-timeline.md](./stakeholder-timeline.md) for a chronological, plain-language history of what’s live on [cev.cupr.app](https://cev.cupr.app).  
+> **Developers:** this file is the sprint checklist and technical backlog.
+
 ## Phases
 
 | Phase | Goal | Status |

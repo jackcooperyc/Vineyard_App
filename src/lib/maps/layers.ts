@@ -1,7 +1,8 @@
 import type { ExpressionSpecification } from "mapbox-gl";
 import {
+  BLOCK_EXTRUSION_CAP_M,
   ELEVATION_BASE_M,
-  EXTRUSION_HEIGHT_MULTIPLIER,
+  type MapColorMode,
 } from "@/domains/map/constants";
 
 export const MAP_SOURCE_ID = "blocks";
@@ -20,48 +21,116 @@ export const BLOCK_LAYER_IDS = [
   OUTLINE_LAYER_ID,
 ] as const;
 
-const overlayColor: ExpressionSpecification = [
+const INFRASTRUCTURE_VARIETAL_COLOR = "#9ca3af";
+const UNKNOWN_VARIETAL_COLOR = "#6b7280";
+const STATUS_FALLBACK_FILL = "#22c55e";
+
+const statusOverlayFill: ExpressionSpecification = [
   "match",
   ["get", "overlay"],
   "irrigation",
   "#3b82f6",
   "tasks",
   "#f59e0b",
-  "#22c55e",
+  STATUS_FALLBACK_FILL,
 ];
 
-export const blockFillColor: ExpressionSpecification = [
-  "case",
-  ["all", ["has", "colorHex"], ["!=", ["get", "colorHex"], ""]],
-  ["get", "colorHex"],
-  overlayColor,
+const statusOverlayOutline: ExpressionSpecification = [
+  "match",
+  ["get", "overlay"],
+  "irrigation",
+  "#1d4ed8",
+  "tasks",
+  "#b45309",
+  "#15803d",
 ];
 
-export const blockOutlineColor: ExpressionSpecification = [
-  "case",
-  ["all", ["has", "colorHex"], ["!=", ["get", "colorHex"], ""]],
-  ["get", "colorHex"],
-  [
-    "match",
-    ["get", "overlay"],
-    "irrigation",
-    "#1d4ed8",
-    "tasks",
-    "#b45309",
-    "#15803d",
-  ],
+const blockColorHexOverride: ExpressionSpecification = [
+  "all",
+  ["has", "colorHex"],
+  ["!=", ["get", "colorHex"], ""],
 ];
 
+/**
+ * Block fill color precedence:
+ * 1. Block.colorHex manual override (any mode)
+ * 2. Varietal mode → varietyColorHex (vineyard) or neutral gray (infrastructure)
+ * 3. Status mode → overlay match (irrigation / tasks / default green)
+ */
+export function buildBlockFillColor(
+  mode: MapColorMode,
+): ExpressionSpecification {
+  if (mode === "varietal") {
+    return [
+      "case",
+      blockColorHexOverride,
+      ["get", "colorHex"],
+      ["==", ["get", "blockType"], "INFRASTRUCTURE"],
+      INFRASTRUCTURE_VARIETAL_COLOR,
+      [
+        "all",
+        ["has", "varietyColorHex"],
+        ["!=", ["get", "varietyColorHex"], ""],
+      ],
+      ["get", "varietyColorHex"],
+      UNKNOWN_VARIETAL_COLOR,
+    ];
+  }
+
+  return [
+    "case",
+    blockColorHexOverride,
+    ["get", "colorHex"],
+    statusOverlayFill,
+  ];
+}
+
+export function buildBlockOutlineColor(
+  mode: MapColorMode,
+): ExpressionSpecification {
+  if (mode === "varietal") {
+    return [
+      "case",
+      blockColorHexOverride,
+      ["get", "colorHex"],
+      ["==", ["get", "blockType"], "INFRASTRUCTURE"],
+      "#6b7280",
+      [
+        "all",
+        ["has", "varietyColorHex"],
+        ["!=", ["get", "varietyColorHex"], ""],
+      ],
+      ["get", "varietyColorHex"],
+      "#4b5563",
+    ];
+  }
+
+  return [
+    "case",
+    blockColorHexOverride,
+    ["get", "colorHex"],
+    statusOverlayOutline,
+  ];
+}
+
+/** @deprecated Use buildBlockFillColor("status") */
+export const blockFillColor = buildBlockFillColor("status");
+
+/** @deprecated Use buildBlockOutlineColor("status") */
+export const blockOutlineColor = buildBlockOutlineColor("status");
+
+/** Sampled terrain elevation (m MSL); falls back to elevMed then estate base */
+export const extrusionBaseHeight: ExpressionSpecification = [
+  "coalesce",
+  ["get", "terrainBaseM"],
+  ["get", "elevMed"],
+  ELEVATION_BASE_M,
+];
+
+/** Vineyard blocks: thin cap above terrain; infrastructure: flat at terrain */
 export const blockExtrusionHeight: ExpressionSpecification = [
   "case",
   ["==", ["get", "blockType"], "VINEYARD"],
-  [
-    "*",
-    ["-", ["coalesce", ["get", "elevMed"], 205], ELEVATION_BASE_M],
-    EXTRUSION_HEIGHT_MULTIPLIER,
-  ],
-  0,
+  ["+", extrusionBaseHeight, BLOCK_EXTRUSION_CAP_M],
+  extrusionBaseHeight,
 ];
-
-export const extrusionBaseHeight =
-  ELEVATION_BASE_M as unknown as ExpressionSpecification;

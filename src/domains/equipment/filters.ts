@@ -33,8 +33,10 @@ export function parseEquipmentDueFilter(
 
 export function parseEquipmentView(
   value: string | undefined,
-): "list" | "calendar" {
-  return value === "calendar" ? "calendar" : "list";
+): "list" | "calendar" | "deleted" {
+  if (value === "calendar") return "calendar";
+  if (value === "deleted") return "deleted";
+  return "list";
 }
 
 export function equipmentFiltersAreActive(params: {
@@ -49,6 +51,6 @@ export function equipmentFiltersAreActive(params: {
       params.type ||
       params.q ||
       params.due ||
-      (params.view && params.view !== "list"),
+      (params.view && params.view !== "list" && params.view !== "deleted"),
   );
 }

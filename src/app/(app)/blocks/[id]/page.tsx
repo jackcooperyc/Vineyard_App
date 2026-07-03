@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
+import { getBlocksForTaskForm } from "@/domains/tasks/queries";
 import type { TaskListItem } from "@/domains/tasks/queries";
 import { BlockRowLayoutPanel } from "@/components/blocks/block-row-layout-panel";
 import { getBlockRowLayoutStatus } from "@/domains/block-rows/actions";
@@ -29,13 +30,14 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [block, equipment, blockEquipment, quickLogTypes, rowLayoutStatus] =
+  const [block, equipment, blockEquipment, quickLogTypes, rowLayoutStatus, vineyardBlocks] =
     await Promise.all([
     getBlockById(id),
     getActiveEquipmentForSelect(),
     getOpenTaskEquipmentForBlock(id),
     getQuickLogTaskTypes(),
     getBlockRowLayoutStatus(id),
+    getBlocksForTaskForm(),
   ]);
 
   if (!block) {
@@ -97,6 +99,7 @@ export default async function BlockDetailPage({
           blockId={block.id}
           blockCode={block.code}
           blockName={block.name}
+          blocks={vineyardBlocks}
           quickLogTypes={quickLogTypes}
           equipment={equipment}
         />

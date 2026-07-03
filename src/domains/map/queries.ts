@@ -81,6 +81,8 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
         0,
       );
 
+      const primaryPlanting = block.plantings[0];
+
       return {
         id: block.id,
         code: block.code,
@@ -88,7 +90,9 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
         status: block.status,
         blockType: block.blockType,
         infrastructureType: block.infrastructureType,
-        primaryVariety: block.plantings[0]?.variety.name ?? null,
+        primaryVariety: primaryPlanting?.variety.name ?? null,
+        primaryVarietyId: primaryPlanting?.variety.id ?? null,
+        varietyColorHex: primaryPlanting?.variety.colorHex ?? null,
         totalVines,
         acreage: block.acreage,
         elevMin: block.elevMin,
@@ -126,6 +130,8 @@ export function mapBlocksToGeoJSON(
         irrigationOverdue: block.irrigationOverdue,
         elevMed: block.elevMed,
         colorHex: block.colorHex,
+        varietyColorHex: block.varietyColorHex,
+        varietyName: block.primaryVariety,
       },
     })),
   };

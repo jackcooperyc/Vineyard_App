@@ -18,6 +18,7 @@ import { EquipmentTypeIcon } from "@/components/equipment/equipment-type-icon";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
 import { MaintenanceRecordItem } from "@/components/equipment/maintenance-record-item";
 import { EquipmentRecentlyDeletedMaintenance } from "@/components/equipment/equipment-recently-deleted-maintenance";
+import { DeleteEquipmentDialog } from "@/components/equipment/delete-equipment-dialog";
 import { RetireEquipmentDialog } from "@/components/equipment/retire-equipment-dialog";
 import { TaskListCard } from "@/components/tasks/task-list-card";
 import { getEquipmentById } from "@/domains/equipment/queries";
@@ -95,6 +96,11 @@ export default async function EquipmentDetailPage({
             equipmentName={equipment.name}
           />
         )}
+        <DeleteEquipmentDialog
+          equipmentId={equipment.id}
+          equipmentName={equipment.name}
+          backParams={backParams}
+        />
       </div>
 
       <Card>

@@ -1,6 +1,24 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 
+export async function validateBlockIds(
+  blockIds: string[],
+  tx?: Prisma.TransactionClient,
+): Promise<{ error?: string }> {
+  const client = tx ?? db;
+  const unique = [...new Set(blockIds)];
+  if (unique.length === 0) {
+    return { error: "At least one block is required" };
+  }
+  const count = await client.block.count({
+    where: { id: { in: unique }, blockType: "VINEYARD" },
+  });
+  if (count !== unique.length) {
+    return { error: "One or more selected blocks are invalid" };
+  }
+  return {};
+}
+
 export function resolvePrimaryBlockId(
   blockIds: string[],
   primaryBlockId?: string,

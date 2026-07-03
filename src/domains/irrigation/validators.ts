@@ -1,5 +1,29 @@
 import { z } from "zod";
 
+const blockIdsField = z
+  .array(z.string().min(1))
+  .min(1, "At least one block is required");
+
+export function parseIrrigationBlockIdsFromForm(
+  blockIdsRaw: FormDataEntryValue | null,
+  blockIdRaw: FormDataEntryValue | null,
+): string[] {
+  if (typeof blockIdsRaw === "string" && blockIdsRaw.trim()) {
+    try {
+      const parsed = JSON.parse(blockIdsRaw) as unknown;
+      if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+        return parsed;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  if (typeof blockIdRaw === "string" && blockIdRaw) {
+    return [blockIdRaw];
+  }
+  return [];
+}
+
 export const irrigationStatusSchema = z.enum([
   "SCHEDULED",
   "APPLIED",
@@ -28,7 +52,7 @@ export const createRecordSchema = z.object({
 });
 
 export const quickLogRecordSchema = z.object({
-  blockId: z.string().min(1),
+  blockIds: blockIdsField,
   appliedAt: z.string().optional(),
   volume: z.string().optional(),
   duration: z.string().optional(),

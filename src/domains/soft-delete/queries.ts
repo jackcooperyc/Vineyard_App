@@ -34,6 +34,14 @@ export type RecentlyDeletedMaintenanceRecord = {
   equipment: { id: string; name: string };
 };
 
+export type RecentlyDeletedEquipment = {
+  id: string;
+  name: string;
+  type: string;
+  status: "ACTIVE" | "IN_MAINTENANCE" | "RETIRED";
+  deletedAt: Date;
+};
+
 async function ensurePurge() {
   await purgeExpiredSoftDeletes();
 }
@@ -120,4 +128,22 @@ export async function getRecentlyDeletedMaintenanceRecords(
     },
     orderBy: { deletedAt: "desc" },
   }) as Promise<RecentlyDeletedMaintenanceRecord[]>;
+}
+
+export async function getRecentlyDeletedEquipment(): Promise<
+  RecentlyDeletedEquipment[]
+> {
+  await ensurePurge();
+
+  return db.equipment.findMany({
+    where: deletedWithinRetentionWhere(),
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      status: true,
+      deletedAt: true,
+    },
+    orderBy: { deletedAt: "desc" },
+  }) as Promise<RecentlyDeletedEquipment[]>;
 }

@@ -145,7 +145,7 @@ export async function getEquipmentMaintenanceReport(): Promise<
   if (rows.length === 0) return [];
 
   const equipment = await db.equipment.findMany({
-    where: { id: { in: rows.map((r) => r.equipmentId) } },
+    where: { id: { in: rows.map((r) => r.equipmentId) }, ...notDeletedWhere() },
     select: { id: true, name: true, type: true },
   });
   const equipmentById = new Map(equipment.map((e) => [e.id, e]));

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Droplets, ListTodo, Wrench } from "lucide-react";
 import { FieldTaskSection } from "@/components/field/field-task-section";
 import { MaintenanceRecordForm } from "@/components/equipment/maintenance-record-form";
-import { BlockPicker, type BlockPickerItem } from "@/components/shared/block-picker";
+import {
+  BlockMultiPicker,
+  formatTaskBlockLabel,
+} from "@/components/shared/block-multi-picker";
+import type { BlockPickerItem } from "@/components/shared/block-picker";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -35,7 +39,7 @@ export function FieldLogPanel({
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<FieldMode>("task");
-  const [blockId, setBlockId] = useState<string | null>(null);
+  const [irrigationBlockIds, setIrrigationBlockIds] = useState<string[]>([]);
   const [taskTypeId, setTaskTypeId] = useState<string>(
     quickLogTypes.find((t) => t.slug === "INSPECTION")?.id ??
       quickLogTypes[0]?.id ??
@@ -49,22 +53,18 @@ export function FieldLogPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedBlock = blocks.find((b) => b.id === blockId) ?? null;
-
   function logTask(
     typeId: string,
     options?: { begin?: boolean; blockIds?: string[]; primaryBlockId?: string },
   ) {
-    if (!blockId) {
-      setError("Select a block first.");
+    const blockIds = options?.blockIds?.length ? options.blockIds : [];
+    if (blockIds.length === 0 || !options?.primaryBlockId) {
+      setError("Select at least one block.");
       return;
     }
     setError(null);
     setMessage(null);
-    const blockIds = options?.blockIds?.length
-      ? options.blockIds
-      : [blockId];
-    const primary = options?.primaryBlockId ?? blockId;
+    const primary = options.primaryBlockId;
     const formData = new FormData();
     formData.set("blockIds", JSON.stringify(blockIds));
     formData.set("primaryBlockId", primary);
@@ -81,20 +81,24 @@ export function FieldLogPanel({
         router.push(redirectAfterTaskCreate({ ...result, began: true }));
         return;
       }
-      setMessage(`Task logged for ${selectedBlock?.name ?? "block"}.`);
+      const blockLabel = formatTaskBlockLabel(
+        blocks.filter((b) => blockIds.includes(b.id)),
+        blocks.find((b) => b.id === primary),
+      );
+      setMessage(`Task logged for ${blockLabel || "selected blocks"}.`);
       router.refresh();
     });
   }
 
   function logIrrigationToday() {
-    if (!blockId) {
-      setError("Select a block first.");
+    if (irrigationBlockIds.length === 0) {
+      setError("Select at least one block.");
       return;
     }
     setError(null);
     setMessage(null);
     const formData = new FormData();
-    formData.set("blockId", blockId);
+    formData.set("blockIds", JSON.stringify(irrigationBlockIds));
     formData.set("method", "Drip");
     formData.set("appliedAt", new Date().toISOString().split("T")[0]);
 
@@ -104,7 +108,15 @@ export function FieldLogPanel({
         setError(result.error);
         return;
       }
-      setMessage(`Irrigation logged for ${selectedBlock?.name ?? "block"}.`);
+      const blockLabel = formatTaskBlockLabel(
+        blocks.filter((b) => irrigationBlockIds.includes(b.id)),
+      );
+      const count = result.count ?? irrigationBlockIds.length;
+      setMessage(
+        count > 1
+          ? `Irrigation logged for ${count} blocks (${blockLabel}).`
+          : `Irrigation logged for ${blockLabel || "block"}.`,
+      );
       router.refresh();
     });
   }
@@ -147,8 +159,6 @@ export function FieldLogPanel({
         <FieldTaskSection
           blocks={blocks}
           quickLogTypes={quickLogTypes}
-          blockId={blockId}
-          onBlockIdChange={setBlockId}
           taskTypeId={taskTypeId}
           onTaskTypeIdChange={setTaskTypeId}
           onQuickLog={logTask}
@@ -158,9 +168,15 @@ export function FieldLogPanel({
         <>
           <section className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              1 · Select block
+              1 · Select blocks
             </h3>
-            <BlockPicker blocks={blocks} value={blockId} onChange={setBlockId} />
+            <BlockMultiPicker
+              blocks={blocks}
+              selectedIds={irrigationBlockIds}
+              primaryId={irrigationBlockIds[0] ?? null}
+              showPrimary={false}
+              onChange={(ids) => setIrrigationBlockIds(ids)}
+            />
           </section>
           <section className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -170,15 +186,15 @@ export function FieldLogPanel({
               type="button"
               size="touch"
               className="w-full"
-              disabled={pending || !blockId}
+              disabled={pending || irrigationBlockIds.length === 0}
               onClick={logIrrigationToday}
             >
               <Droplets className="size-5" />
               {pending ? "Saving…" : "Irrigation applied today"}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Records drip irrigation for today. Add volume and duration from the
-              block detail page if needed.
+              Records drip irrigation for today on each selected block. Add
+              volume and duration from the block detail page if needed.
             </p>
           </section>
         </>

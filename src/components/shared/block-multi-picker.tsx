@@ -11,12 +11,14 @@ export function BlockMultiPicker({
   selectedIds,
   primaryId,
   onChange,
+  showPrimary = true,
   className,
 }: {
   blocks: BlockPickerItem[];
   selectedIds: string[];
   primaryId: string | null;
   onChange: (selectedIds: string[], primaryId: string) => void;
+  showPrimary?: boolean;
   className?: string;
 }) {
   const [query, setQuery] = useState("");
@@ -99,7 +101,7 @@ export function BlockMultiPicker({
                     </span>
                     <p className="font-medium leading-tight">{block.name}</p>
                   </button>
-                  {selected && (
+                  {selected && showPrimary && (
                     <button
                       type="button"
                       onClick={() => setPrimary(block.id)}
@@ -134,8 +136,9 @@ export function BlockMultiPicker({
       />
       <input type="hidden" name="primaryBlockId" value={primaryId ?? ""} />
       <p className="text-xs text-muted-foreground">
-        Select one or more blocks. Star marks the primary block for map links and
-        GPS start.
+        {showPrimary
+          ? "Select one or more blocks. Star marks the primary block for map links and GPS start."
+          : "Select one or more blocks."}
       </p>
     </div>
   );

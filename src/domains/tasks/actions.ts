@@ -19,6 +19,7 @@ import {
 import {
   resolvePrimaryBlockId,
   syncTaskBlocks,
+  validateBlockIds,
 } from "@/domains/tasks/task-blocks";
 import { createGpsSessionForTask } from "@/domains/task-gps/start-session-core";
 import { notDeletedWhere } from "@/lib/soft-delete";
@@ -140,6 +141,11 @@ export async function createTask(formData: FormData) {
 
   const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
 
+  const blockValidation = await validateBlockIds(blockIds);
+  if (blockValidation.error) {
+    return { error: blockValidation.error };
+  }
+
   const taskType = await getTaskTypeById(taskTypeId);
   if (!taskType?.active) {
     return { error: "Invalid task type" };
@@ -226,6 +232,12 @@ export async function quickLogTask(formData: FormData) {
   } = parsed.data;
 
   const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
+
+  const blockValidation = await validateBlockIds(blockIds);
+  if (blockValidation.error) {
+    return { error: blockValidation.error };
+  }
+
   const primaryBlock = await db.block.findUnique({
     where: { id: primary },
     select: { code: true },
@@ -386,6 +398,11 @@ export async function updateTask(formData: FormData) {
   } = parsed.data;
 
   const primary = resolvePrimaryBlockId(blockIds, primaryBlockId);
+
+  const blockValidation = await validateBlockIds(blockIds);
+  if (blockValidation.error) {
+    return { error: blockValidation.error };
+  }
 
   const existing = await db.task.findFirst({
     where: { id: taskId, ...notDeletedWhere() },

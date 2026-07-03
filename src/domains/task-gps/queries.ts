@@ -157,28 +157,37 @@ export async function getActiveGpsTracksGeoJson(): Promise<GpsTrackFeatureCollec
   return { type: "FeatureCollection", features };
 }
 
-export async function getOpenGpsEligibleTasks(blockId: string) {
+const eligibleTaskInclude = {
+  block: { select: { code: true } },
+  taskType: {
+    select: {
+      label: true,
+      defaultSwathWidthM: true,
+      tracksGpsProgress: true,
+    },
+  },
+  taskBlocks: taskBlockSelect,
+} as const;
+
+export async function getOpenGpsEligibleTasksForBlocks(blockIds: string[]) {
+  const unique = [...new Set(blockIds)];
+  if (unique.length === 0) return [];
+
   return db.task.findMany({
     where: {
       ...notDeletedWhere(),
       status: { in: ["PENDING", "IN_PROGRESS"] },
       taskType: { tracksGpsProgress: true, active: true },
-      OR: [
+      OR: unique.flatMap((blockId) => [
         { blockId },
         { taskBlocks: { some: { blockId } } },
-      ],
+      ]),
     },
-    include: {
-      block: { select: { code: true } },
-      taskType: {
-        select: {
-          label: true,
-          defaultSwathWidthM: true,
-          tracksGpsProgress: true,
-        },
-      },
-      taskBlocks: taskBlockSelect,
-    },
+    include: eligibleTaskInclude,
     orderBy: { dueDate: "asc" },
   });
+}
+
+export async function getOpenGpsEligibleTasks(blockId: string) {
+  return getOpenGpsEligibleTasksForBlocks([blockId]);
 }

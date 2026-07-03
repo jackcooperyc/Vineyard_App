@@ -27,9 +27,14 @@ export type EquipmentHubStats = {
   retired: number;
 };
 
+function activeEquipmentWhere() {
+  return notDeletedWhere();
+}
+
 function needsServiceWhere() {
   const now = new Date();
   return {
+    ...activeEquipmentWhere(),
     status: { not: "RETIRED" as EquipmentStatus },
     OR: [
       { nextServiceAt: { lte: now } },
@@ -52,7 +57,11 @@ function serviceDueWhere(due: "overdue" | "week" | "month") {
   weekEnd.setHours(23, 59, 59, 999);
   const monthEnd = endOfMonth();
 
-  const base = { status: { not: "RETIRED" as EquipmentStatus }, nextServiceAt: { not: null } };
+  const base = {
+    ...activeEquipmentWhere(),
+    status: { not: "RETIRED" as EquipmentStatus },
+    nextServiceAt: { not: null },
+  };
 
   if (due === "overdue") {
     return { ...base, nextServiceAt: { lte: now } };
@@ -67,11 +76,14 @@ export async function getEquipmentHubStats(): Promise<EquipmentHubStats> {
   const now = new Date();
 
   const [operational, inMaintenance, retired, needsService] = await Promise.all([
-    db.equipment.count({ where: { status: "ACTIVE" } }),
-    db.equipment.count({ where: { status: "IN_MAINTENANCE" } }),
-    db.equipment.count({ where: { status: "RETIRED" } }),
+    db.equipment.count({ where: { status: "ACTIVE", ...activeEquipmentWhere() } }),
+    db.equipment.count({
+      where: { status: "IN_MAINTENANCE", ...activeEquipmentWhere() },
+    }),
+    db.equipment.count({ where: { status: "RETIRED", ...activeEquipmentWhere() } }),
     db.equipment.count({
       where: {
+        ...activeEquipmentWhere(),
         status: { not: "RETIRED" },
         nextServiceAt: { lte: now },
       },
@@ -84,7 +96,7 @@ export async function getEquipmentHubStats(): Promise<EquipmentHubStats> {
 export async function getEquipment(
   filters: EquipmentFilters = {},
 ): Promise<EquipmentListItem[]> {
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { ...activeEquipmentWhere() };
 
   if (filters.status === "NEEDS_SERVICE") {
     Object.assign(where, needsServiceWhere());
@@ -122,8 +134,8 @@ export async function getEquipment(
 }
 
 export async function getEquipmentById(id: string) {
-  return db.equipment.findUnique({
-    where: { id },
+  return db.equipment.findFirst({
+    where: { id, ...activeEquipmentWhere() },
     include: {
       maintenanceRecords: {
         where: notDeletedWhere(),
@@ -148,7 +160,10 @@ export async function getEquipmentById(id: string) {
 
 export async function getActiveEquipmentForSelect() {
   return db.equipment.findMany({
-    where: { status: { in: ["ACTIVE", "IN_MAINTENANCE"] } },
+    where: {
+      ...activeEquipmentWhere(),
+      status: { in: ["ACTIVE", "IN_MAINTENANCE"] },
+    },
     select: { id: true, name: true, type: true },
     orderBy: { name: "asc" },
   });
@@ -158,6 +173,7 @@ export async function getEquipmentNeedingService(limit = 5) {
   const now = new Date();
   return db.equipment.findMany({
     where: {
+      ...activeEquipmentWhere(),
       status: { not: "RETIRED" },
       nextServiceAt: { lte: now },
     },
@@ -173,6 +189,7 @@ export async function countEquipmentNeedingService() {
   const now = new Date();
   return db.equipment.count({
     where: {
+      ...activeEquipmentWhere(),
       status: { not: "RETIRED" },
       nextServiceAt: { lte: now },
     },

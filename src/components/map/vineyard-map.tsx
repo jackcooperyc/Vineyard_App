@@ -9,6 +9,7 @@ import {
   MAP_3D_BEARING,
   MAP_3D_PITCH,
   TERRAIN_EXAGGERATION,
+  type MapColorMode,
   type MapViewMode,
 } from "@/domains/map/constants";
 import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
@@ -24,10 +25,11 @@ import {
   GPS_TRACK_SOURCE_ID,
   TERRAIN_SOURCE_ID,
   blockExtrusionHeight,
-  blockFillColor,
-  blockOutlineColor,
+  buildBlockFillColor,
+  buildBlockOutlineColor,
   extrusionBaseHeight,
 } from "@/lib/maps/layers";
+import { injectTerrainElevations } from "@/lib/maps/terrain-sample";
 
 type PumpFeatureCollection = {
   type: "FeatureCollection";
@@ -66,29 +68,38 @@ type VineyardMapProps = {
   bounds: [[number, number], [number, number]] | null;
   token: string;
   viewMode: MapViewMode;
+  colorMode: MapColorMode;
   highlightedBlockIds?: string[];
   selectedPumpId?: string | null;
   onBlockSelect: (blockId: string) => void;
   onPumpSelect?: (pumpId: string) => void;
 };
 
-function highlightFillColor(ids: string[]): ExpressionSpecification {
-  if (ids.length === 0) return blockFillColor;
+function highlightFillColor(
+  ids: string[],
+  colorMode: MapColorMode,
+): ExpressionSpecification {
+  const base = buildBlockFillColor(colorMode);
+  if (ids.length === 0) return base;
   return [
     "case",
     ["in", ["get", "blockId"], ["literal", ids]],
     "#38bdf8",
-    blockFillColor,
+    base,
   ];
 }
 
-function highlightOutlineColor(ids: string[]): ExpressionSpecification {
-  if (ids.length === 0) return blockOutlineColor;
+function highlightOutlineColor(
+  ids: string[],
+  colorMode: MapColorMode,
+): ExpressionSpecification {
+  const base = buildBlockOutlineColor(colorMode);
+  if (ids.length === 0) return base;
   return [
     "case",
     ["in", ["get", "blockId"], ["literal", ids]],
     "#0284c7",
-    blockOutlineColor,
+    base,
   ];
 }
 
@@ -137,43 +148,100 @@ function registerPumpClicks(
   });
 }
 
-function applyViewMode(map: mapboxgl.Map, viewMode: MapViewMode) {
+function applyTerrainAlignedBlocks(
+  map: mapboxgl.Map,
+  geoJson: MapBlockFeatureCollection,
+): void {
+  const aligned = injectTerrainElevations(map, geoJson);
+  const source = map.getSource(MAP_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+  source?.setData(aligned);
+}
+
+function waitForTerrainSource(
+  map: mapboxgl.Map,
+  onReady: () => void,
+): () => void {
+  if (map.isSourceLoaded(TERRAIN_SOURCE_ID)) {
+    onReady();
+    return () => {};
+  }
+
+  const onSourceData = (event: mapboxgl.MapSourceDataEvent) => {
+    if (
+      event.sourceId === TERRAIN_SOURCE_ID &&
+      map.isSourceLoaded(TERRAIN_SOURCE_ID)
+    ) {
+      map.off("sourcedata", onSourceData);
+      onReady();
+    }
+  };
+
+  map.on("sourcedata", onSourceData);
+  return () => map.off("sourcedata", onSourceData);
+}
+
+function enable3dTerrain(
+  map: mapboxgl.Map,
+  geoJson: MapBlockFeatureCollection,
+): () => void {
+  if (map.getLayer(EXTRUSION_LAYER_ID)) {
+    map.setLayoutProperty(EXTRUSION_LAYER_ID, "visibility", "none");
+  }
+  if (map.getLayer(FILL_LAYER_ID)) {
+    map.setLayoutProperty(FILL_LAYER_ID, "visibility", "none");
+  }
+
+  if (!map.getSource(TERRAIN_SOURCE_ID)) {
+    map.addSource(TERRAIN_SOURCE_ID, {
+      type: "raster-dem",
+      url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+      tileSize: 512,
+      maxzoom: 14,
+    });
+  }
+
+  map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION });
+
+  const showExtrusion = () => {
+    applyTerrainAlignedBlocks(map, geoJson);
+    if (map.getLayer(EXTRUSION_LAYER_ID)) {
+      map.setLayoutProperty(EXTRUSION_LAYER_ID, "visibility", "visible");
+    }
+  };
+
+  return waitForTerrainSource(map, showExtrusion);
+}
+
+function applyViewMode(
+  map: mapboxgl.Map,
+  viewMode: MapViewMode,
+  geoJson: MapBlockFeatureCollection,
+): (() => void) | void {
   const is3d = viewMode === "3d";
 
-  if (map.getLayer(FILL_LAYER_ID)) {
-    map.setLayoutProperty(FILL_LAYER_ID, "visibility", is3d ? "none" : "visible");
-  }
-  if (map.getLayer(EXTRUSION_LAYER_ID)) {
-    map.setLayoutProperty(
-      EXTRUSION_LAYER_ID,
-      "visibility",
-      is3d ? "visible" : "none",
-    );
-  }
-
   if (is3d) {
-    if (!map.getSource(TERRAIN_SOURCE_ID)) {
-      map.addSource(TERRAIN_SOURCE_ID, {
-        type: "raster-dem",
-        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-        tileSize: 512,
-        maxzoom: 14,
-      });
-    }
-    map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: TERRAIN_EXAGGERATION });
+    const cleanupTerrain = enable3dTerrain(map, geoJson);
     map.easeTo({
       pitch: MAP_3D_PITCH,
       bearing: MAP_3D_BEARING,
       duration: 800,
     });
-  } else {
-    map.setTerrain(null);
-    map.easeTo({
-      pitch: 0,
-      bearing: 0,
-      duration: 800,
-    });
+    return cleanupTerrain;
   }
+
+  if (map.getLayer(FILL_LAYER_ID)) {
+    map.setLayoutProperty(FILL_LAYER_ID, "visibility", "visible");
+  }
+  if (map.getLayer(EXTRUSION_LAYER_ID)) {
+    map.setLayoutProperty(EXTRUSION_LAYER_ID, "visibility", "none");
+  }
+
+  map.setTerrain(null);
+  map.easeTo({
+    pitch: 0,
+    bearing: 0,
+    duration: 800,
+  });
 }
 
 export function VineyardMap({
@@ -184,6 +252,7 @@ export function VineyardMap({
   bounds,
   token,
   viewMode,
+  colorMode,
   highlightedBlockIds = [],
   selectedPumpId = null,
   onBlockSelect,
@@ -193,8 +262,15 @@ export function VineyardMap({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const readyRef = useRef(false);
   const viewModeRef = useRef(viewMode);
+  const colorModeRef = useRef(colorMode);
+  const geoJsonRef = useRef(geoJson);
+  const terrainCleanupRef = useRef<(() => void) | null>(null);
   const onBlockSelectRef = useRef(onBlockSelect);
   const onPumpSelectRef = useRef(onPumpSelect);
+
+  useEffect(() => {
+    geoJsonRef.current = geoJson;
+  }, [geoJson]);
 
   useEffect(() => {
     onBlockSelectRef.current = onBlockSelect;
@@ -207,6 +283,10 @@ export function VineyardMap({
   useEffect(() => {
     viewModeRef.current = viewMode;
   }, [viewMode]);
+
+  useEffect(() => {
+    colorModeRef.current = colorMode;
+  }, [colorMode]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -241,7 +321,7 @@ export function VineyardMap({
         source: MAP_SOURCE_ID,
         layout: { visibility: viewModeRef.current === "3d" ? "none" : "visible" },
         paint: {
-          "fill-color": blockFillColor,
+          "fill-color": buildBlockFillColor(colorModeRef.current),
           "fill-opacity": 0.45,
         },
       });
@@ -250,9 +330,9 @@ export function VineyardMap({
         id: EXTRUSION_LAYER_ID,
         type: "fill-extrusion",
         source: MAP_SOURCE_ID,
-        layout: { visibility: viewModeRef.current === "3d" ? "visible" : "none" },
+        layout: { visibility: "none" },
         paint: {
-          "fill-extrusion-color": blockFillColor,
+          "fill-extrusion-color": buildBlockFillColor(colorModeRef.current),
           "fill-extrusion-height": blockExtrusionHeight,
           "fill-extrusion-base": extrusionBaseHeight,
           "fill-extrusion-opacity": 0.85,
@@ -264,7 +344,7 @@ export function VineyardMap({
         type: "line",
         source: MAP_SOURCE_ID,
         paint: {
-          "line-color": blockOutlineColor,
+          "line-color": buildBlockOutlineColor(colorModeRef.current),
           "line-width": 2,
         },
       });
@@ -325,7 +405,7 @@ export function VineyardMap({
       }
 
       if (viewModeRef.current === "3d") {
-        applyViewMode(map, "3d");
+        terrainCleanupRef.current = applyViewMode(map, "3d", geoJsonRef.current) ?? null;
       }
 
       readyRef.current = true;
@@ -335,6 +415,8 @@ export function VineyardMap({
 
     return () => {
       readyRef.current = false;
+      terrainCleanupRef.current?.();
+      terrainCleanupRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -346,22 +428,38 @@ export function VineyardMap({
 
     const apply = () => {
       readyRef.current = true;
-      applyViewMode(map, viewModeRef.current);
+      terrainCleanupRef.current?.();
+      terrainCleanupRef.current =
+        applyViewMode(map, viewModeRef.current, geoJsonRef.current) ?? null;
     };
 
     if (map.isStyleLoaded()) {
       apply();
-      return;
+      return () => {
+        terrainCleanupRef.current?.();
+        terrainCleanupRef.current = null;
+      };
     }
 
     map.once("load", apply);
+    return () => {
+      terrainCleanupRef.current?.();
+      terrainCleanupRef.current = null;
+    };
   }, [viewMode]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
     const source = map.getSource(MAP_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-    source?.setData(geoJson);
+    if (!source) return;
+
+    if (viewModeRef.current === "3d" && map.getTerrain()) {
+      applyTerrainAlignedBlocks(map, geoJson);
+      return;
+    }
+
+    source.setData(geoJson);
   }, [geoJson]);
 
   useEffect(() => {
@@ -383,7 +481,11 @@ export function VineyardMap({
     if (!map || !readyRef.current) return;
 
     if (map.getLayer(FILL_LAYER_ID)) {
-      map.setPaintProperty(FILL_LAYER_ID, "fill-color", highlightFillColor(highlightedBlockIds));
+      map.setPaintProperty(
+        FILL_LAYER_ID,
+        "fill-color",
+        highlightFillColor(highlightedBlockIds, colorMode),
+      );
       map.setPaintProperty(
         FILL_LAYER_ID,
         "fill-opacity",
@@ -394,14 +496,14 @@ export function VineyardMap({
       map.setPaintProperty(
         EXTRUSION_LAYER_ID,
         "fill-extrusion-color",
-        highlightFillColor(highlightedBlockIds),
+        highlightFillColor(highlightedBlockIds, colorMode),
       );
     }
     if (map.getLayer(OUTLINE_LAYER_ID)) {
       map.setPaintProperty(
         OUTLINE_LAYER_ID,
         "line-color",
-        highlightOutlineColor(highlightedBlockIds),
+        highlightOutlineColor(highlightedBlockIds, colorMode),
       );
       map.setPaintProperty(
         OUTLINE_LAYER_ID,
@@ -423,7 +525,7 @@ export function VineyardMap({
         2,
       ]);
     }
-  }, [highlightedBlockIds, selectedPumpId]);
+  }, [highlightedBlockIds, selectedPumpId, colorMode]);
 
   useEffect(() => {
     const map = mapRef.current;

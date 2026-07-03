@@ -2,15 +2,11 @@
 
 Operational command center for Cooper Estate Vineyards — a block-centered vineyard operations platform built with Next.js, Prisma, and PostgreSQL.
 
-## Features (Sprint 0–1)
+**For owners and operators:** see the plain-language [Stakeholder timeline](docs/stakeholder-timeline.md) — what’s been built, in order, and how it helps daily vineyard work.
 
-- Authenticated app shell with mobile bottom nav and desktop sidebar
-- Vineyard block directory with varietal and planting details
-- Block detail pages with notes and task preview
-- Dashboard summary cards
-- Placeholder pages for tasks, equipment, irrigation, and map
-- Prisma schema for full domain model (tasks, equipment, irrigation ready for later sprints)
-- Seed data for 8 Cooper Estate sample blocks on Red Mountain, WA
+## Features (current)
+
+Live on [cev.cupr.app](https://cev.cupr.app): block directory, interactive 2D/3D map, tasks, irrigation, equipment, field log, GPS progress, reports, and pump management. Full milestone history: [docs/stakeholder-timeline.md](docs/stakeholder-timeline.md).
 
 ## Stack
 
@@ -19,7 +15,7 @@ Operational command center for Cooper Estate Vineyards — a block-centered vine
 - **Prisma 7** ORM with `@prisma/adapter-pg`
 - **Auth.js v5** (credentials login)
 - **Tailwind CSS** + **shadcn/ui**
-- **Mapbox GL JS** (planned Sprint 5)
+- **Mapbox GL JS** (2D/3D vineyard map)
 
 ## Getting started
 

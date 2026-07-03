@@ -10,6 +10,7 @@ import type {
   PrismaClient,
   VarietyColor,
 } from "../src/generated/prisma/client";
+import { defaultVarietyColorHex } from "./variety-map-colors";
 
 export const ESTATE_CENTER = { lat: 46.26513, lng: -119.45518 };
 
@@ -114,8 +115,15 @@ export async function seedEstateBlocks(
     source.varieties.map((v) =>
       prisma.variety.upsert({
         where: { name: v.name },
-        update: { color: v.color as VarietyColor },
-        create: { name: v.name, color: v.color as VarietyColor },
+        update: {
+          color: v.color as VarietyColor,
+          colorHex: defaultVarietyColorHex(v.name),
+        },
+        create: {
+          name: v.name,
+          color: v.color as VarietyColor,
+          colorHex: defaultVarietyColorHex(v.name),
+        },
       }),
     ),
   );

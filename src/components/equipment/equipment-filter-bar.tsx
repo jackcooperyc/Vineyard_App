@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,7 +57,9 @@ function hasActiveFilters(searchParams: URLSearchParams) {
     searchParams.has("type") ||
     searchParams.has("q") ||
     searchParams.has("due") ||
-    (searchParams.has("view") && searchParams.get("view") !== "list")
+    (searchParams.has("view") &&
+      searchParams.get("view") !== "list" &&
+      searchParams.get("view") !== "deleted")
   );
 }
 
@@ -103,6 +105,7 @@ export function EquipmentFilterBar() {
   const currentQuery = searchParams.get("q") ?? "";
   const currentDue = searchParams.get("due") ?? "all";
   const currentView = searchParams.get("view") ?? "list";
+  const showDeleted = currentView === "deleted";
 
   function handleTypeChange(value: string | null) {
     const href = buildHref(pathname, searchParams, {
@@ -150,8 +153,9 @@ export function EquipmentFilterBar() {
             view: filter.value === "list" ? null : filter.value,
           });
           const active =
-            currentView === filter.value ||
-            (filter.value === "list" && !searchParams.get("view"));
+            !showDeleted &&
+            (currentView === filter.value ||
+              (filter.value === "list" && !searchParams.get("view")));
 
           return (
             <Link
@@ -168,6 +172,18 @@ export function EquipmentFilterBar() {
             </Link>
           );
         })}
+        <Link
+          href={buildHref(pathname, searchParams, { view: "deleted" })}
+          className={cn(
+            "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors",
+            showDeleted
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background text-muted-foreground hover:bg-muted",
+          )}
+        >
+          <Trash2 className="size-3.5" />
+          Recently deleted
+        </Link>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">

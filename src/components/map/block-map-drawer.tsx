@@ -21,12 +21,14 @@ export function BlockMapDrawer({
   block,
   equipment,
   quickLogTypes,
+  vineyardBlocks,
   pumps = [],
   onClose,
 }: {
   block: MapBlock | null;
   equipment: { id: string; name: string; type: string }[];
   quickLogTypes: TaskTypeConfig[];
+  vineyardBlocks: { id: string; code: string; name: string }[];
   pumps?: MapPumpGeo[];
   onClose: () => void;
 }) {
@@ -43,10 +45,21 @@ export function BlockMapDrawer({
                 <BlockStatusBadge status={block.status} />
               </div>
               <SheetTitle>{block.name}</SheetTitle>
-              <SheetDescription>
-                {block.blockType === "INFRASTRUCTURE"
-                  ? (block.infrastructureType ?? "Infrastructure area")
-                  : (block.primaryVariety ?? "Mixed varieties")}
+              <SheetDescription className="flex flex-wrap items-center gap-1.5">
+                {block.blockType === "INFRASTRUCTURE" ? (
+                  block.infrastructureType ?? "Infrastructure area"
+                ) : (
+                  <>
+                    {block.varietyColorHex && (
+                      <span
+                        className="inline-block size-3 shrink-0 rounded-sm ring-1 ring-black/20"
+                        style={{ backgroundColor: block.varietyColorHex }}
+                        aria-hidden
+                      />
+                    )}
+                    {block.primaryVariety ?? "Mixed varieties"}
+                  </>
+                )}
                 {block.acreage != null && ` · ${block.acreage} ac`}
                 {block.totalVines > 0 &&
                   ` · ${block.totalVines.toLocaleString()} vines`}
@@ -136,6 +149,7 @@ export function BlockMapDrawer({
                   blockId={block.id}
                   blockCode={block.code}
                   blockName={block.name}
+                  blocks={vineyardBlocks}
                   equipment={equipment}
                   quickLogTypes={quickLogTypes}
                 />

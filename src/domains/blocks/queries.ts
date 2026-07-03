@@ -149,6 +149,7 @@ export async function getDashboardStats() {
     }),
     db.equipment.count({
       where: {
+        ...notDeletedWhere(),
         status: { not: "RETIRED" },
         nextServiceAt: { lte: new Date() },
       },

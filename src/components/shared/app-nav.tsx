@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   Gauge,
   Bell,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -47,6 +48,7 @@ const moreNav = [
     badgeKey: "irrigation" as const,
   },
   { href: "/pumps", label: "Pumps", icon: Gauge },
+  { href: "/settings/varieties", label: "Variety colors", icon: Palette },
   { href: "/settings/notifications", label: "Notifications", icon: Bell },
 ];
 

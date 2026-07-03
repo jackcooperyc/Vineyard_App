@@ -6,17 +6,24 @@ import { getMapBlocks, getMapBounds, mapBlocksToGeoJSON } from "@/domains/map/qu
 import { getMapPumps } from "@/domains/pumps/queries";
 import { getActiveGpsTracksGeoJson } from "@/domains/task-gps/queries";
 import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
+import {
+  getVarietyLegendItems,
+  getVineyardMapColorMode,
+} from "@/domains/varieties/queries";
 import { getCurrentWeather } from "@/domains/weather/queries";
 
 export default async function MapPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
-  const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes] = await Promise.all([
+  const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes, varieties, defaultMapColorMode] =
+    await Promise.all([
     getMapBlocks(),
     getActiveEquipmentForSelect(),
     getMapPumps(),
     getActiveGpsTracksGeoJson(),
     getCurrentWeather(),
     getQuickLogTaskTypes(),
+    getVarietyLegendItems(),
+    getVineyardMapColorMode(),
   ]);
 
   return (
@@ -45,6 +52,8 @@ export default async function MapPage() {
             gpsTracks={gpsTracks}
             weather={currentWeather}
             quickLogTypes={quickLogTypes}
+            varieties={varieties}
+            defaultMapColorMode={defaultMapColorMode}
             token={mapboxToken}
           />
         </Suspense>
