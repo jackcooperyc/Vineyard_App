@@ -2,6 +2,16 @@
 
 Activity log for data import, deployment, and security items requiring human review.
 
+## 2026-07-02 — Vercel Git repository link (cev-app)
+
+### Completed
+
+- Verified Vercel project **cev-app** (`prj_MoFPQPGUm9WkaYeKnjCMWE6bSqyg`) is connected to **jackcooperyc/Vineyard_App** (GitHub, production branch `main`), not **jackcooperyc/CEV_App**.
+- Non-interactive check: `npx vercel git connect https://github.com/jackcooperyc/Vineyard_App.git --non-interactive` reports the repo is already connected (no replace prompt needed).
+- Local `origin` remote matches: `https://github.com/jackcooperyc/Vineyard_App.git`.
+
+---
+
 ## 2026-07-01 — Production deploy (tasks / irrigation / equipment hubs)
 
 ### Completed
