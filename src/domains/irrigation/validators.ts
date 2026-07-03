@@ -43,3 +43,7 @@ export const updateScheduleSchema = createScheduleSchema.extend({
 export const updateRecordSchema = createRecordSchema.extend({
   recordId: z.string().min(1, "Record is required"),
 });
+
+export const bulkDeleteIrrigationRecordsSchema = z.object({
+  recordIds: z.array(z.string().min(1)).min(1),
+});

@@ -6,7 +6,7 @@ import { IrrigationStatsChips } from "@/components/irrigation/irrigation-stats-c
 import { IrrigationEmptyState } from "@/components/irrigation/irrigation-empty-state";
 import { IrrigationHubActions } from "@/components/irrigation/irrigation-hub-actions";
 import { ScheduleListCard } from "@/components/irrigation/schedule-list-card";
-import { RecordListCard } from "@/components/irrigation/record-list-card";
+import { IrrigationRecordsHubBody } from "@/components/irrigation/irrigation-records-hub-body";
 import { IrrigationAlertCard } from "@/components/irrigation/irrigation-alert-card";
 import { Button } from "@/components/ui/button";
 import { getBlockById } from "@/domains/blocks/queries";
@@ -175,27 +175,18 @@ export default async function IrrigationPage({
           </div>
         ))}
 
-      {view === "records" &&
-        (records.length === 0 ? (
-          <IrrigationEmptyState
-            context={{
-              view: "records",
-              hasFilters,
-              blockId,
-              blockCode: blockFilter?.code,
-            }}
-          />
-        ) : (
-          <div className="space-y-3">
-            {records.map((record) => (
-              <RecordListCard
-                key={record.id}
-                record={record}
-                backParams={backParams}
-              />
-            ))}
-          </div>
-        ))}
+      {view === "records" && (
+        <IrrigationRecordsHubBody
+          records={records}
+          backParams={backParams}
+          emptyContext={{
+            view: "records",
+            hasFilters,
+            blockId,
+            blockCode: blockFilter?.code,
+          }}
+        />
+      )}
 
       {view === "alerts" &&
         (filteredAlerts.length === 0 ? (

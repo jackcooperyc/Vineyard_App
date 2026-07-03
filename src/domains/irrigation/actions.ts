@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
+  bulkDeleteIrrigationRecordsSchema,
   createRecordSchema,
   createScheduleSchema,
   quickLogRecordSchema,
@@ -286,27 +287,65 @@ export async function updateIrrigationRecord(formData: FormData) {
   return { success: true, recordId: data.recordId };
 }
 
+async function softDeleteIrrigationRecords(recordIds: string[]) {
+  const records = await db.irrigationRecord.findMany({
+    where: { id: { in: recordIds }, ...notDeletedWhere() },
+    select: { id: true, blockId: true },
+  });
+
+  if (records.length === 0) {
+    return { error: "No records found" as const };
+  }
+
+  if (records.length !== recordIds.length) {
+    return {
+      error: "One or more records were not found or already deleted" as const,
+    };
+  }
+
+  await db.irrigationRecord.updateMany({
+    where: { id: { in: recordIds }, ...notDeletedWhere() },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidateIrrigationPaths();
+  for (const blockId of new Set(records.map((r) => r.blockId))) {
+    revalidatePath(`/blocks/${blockId}`);
+  }
+  for (const record of records) {
+    revalidatePath(`/irrigation/records/${record.id}`);
+  }
+
+  return { success: true as const, deletedCount: records.length };
+}
+
 export async function deleteIrrigationRecord(recordId: string) {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
 
   await purgeExpiredSoftDeletes();
 
-  const record = await db.irrigationRecord.findFirst({
-    where: { id: recordId, ...notDeletedWhere() },
-    select: { blockId: true },
-  });
-
-  if (!record) return { error: "Record not found" };
-
-  await db.irrigationRecord.update({
-    where: { id: recordId },
-    data: { deletedAt: new Date() },
-  });
-
-  revalidateIrrigationPaths(record.blockId);
-  revalidatePath(`/irrigation/records/${recordId}`);
+  const result = await softDeleteIrrigationRecords([recordId]);
+  if ("error" in result) return { error: result.error };
   return { success: true };
+}
+
+export async function bulkDeleteIrrigationRecords(input: {
+  recordIds: string[];
+}) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = bulkDeleteIrrigationRecordsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  await purgeExpiredSoftDeletes();
+
+  const result = await softDeleteIrrigationRecords(parsed.data.recordIds);
+  if ("error" in result) return { error: result.error };
+  return { success: true, deletedCount: result.deletedCount };
 }
 
 export async function restoreIrrigationRecord(recordId: string) {
