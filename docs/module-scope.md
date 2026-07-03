@@ -72,3 +72,4 @@
 - Mobile-responsive app shell
 - Domain-driven folder structure under `src/domains/`
 - Notes attachable to blocks (and later tasks)
+- Task email notifications (opt-in per user at `/settings/notifications`; Resend + Vercel Cron for due/overdue reminders)

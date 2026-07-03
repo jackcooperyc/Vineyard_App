@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   FileSpreadsheet,
   Gauge,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -46,6 +47,7 @@ const moreNav = [
     badgeKey: "irrigation" as const,
   },
   { href: "/pumps", label: "Pumps", icon: Gauge },
+  { href: "/settings/notifications", label: "Notifications", icon: Bell },
 ];
 
 const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];

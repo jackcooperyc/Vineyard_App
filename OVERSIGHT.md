@@ -22,6 +22,32 @@ Activity log for data import, deployment, and security items requiring human rev
 
 ---
 
+---
+
+## 2026-07-03 — Task notification system
+
+### Completed
+
+- **Schema:** `UserNotificationPreference`, `NotificationDelivery`, `Task.createdById`; enums for event type, channel, delivery status.
+- **Domain:** `src/domains/notifications/` — preferences, outbox delivery, email templates (Resend), quiet hours, due-soon/overdue cron logic with overdue throttle (1/day/task/user).
+- **Hooks:** `createTask`, `quickLogTask`, `updateTask`, `updateTaskStatus`, `bulkUpdateTasks` emit events respecting prefs and soft-delete filters.
+- **UI:** `/settings/notifications` toggle matrix; link in app More nav.
+- **Cron:** `GET /api/cron/task-reminders` + `vercel.json` hourly schedule (`CRON_SECRET`).
+
+### Verification
+
+- `npx prisma validate` — pass
+- `npx tsc --noEmit` — pass
+- `npm run lint` — pass
+- `npm run build` — pass
+
+### Production env
+
+- `RESEND_API_KEY`, `EMAIL_FROM` — email delivery (optional; outbox stays pending)
+- `CRON_SECRET` — authorize Vercel Cron requests
+
+---
+
 ## 2026-07-03 — Configurable task types + bulk task editing
 
 ### Completed

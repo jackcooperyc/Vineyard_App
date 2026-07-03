@@ -11,8 +11,9 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isAuthPage = nextUrl.pathname.startsWith("/login");
       const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
+      const isCronApi = nextUrl.pathname.startsWith("/api/cron");
 
-      if (isApiAuth) return true;
+      if (isApiAuth || isCronApi) return true;
       if (isAuthPage) {
         if (isLoggedIn) {
           return Response.redirect(new URL("/dashboard", nextUrl));
