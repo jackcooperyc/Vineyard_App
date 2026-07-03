@@ -17,3 +17,9 @@ export const createIrrigationPumpSchema = z.object({
 });
 
 export type CreateIrrigationPumpInput = z.infer<typeof createIrrigationPumpSchema>;
+
+export const updateIrrigationPumpSchema = createIrrigationPumpSchema.extend({
+  pumpId: z.string().min(1, "Pump is required"),
+});
+
+export type UpdateIrrigationPumpInput = z.infer<typeof updateIrrigationPumpSchema>;

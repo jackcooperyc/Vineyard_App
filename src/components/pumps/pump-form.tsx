@@ -7,23 +7,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createIrrigationPump } from "@/domains/pumps/actions";
+import { PumpLocationPicker } from "@/components/pumps/pump-location-picker";
+import {
+  createIrrigationPump,
+  updateIrrigationPump,
+} from "@/domains/pumps/actions";
 import { ESTATE_WEATHER_LOCATION } from "@/domains/weather/constants";
 
 type BlockOption = { id: string; code: string; name: string };
 
-export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
+type PumpFormValues = {
+  id: string;
+  name: string | null;
+  lat: number;
+  lng: number;
+  flowCapacity: number | null;
+  servicedBlockIds: string[];
+  notes: string | null;
+};
+
+export function PumpForm({
+  blocks,
+  pump,
+  mapboxToken,
+  cancelHref = "/pumps",
+}: {
+  blocks: BlockOption[];
+  pump?: PumpFormValues;
+  mapboxToken?: string;
+  cancelHref?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const isEdit = Boolean(pump);
+
+  const [lat, setLat] = useState(pump?.lat ?? ESTATE_WEATHER_LOCATION.lat);
+  const [lng, setLng] = useState(pump?.lng ?? ESTATE_WEATHER_LOCATION.lng);
+
+  function handleLocationChange(newLat: number, newLng: number) {
+    setLat(newLat);
+    setLng(newLng);
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
+    formData.set("lat", String(lat));
+    formData.set("lng", String(lng));
 
     startTransition(async () => {
-      const result = await createIrrigationPump(formData);
+      const result = isEdit
+        ? await updateIrrigationPump(formData)
+        : await createIrrigationPump(formData);
       if (result.error) {
         setError(result.error);
         return;
@@ -37,6 +74,8 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {pump && <input type="hidden" name="pumpId" value={pump.id} />}
+
       <div className="space-y-2">
         <Label htmlFor="name">Pump name</Label>
         <Input
@@ -45,33 +84,51 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
           required
           className="h-12 text-base"
           placeholder="e.g. Main station pump"
+          defaultValue={pump?.name ?? ""}
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="lat">Latitude</Label>
-          <Input
-            id="lat"
-            name="lat"
-            type="number"
-            step="any"
-            required
-            className="h-12 text-base"
-            defaultValue={ESTATE_WEATHER_LOCATION.lat}
+      <div className="space-y-2">
+        <Label>Location</Label>
+        {mapboxToken ? (
+          <PumpLocationPicker
+            token={mapboxToken}
+            lat={lat}
+            lng={lng}
+            onChange={handleLocationChange}
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lng">Longitude</Label>
-          <Input
-            id="lng"
-            name="lng"
-            type="number"
-            step="any"
-            required
-            className="h-12 text-base"
-            defaultValue={ESTATE_WEATHER_LOCATION.lng}
-          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Map picker unavailable — enter coordinates below.
+          </p>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="lat">Latitude</Label>
+            <Input
+              id="lat"
+              name="lat"
+              type="number"
+              step="any"
+              required
+              className="h-12 text-base"
+              value={lat}
+              onChange={(e) => setLat(Number(e.target.value))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lng">Longitude</Label>
+            <Input
+              id="lng"
+              name="lng"
+              type="number"
+              step="any"
+              required
+              className="h-12 text-base"
+              value={lng}
+              onChange={(e) => setLng(Number(e.target.value))}
+            />
+          </div>
         </div>
       </div>
 
@@ -85,6 +142,7 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
           min="0"
           className="h-12 text-base"
           placeholder="e.g. 150"
+          defaultValue={pump?.flowCapacity ?? ""}
         />
       </div>
 
@@ -103,6 +161,7 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
                   type="checkbox"
                   name="servicedBlockIds"
                   value={block.id}
+                  defaultChecked={pump?.servicedBlockIds.includes(block.id)}
                   className="size-4 rounded border-input"
                 />
                 <span>
@@ -122,6 +181,7 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
           rows={3}
           className="text-base"
           placeholder="Location notes, valve IDs, etc."
+          defaultValue={pump?.notes ?? ""}
         />
       </div>
 
@@ -133,13 +193,19 @@ export function PumpForm({ blocks }: { blocks: BlockOption[] }) {
 
       <div className="flex gap-3">
         <Button type="submit" className="min-h-11 flex-1 text-base" disabled={pending}>
-          {pending ? "Creating…" : "Add pump"}
+          {pending
+            ? isEdit
+              ? "Saving…"
+              : "Creating…"
+            : isEdit
+              ? "Save changes"
+              : "Add pump"}
         </Button>
         <Button
           type="button"
           variant="outline"
           className="min-h-11"
-          render={<Link href="/pumps" />}
+          render={<Link href={cancelHref} />}
         >
           Cancel
         </Button>

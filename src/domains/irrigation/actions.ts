@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   bulkDeleteIrrigationRecordsSchema,
+  bulkToggleSchedulesActiveSchema,
   clearIrrigationAlertsSchema,
   createRecordSchema,
   createScheduleSchema,
@@ -207,6 +208,48 @@ export async function toggleScheduleActive(scheduleId: string, active: boolean) 
 
   revalidateSchedulePaths(scheduleId, schedule.blockId);
   return { success: true };
+}
+
+export async function bulkToggleSchedulesActive(input: {
+  scheduleIds: string[];
+  active: boolean;
+}) {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+
+  const parsed = bulkToggleSchedulesActiveSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const schedules = await db.irrigationSchedule.findMany({
+    where: { id: { in: parsed.data.scheduleIds }, ...notDeletedWhere() },
+    select: { id: true, blockId: true },
+  });
+
+  if (schedules.length === 0) {
+    return { error: "No schedules found" };
+  }
+
+  if (schedules.length !== parsed.data.scheduleIds.length) {
+    return { error: "One or more schedules were not found" };
+  }
+
+  await db.irrigationSchedule.updateMany({
+    where: { id: { in: parsed.data.scheduleIds } },
+    data: { active: parsed.data.active },
+  });
+
+  const blockIds = [...new Set(schedules.map((s) => s.blockId))];
+  revalidatePath("/irrigation");
+  revalidatePath("/dashboard");
+  revalidatePath("/field");
+  revalidatePath("/map");
+  for (const blockId of blockIds) {
+    revalidatePath(`/blocks/${blockId}`);
+  }
+
+  return { success: true, updatedCount: schedules.length };
 }
 
 export async function updateSchedule(formData: FormData) {

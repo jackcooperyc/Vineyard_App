@@ -49,20 +49,38 @@ function dueHint(schedule: ScheduleWithDueHint) {
 export function ScheduleListCard({
   schedule,
   backParams,
+  selectable,
+  selected,
+  onSelectedChange,
 }: {
   schedule: ScheduleWithDueHint;
   backParams?: IrrigationHubParams;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }) {
   const hint = dueHint(schedule);
 
-  return (
+  const card = (
     <Card
       className={cn(
         schedule.active ? "" : "opacity-60",
         schedule.isOverdue && schedule.active && "border-red-200 dark:border-red-900/50",
+        selectable && selected && "border-primary bg-primary/5",
       )}
     >
       <CardContent className="flex min-h-[80px] items-center gap-3 p-4">
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => onSelectedChange?.(e.target.checked)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select ${schedule.block.name} irrigation schedule`}
+            className="size-5 shrink-0 rounded border-input"
+          />
+        )}
+
         <Link
           href={buildDetailHref("/irrigation/schedules", schedule.id, backParams)}
           className="field-tap flex flex-1 items-center gap-3 transition-colors hover:opacity-90"
@@ -105,10 +123,18 @@ export function ScheduleListCard({
                 ` · Last applied ${schedule.lastAppliedAt.toLocaleDateString()}`}
             </p>
           </div>
-          <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+          {!selectable && (
+            <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+          )}
         </Link>
         <ScheduleActiveToggle scheduleId={schedule.id} active={schedule.active} />
       </CardContent>
     </Card>
   );
+
+  if (selectable) {
+    return <div className="block">{card}</div>;
+  }
+
+  return card;
 }

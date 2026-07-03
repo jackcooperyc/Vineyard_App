@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,14 +48,20 @@ export default async function PumpDetailPage({
         </div>
       </div>
 
-      <Button
-        variant="outline"
-        className="min-h-11"
-        render={<Link href={`/map?pump=${pump.id}`} />}
-      >
-        <MapPin className="size-4" />
-        View on map
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant="outline"
+          className="min-h-11"
+          render={<Link href={`/map?pump=${pump.id}`} />}
+        >
+          <MapPin className="size-4" />
+          View on map
+        </Button>
+        <Button className="min-h-11" render={<Link href={`/pumps/${pump.id}/edit`} />}>
+          <Pencil className="size-4" />
+          Edit pump
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>

@@ -6,6 +6,7 @@ import { PumpForm } from "@/components/pumps/pump-form";
 import { getVineyardBlocksForPumpForm } from "@/domains/pumps/queries";
 
 export default async function NewPumpPage() {
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
   const blocks = await getVineyardBlocksForPumpForm();
 
   return (
@@ -32,7 +33,7 @@ export default async function NewPumpPage() {
           <CardTitle>Pump details</CardTitle>
         </CardHeader>
         <CardContent>
-          <PumpForm blocks={blocks} />
+          <PumpForm blocks={blocks} mapboxToken={mapboxToken} />
         </CardContent>
       </Card>
     </div>

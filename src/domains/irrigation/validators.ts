@@ -48,6 +48,11 @@ export const bulkDeleteIrrigationRecordsSchema = z.object({
   recordIds: z.array(z.string().min(1)).min(1),
 });
 
+export const bulkToggleSchedulesActiveSchema = z.object({
+  scheduleIds: z.array(z.string().min(1)).min(1),
+  active: z.boolean(),
+});
+
 export const clearIrrigationAlertsSchema = z.object({
   blockId: z.string().min(1).optional(),
 });

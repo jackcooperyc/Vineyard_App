@@ -12,6 +12,7 @@ export type BlockListItem = {
   blockType: BlockType;
   infrastructureType: string | null;
   primaryVariety: string | null;
+  varieties: string[];
   totalVines: number;
   yearPlanted: number | null;
 };
@@ -42,6 +43,10 @@ export async function getBlocks(filters?: {
   return blocks
     .map((block) => {
       const primary = block.plantings[0];
+      const varieties = [
+        ...new Set(block.plantings.map((p) => p.variety.name)),
+      ].sort((a, b) => a.localeCompare(b));
+
       return {
         id: block.id,
         code: block.code,
@@ -51,6 +56,7 @@ export async function getBlocks(filters?: {
         blockType: block.blockType,
         infrastructureType: block.infrastructureType,
         primaryVariety: primary?.variety.name ?? null,
+        varieties,
         totalVines: block.plantings.reduce(
           (sum, p) => sum + (p.vineCount ?? 0),
           0,

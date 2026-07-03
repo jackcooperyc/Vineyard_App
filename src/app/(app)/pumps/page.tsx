@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Droplets, MapPin, Plus } from "lucide-react";
+import { Droplets, MapPin, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,14 +67,24 @@ export default async function PumpsPage() {
                   {pump.gpsPoint.coordinates[1].toFixed(5)},{" "}
                   {pump.gpsPoint.coordinates[0].toFixed(5)}
                 </p>
-                <Button
-                  variant="link"
-                  className="h-auto shrink-0 p-0 text-sm"
-                  render={<Link href={`/map?pump=${pump.id}`} />}
-                >
-                  <MapPin className="size-3.5" />
-                  Map
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-sm"
+                    render={<Link href={`/pumps/${pump.id}/edit`} />}
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-sm"
+                    render={<Link href={`/map?pump=${pump.id}`} />}
+                  >
+                    <MapPin className="size-3.5" />
+                    Map
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

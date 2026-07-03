@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Droplets } from "lucide-react";
+import { Droplets, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -64,6 +64,14 @@ export function PumpMapDrawer({
                 </p>
               )}
 
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  className="min-h-11"
+                  render={<Link href={`/pumps/${pump.id}/edit`} />}
+                >
+                  <Pencil className="size-4" />
+                  Edit pump
+                </Button>
                 <Button
                   variant="outline"
                   className="min-h-11"
@@ -71,6 +79,7 @@ export function PumpMapDrawer({
                 >
                   Pump details
                 </Button>
+              </div>
             </div>
           </>
         )}

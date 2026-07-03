@@ -5,8 +5,8 @@ import { IrrigationFilterBar } from "@/components/irrigation/irrigation-filter-b
 import { IrrigationStatsChips } from "@/components/irrigation/irrigation-stats-chips";
 import { IrrigationEmptyState } from "@/components/irrigation/irrigation-empty-state";
 import { IrrigationHubActions } from "@/components/irrigation/irrigation-hub-actions";
-import { ScheduleListCard } from "@/components/irrigation/schedule-list-card";
 import { IrrigationRecordsHubBody } from "@/components/irrigation/irrigation-records-hub-body";
+import { IrrigationSchedulesHubBody } from "@/components/irrigation/irrigation-schedules-hub-body";
 import { IrrigationAlertsHubBody } from "@/components/irrigation/irrigation-alerts-hub-body";
 import { Button } from "@/components/ui/button";
 import { getBlockById } from "@/domains/blocks/queries";
@@ -160,27 +160,18 @@ export default async function IrrigationPage({
         />
       )}
 
-      {view === "schedules" &&
-        (schedules.length === 0 ? (
-          <IrrigationEmptyState
-            context={{
-              view: "schedules",
-              hasFilters,
-              blockId,
-              blockCode: blockFilter?.code,
-            }}
-          />
-        ) : (
-          <div className="space-y-3">
-            {schedules.map((schedule) => (
-              <ScheduleListCard
-                key={schedule.id}
-                schedule={schedule}
-                backParams={backParams}
-              />
-            ))}
-          </div>
-        ))}
+      {view === "schedules" && (
+        <IrrigationSchedulesHubBody
+          schedules={schedules}
+          backParams={backParams}
+          emptyContext={{
+            view: "schedules",
+            hasFilters,
+            blockId,
+            blockCode: blockFilter?.code,
+          }}
+        />
+      )}
 
       {view === "records" && (
         <IrrigationRecordsHubBody
