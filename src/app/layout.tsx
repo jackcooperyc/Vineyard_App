@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthSessionProvider } from "@/components/shared/session-provider";
+import { AppToaster } from "@/components/shared/app-toaster";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <AuthSessionProvider>{children}</AuthSessionProvider>
+        <AppToaster />
       </body>
     </html>
   );

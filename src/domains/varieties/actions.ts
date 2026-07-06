@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import {
   updateMapColorModeSchema,
@@ -9,8 +9,8 @@ import {
 } from "@/domains/varieties/validators";
 
 export async function updateVarietyColor(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("varieties:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateVarietyColorSchema.safeParse({
     varietyId: formData.get("varietyId"),
@@ -32,8 +32,8 @@ export async function updateVarietyColor(formData: FormData) {
 }
 
 export async function updateVineyardMapColorMode(mapColorMode: "STATUS" | "VARIETAL") {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("varieties:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateMapColorModeSchema.safeParse({ mapColorMode });
   if (!parsed.success) return { error: "Invalid map color mode" };

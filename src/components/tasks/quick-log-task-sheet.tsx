@@ -23,6 +23,7 @@ import { EquipmentSelectField } from "@/components/equipment/equipment-select-fi
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
 import { quickLogTask } from "@/domains/tasks/actions";
 import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
+import { showTaskLoggedToast } from "@/lib/submission-toast";
 import { defaultTitleForTypeConfig } from "@/domains/tasks/constants";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
@@ -118,6 +119,14 @@ export function QuickLogTaskSheet({
         return;
       }
       setOpen(false);
+      const detail = [
+        selectedType?.label,
+        (formData.get("title") as string | null)?.trim() || undefined,
+        blockSummary,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      showTaskLoggedToast(detail || undefined, { began: beginTask });
       if (result.taskId) {
         router.push(redirectAfterTaskCreate(result));
       }

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import type { EquipmentStatus } from "@/generated/prisma/client";
 import {
@@ -36,10 +36,8 @@ function revalidateEquipmentPaths(equipmentId?: string) {
 }
 
 export async function createEquipment(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = createEquipmentSchema.safeParse({
     name: formData.get("name"),
@@ -89,10 +87,8 @@ export async function createEquipment(formData: FormData) {
 }
 
 export async function createMaintenanceRecord(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = createMaintenanceRecordSchema.safeParse({
     equipmentId: formData.get("equipmentId"),
@@ -140,10 +136,8 @@ export async function createMaintenanceRecord(formData: FormData) {
 }
 
 export async function updateEquipment(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateEquipmentSchema.safeParse({
     equipmentId: formData.get("equipmentId"),
@@ -222,10 +216,8 @@ export async function updateEquipmentStatus(
   equipmentId: string,
   status: EquipmentStatus,
 ) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateEquipmentStatusSchema.safeParse({ equipmentId, status });
   if (!parsed.success) {
@@ -251,10 +243,8 @@ export async function updateEquipmentStatus(
 }
 
 export async function retireEquipment(equipmentId: string) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const existing = await db.equipment.findFirst({
     where: { id: equipmentId, ...notDeletedWhere() },
@@ -279,10 +269,8 @@ export async function retireEquipment(equipmentId: string) {
 }
 
 export async function updateMaintenanceRecord(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateMaintenanceRecordSchema.safeParse({
     recordId: formData.get("recordId"),
@@ -328,10 +316,8 @@ export async function deleteMaintenanceRecord(
   recordId: string,
   equipmentId: string,
 ) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -354,10 +340,8 @@ export async function deleteMaintenanceRecord(
 }
 
 export async function deleteEquipment(equipmentId: string) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -380,10 +364,8 @@ export async function deleteEquipment(equipmentId: string) {
 }
 
 export async function restoreEquipment(equipmentId: string) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -409,10 +391,8 @@ export async function restoreMaintenanceRecord(
   recordId: string,
   equipmentId: string,
 ) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("equipment:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 

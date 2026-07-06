@@ -14,6 +14,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
+import { formatIrrigationQuickLogDetail } from "@/lib/irrigation-toast-detail";
+import { showIrrigationLoggedToast } from "@/lib/submission-toast";
 
 export function IrrigationHubQuickLogSheet({
   blocks,
@@ -44,6 +46,15 @@ export function IrrigationHubQuickLogSheet({
         return;
       }
       setOpen(false);
+      const selectedBlock = blocks.find((block) => block.id === blockId);
+      showIrrigationLoggedToast(
+        formatIrrigationQuickLogDetail({
+          blockLabel: selectedBlock
+            ? `${selectedBlock.code} · ${selectedBlock.name}`
+            : undefined,
+          method: "Drip",
+        }),
+      );
       router.refresh();
     });
   }

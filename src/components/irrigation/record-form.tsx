@@ -12,6 +12,11 @@ import {
   updateIrrigationRecord,
 } from "@/domains/irrigation/actions";
 import { IRRIGATION_METHODS } from "@/domains/irrigation/constants";
+import {
+  formatBlockDetail,
+  formatIrrigationRecordDetail,
+} from "@/lib/irrigation-toast-detail";
+import { showIrrigationRecordSavedToast } from "@/lib/submission-toast";
 import type { IrrigationStatus } from "@/generated/prisma/client";
 import { buildIrrigationHubHref } from "@/lib/hub-back-href";
 
@@ -61,6 +66,17 @@ export function RecordForm({
         return;
       }
       if (result.recordId) {
+        const blockId = formData.get("blockId") as string;
+        const method = (formData.get("method") as string | null) || null;
+        const appliedAt = (formData.get("appliedAt") as string | null) || undefined;
+        showIrrigationRecordSavedToast(
+          formatIrrigationRecordDetail({
+            blockLabel: formatBlockDetail(blocks, blockId),
+            method,
+            appliedAt,
+          }),
+          { isEdit },
+        );
         router.push(`/irrigation/records/${result.recordId}`);
         router.refresh();
       }

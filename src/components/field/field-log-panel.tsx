@@ -21,6 +21,8 @@ import {
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
 import { quickLogTask } from "@/domains/tasks/actions";
 import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
+import { formatIrrigationQuickLogDetail } from "@/lib/irrigation-toast-detail";
+import { showIrrigationLoggedToast, showTaskLoggedToast } from "@/lib/submission-toast";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +65,6 @@ export function FieldLogPanel({
       return;
     }
     setError(null);
-    setMessage(null);
     const primary = options.primaryBlockId;
     const formData = new FormData();
     formData.set("blockIds", JSON.stringify(blockIds));
@@ -78,6 +79,15 @@ export function FieldLogPanel({
         return;
       }
       if (result.taskId && options?.begin) {
+        const type = quickLogTypes.find((t) => t.id === typeId);
+        const blockLabel = formatTaskBlockLabel(
+          blocks.filter((b) => blockIds.includes(b.id)),
+          blocks.find((b) => b.id === primary),
+        );
+        showTaskLoggedToast(
+          [type?.label, blockLabel].filter(Boolean).join(" · ") || undefined,
+          { began: true },
+        );
         router.push(redirectAfterTaskCreate({ ...result, began: true }));
         return;
       }
@@ -85,7 +95,10 @@ export function FieldLogPanel({
         blocks.filter((b) => blockIds.includes(b.id)),
         blocks.find((b) => b.id === primary),
       );
-      setMessage(`Task logged for ${blockLabel || "selected blocks"}.`);
+      const type = quickLogTypes.find((t) => t.id === typeId);
+      showTaskLoggedToast(
+        [type?.label, blockLabel].filter(Boolean).join(" · ") || undefined,
+      );
       router.refresh();
     });
   }
@@ -96,7 +109,6 @@ export function FieldLogPanel({
       return;
     }
     setError(null);
-    setMessage(null);
     const formData = new FormData();
     formData.set("blockIds", JSON.stringify(irrigationBlockIds));
     formData.set("method", "Drip");
@@ -112,10 +124,12 @@ export function FieldLogPanel({
         blocks.filter((b) => irrigationBlockIds.includes(b.id)),
       );
       const count = result.count ?? irrigationBlockIds.length;
-      setMessage(
-        count > 1
-          ? `Irrigation logged for ${count} blocks (${blockLabel}).`
-          : `Irrigation logged for ${blockLabel || "block"}.`,
+      showIrrigationLoggedToast(
+        formatIrrigationQuickLogDetail({
+          blockLabel: blockLabel || undefined,
+          count,
+          method: "Drip",
+        }),
       );
       router.refresh();
     });

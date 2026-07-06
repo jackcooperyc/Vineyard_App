@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requireAuth, requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import { GPS_AUTO_COMPLETE_COVERAGE } from "@/domains/task-gps/constants";
@@ -37,8 +37,9 @@ export async function startGpsSession(input: {
   blockId?: string;
   swathWidthM?: number;
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const parsed = startGpsSessionSchema.safeParse(input);
   if (!parsed.success) {
@@ -47,7 +48,7 @@ export async function startGpsSession(input: {
 
   const result = await createGpsSessionForTask({
     taskId: parsed.data.taskId,
-    userId: session.user.id,
+    userId: user.id,
     blockId: parsed.data.blockId,
     swathWidthM: parsed.data.swathWidthM,
   });
@@ -64,8 +65,9 @@ export async function switchGpsSessionBlock(input: {
   sessionId: string;
   blockId: string;
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const parsed = switchGpsSessionBlockSchema.safeParse(input);
   if (!parsed.success) {
@@ -75,7 +77,7 @@ export async function switchGpsSessionBlock(input: {
   const row = await db.taskGpsSession.findFirst({
     where: {
       id: parsed.data.sessionId,
-      userId: session.user.id,
+      userId: user.id,
       status: { in: ["ACTIVE", "PAUSED"] },
     },
     include: {
@@ -107,7 +109,7 @@ export async function switchGpsSessionBlock(input: {
 
   const next = await createGpsSessionForTask({
     taskId: row.taskId,
-    userId: session.user.id,
+    userId: user.id,
     blockId: parsed.data.blockId,
     swathWidthM: row.swathWidthM ?? undefined,
     skipStatusTransition: true,
@@ -122,11 +124,12 @@ export async function switchGpsSessionBlock(input: {
 }
 
 export async function pauseGpsSession(sessionId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const row = await db.taskGpsSession.findFirst({
-    where: { id: sessionId, userId: session.user.id, status: "ACTIVE" },
+    where: { id: sessionId, userId: user.id, status: "ACTIVE" },
   });
   if (!row) return { error: "Active session not found" };
 
@@ -139,11 +142,12 @@ export async function pauseGpsSession(sessionId: string) {
 }
 
 export async function resumeGpsSession(sessionId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const row = await db.taskGpsSession.findFirst({
-    where: { id: sessionId, userId: session.user.id, status: "PAUSED" },
+    where: { id: sessionId, userId: user.id, status: "PAUSED" },
   });
   if (!row) return { error: "Paused session not found" };
 
@@ -159,8 +163,9 @@ export async function endGpsSession(
   sessionId: string,
   options?: { markComplete?: boolean },
 ) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const parsed = sessionIdSchema.safeParse({ sessionId });
   if (!parsed.success) return { error: "Invalid session" };
@@ -168,7 +173,7 @@ export async function endGpsSession(
   const row = await db.taskGpsSession.findFirst({
     where: {
       id: sessionId,
-      userId: session.user.id,
+      userId: user.id,
       status: { in: ["ACTIVE", "PAUSED"] },
     },
     include: {
@@ -205,13 +210,13 @@ export async function endGpsSession(
       data: { status: "COMPLETED", completedAt: new Date() },
     });
     const recipients = [
-      row.task.assignedToId ?? session.user.id,
+      row.task.assignedToId ?? user.id,
     ].filter(Boolean) as string[];
     await emitTaskEvent({
       taskId: row.task.id,
       eventType: "COMPLETED",
       recipientUserIds: recipients,
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
   }
 
@@ -235,8 +240,9 @@ export async function appendTaskGpsPoints(input: {
     recordedAt: string;
   }[];
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const parsed = appendGpsPointsSchema.safeParse(input);
   if (!parsed.success) {
@@ -246,7 +252,7 @@ export async function appendTaskGpsPoints(input: {
   const row = await db.taskGpsSession.findFirst({
     where: {
       id: parsed.data.sessionId,
-      userId: session.user.id,
+      userId: user.id,
       status: "ACTIVE",
       task: notDeletedWhere(),
     },
@@ -296,13 +302,14 @@ export async function appendTaskGpsPoints(input: {
 }
 
 export async function cancelGpsSession(sessionId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("gps:manage");
+  if ("error" in authResult) return { error: authResult.error };
+  const { user } = authResult;
 
   const row = await db.taskGpsSession.findFirst({
     where: {
       id: sessionId,
-      userId: session.user.id,
+      userId: user.id,
       status: { in: ["ACTIVE", "PAUSED"] },
     },
   });
@@ -317,8 +324,8 @@ export async function cancelGpsSession(sessionId: string) {
 }
 
 export async function fetchGpsFieldData(blockIds: string[] | null) {
-  const session = await auth();
-  if (!session?.user) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
     return {
       activeSession: null,
       eligibleTasks: [] as Awaited<
@@ -329,7 +336,7 @@ export async function fetchGpsFieldData(blockIds: string[] | null) {
 
   const ids = blockIds?.filter(Boolean) ?? [];
   const [activeSession, eligibleTasks] = await Promise.all([
-    getActiveGpsSessionForUser(session.user.id),
+    getActiveGpsSessionForUser(authResult.user.id),
     ids.length > 0
       ? getOpenGpsEligibleTasksForBlocks(ids)
       : Promise.resolve([]),

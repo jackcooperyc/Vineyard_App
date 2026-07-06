@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import {
   createIrrigationPumpSchema,
@@ -19,10 +19,8 @@ function revalidatePumpPaths(pumpId?: string) {
 }
 
 export async function createIrrigationPump(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("pumps:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const servicedBlockIds = formData.getAll("servicedBlockIds").map(String);
 
@@ -57,10 +55,8 @@ export async function createIrrigationPump(formData: FormData) {
 }
 
 export async function updateIrrigationPump(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("pumps:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const servicedBlockIds = formData.getAll("servicedBlockIds").map(String);
 

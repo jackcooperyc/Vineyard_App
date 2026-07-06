@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import length from "@turf/length";
 import { lineString } from "@turf/helpers";
@@ -41,8 +41,8 @@ export async function importBlockRows(input: {
   blockId: string;
   rows: { rowIndex: number; coordinates: [number, number][] }[];
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("import:data");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = importRowsSchema.safeParse(input);
   if (!parsed.success) {
@@ -81,8 +81,8 @@ export async function updateBlockSpacing(input: {
   rowSpacing?: number;
   vineSpacing?: number;
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("blocks:edit");
+  if ("error" in authResult) return { error: authResult.error };
 
   const planting = await db.planting.findFirst({
     where: { blockId: input.blockId },

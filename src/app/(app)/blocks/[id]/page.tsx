@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Pencil } from "lucide-react";
 import { getBlockById, getOpenTaskEquipmentForBlock } from "@/domains/blocks/queries";
 import { BlockStatusBadge } from "@/components/blocks/block-status-badge";
 import { BlockTerrainSection } from "@/components/blocks/block-terrain-section";
+import { BlockNoteForm } from "@/components/blocks/block-note-form";
 import { QuickLogTaskSheet } from "@/components/tasks/quick-log-task-sheet";
 import { QuickLogIrrigationSheet } from "@/components/irrigation/quick-log-irrigation-sheet";
 import { IrrigationStatusBadge } from "@/components/irrigation/irrigation-status-badge";
@@ -27,6 +28,9 @@ import {
   VarietyColorRow,
   WineTypeBadge,
 } from "@/components/varieties/variety-color-row";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth-session";
+import { parseUserRole } from "@/lib/rbac";
 
 export default async function BlockDetailPage({
   params,
@@ -34,6 +38,11 @@ export default async function BlockDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await auth();
+  const role = parseUserRole(session?.user?.role);
+  const canEditBlock = hasPermission(role, "blocks:edit");
+  const canAddNote = hasPermission(role, "notes:create");
+
   const [block, equipment, blockEquipment, quickLogTypes, rowLayoutStatus, vineyardBlocks] =
     await Promise.all([
     getBlockById(id),
@@ -112,6 +121,16 @@ export default async function BlockDetailPage({
           blockCode={block.code}
           blockName={block.name}
         />
+        {canEditBlock && (
+          <Button
+            variant="outline"
+            className="min-h-11 gap-2"
+            render={<Link href={`/blocks/${block.id}/edit`} />}
+          >
+            <Pencil className="size-4" />
+            Edit block
+          </Button>
+        )}
         <Button
           variant="outline"
           className="min-h-11"
@@ -173,7 +192,14 @@ export default async function BlockDetailPage({
           <CardDescription>Varietals and vine counts for this block</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {block.plantings.map((planting) => (
+          {block.plantings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {canEditBlock
+                ? "No plantings recorded. Edit block to add variety plantings."
+                : "No plantings recorded. Ask a manager to update block data."}
+            </p>
+          ) : (
+          block.plantings.map((planting) => (
             <div key={planting.id} className="space-y-3 border-b pb-4 last:border-0 last:pb-0">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
@@ -213,7 +239,8 @@ export default async function BlockDetailPage({
                 showPlantingCount={false}
               />
             </div>
-          ))}
+          ))
+          )}
         </CardContent>
       </Card>
       )}
@@ -235,8 +262,18 @@ export default async function BlockDetailPage({
           <CardDescription>Observations logged against this block</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {canAddNote && (
+            <BlockNoteForm
+              blockId={block.id}
+              blockLabel={`${block.code} · ${block.name}`}
+            />
+          )}
           {block.notes_records.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No notes yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {canAddNote
+                ? "No notes yet. Log the first observation above."
+                : "No notes yet."}
+            </p>
           ) : (
             block.notes_records.map((note) => (
               <div key={note.id} className="space-y-1 border-b pb-4 last:border-0">

@@ -1,10 +1,20 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskTypeList } from "@/components/tasks/settings/task-type-list";
 import { getTaskTypesForSettings } from "@/domains/tasks/type-queries";
+import { hasPermission } from "@/lib/auth-session";
+import { auth } from "@/lib/auth";
+import { parseUserRole } from "@/lib/rbac";
 
 export default async function TaskTypeSettingsPage() {
+  const session = await auth();
+  const role = parseUserRole(session?.user?.role);
+  if (!hasPermission(role, "tasks:types")) {
+    redirect("/tasks");
+  }
+
   const types = await getTaskTypesForSettings();
 
   return (

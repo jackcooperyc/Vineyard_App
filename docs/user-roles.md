@@ -1,32 +1,47 @@
 # User Roles
 
-## v1 roles
+## Roles
 
-| Role | Description | v1 permissions |
-|------|-------------|----------------|
-| `OWNER` | Winery owner or executive | Full read/write; future admin settings |
-| `MANAGER` | Vineyard manager | Full read/write on all modules |
-| `FIELD_WORKER` | Crew member in the vineyard | Read all; create/update tasks, notes, irrigation records |
-| `READ_ONLY` | Consultant or auditor | Read-only access to blocks, tasks, records |
+| Role | Description | Permissions |
+|------|-------------|-------------|
+| `OWNER` | Winery owner or executive | Full access including team user management |
+| `MANAGER` | Vineyard manager | Full operational access except user management |
+| `FIELD_WORKER` | Crew member in the vineyard | Log tasks, irrigation, and field notes; GPS tracking |
+| `READ_ONLY` | Consultant or auditor | View-only access |
 
-## v1 implementation note
+## RBAC (enforced)
 
-Sprint 0–1 implements authentication only. All authenticated users have full read/write access. Role-based access control (RBAC) will be enforced in a later sprint once workflows are validated with the team.
+Role-based access control is enforced on **all server mutations** via `src/lib/rbac.ts` and `requirePermission()` in domain actions.
 
-## Future RBAC matrix (planned)
+| Permission | Owner | Manager | Field worker | Read only |
+|------------|-------|---------|--------------|-----------|
+| `users:manage` | yes | — | — | — |
+| `blocks:edit` | yes | yes | — | — |
+| `notes:create` | yes | yes | yes | — |
+| `tasks:create` / `tasks:update` | yes | yes | yes | — |
+| `tasks:delete` / `tasks:types` | yes | yes | — | — |
+| `irrigation:log` | yes | yes | yes | — |
+| `irrigation:manage` | yes | yes | — | — |
+| `equipment:manage` | yes | yes | — | — |
+| `pumps:manage` | yes | yes | — | — |
+| `import:data` | yes | yes | — | — |
+| `varieties:manage` | yes | yes | — | — |
+| `gps:manage` | yes | yes | yes | — |
+| `notifications:self` | yes | yes | yes | — |
 
-| Action | Owner | Manager | Field Worker | Read Only |
-|--------|-------|---------|--------------|-----------|
-| View blocks | ✓ | ✓ | ✓ | ✓ |
-| Edit block records | ✓ | ✓ | — | — |
-| Create/complete tasks | ✓ | ✓ | ✓ | — |
-| Log irrigation | ✓ | ✓ | ✓ | — |
-| Manage equipment | ✓ | ✓ | — | — |
-| Import data | ✓ | ✓ | — | — |
-| Manage users | ✓ | — | — | — |
+## User onboarding
+
+Owners create accounts at **Settings → Team users** (`/settings/users`). A one-time temporary password is shown at creation — share it securely with the new team member.
+
+### Demo seed accounts
+
+| Email | Role | Password (seed) |
+|-------|------|-----------------|
+| admin@cooperestate.com | Owner | cooper2026 |
+| manager@cooperestate.com | Manager | manager2026 |
+| field@cooperestate.com | Field worker | field2026 |
 
 ## Open questions
 
-- How many users need mobile access in v1?
-- Should field workers see all blocks or only assigned blocks?
-- Are consultants expected in v1 or v2?
+- Should field workers see all blocks or only assigned blocks? (v1: all blocks)
+- Email invite / password reset flows (deferred — use owner-created temp passwords)

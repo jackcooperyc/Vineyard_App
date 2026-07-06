@@ -22,6 +22,31 @@ async function main() {
     },
   });
 
+  const managerHash = await bcrypt.hash("manager2026", 12);
+  const fieldHash = await bcrypt.hash("field2026", 12);
+
+  await prisma.user.upsert({
+    where: { email: "manager@cooperestate.com" },
+    update: {},
+    create: {
+      email: "manager@cooperestate.com",
+      name: "Vineyard Manager",
+      role: "MANAGER",
+      passwordHash: managerHash,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "field@cooperestate.com" },
+    update: {},
+    create: {
+      email: "field@cooperestate.com",
+      name: "Field Crew",
+      role: "FIELD_WORKER",
+      passwordHash: fieldHash,
+    },
+  });
+
   const vineyard = await prisma.vineyard.upsert({
     where: { id: "cooper-estate-vineyards" },
     update: {

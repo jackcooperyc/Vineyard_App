@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import type { TaskStatus } from "@/generated/prisma/client";
 import {
@@ -51,10 +51,11 @@ export async function beginTask(
   taskId: string,
   options?: { actorUserId?: string; autoStartGps?: boolean },
 ) {
-  const session = await auth();
-  const actorUserId = options?.actorUserId ?? session?.user?.id;
+  let actorUserId = options?.actorUserId;
   if (!actorUserId) {
-    return { error: "Unauthorized" };
+    const authResult = await requirePermission("tasks:update");
+    if ("error" in authResult) return { error: authResult.error };
+    actorUserId = authResult.user.id;
   }
 
   const task = await db.task.findFirst({
@@ -117,10 +118,9 @@ export async function beginTask(
 }
 
 export async function createTask(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:create");
+  if ("error" in authResult) return { error: authResult.error };
+  const user = authResult.user;
 
   const parsed = parseCreateTaskFromForm(formData);
   if (!parsed.success) {
@@ -159,8 +159,8 @@ export async function createTask(formData: FormData) {
         title,
         description,
         dueDate: parseDueDate(dueDate),
-        assignedToId: assignedToId || session.user.id,
-        createdById: session.user.id,
+        assignedToId: assignedToId || user.id,
+        createdById: user.id,
         equipmentId: equipmentId || null,
         status: "PENDING",
       },
@@ -170,19 +170,19 @@ export async function createTask(formData: FormData) {
     return created;
   });
 
-  const assigneeId = assignedToId || session.user.id;
+  const assigneeId = assignedToId || user.id;
   await emitTaskEvent({
     taskId: task.id,
     eventType: "CREATED",
-    recipientUserIds: [session.user.id],
-    actorUserId: session.user.id,
+    recipientUserIds: [user.id],
+    actorUserId: user.id,
   });
   if (assigneeId) {
     await emitTaskEvent({
       taskId: task.id,
       eventType: "ASSIGNED",
       recipientUserIds: [assigneeId],
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
   }
 
@@ -192,7 +192,7 @@ export async function createTask(formData: FormData) {
   if (shouldBegin) {
     tracksGps = taskType.tracksGpsProgress;
     const beginResult = await beginTask(task.id, {
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
     if ("sessionId" in beginResult && beginResult.sessionId) {
       sessionId = beginResult.sessionId;
@@ -210,10 +210,9 @@ export async function createTask(formData: FormData) {
 }
 
 export async function quickLogTask(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:create");
+  if ("error" in authResult) return { error: authResult.error };
+  const user = authResult.user;
 
   const fallbackBlockId = formData.get("blockId") as string | null;
   const parsed = parseQuickLogTaskFromForm(formData, fallbackBlockId ?? undefined);
@@ -273,8 +272,8 @@ export async function quickLogTask(formData: FormData) {
           ),
         description: taskDesc,
         dueDate: dueDateFromOffset(taskType.defaultDueDaysOffset) ?? null,
-        assignedToId: session.user.id,
-        createdById: session.user.id,
+        assignedToId: user.id,
+        createdById: user.id,
         equipmentId: equipId || null,
         status: "PENDING",
       },
@@ -287,14 +286,14 @@ export async function quickLogTask(formData: FormData) {
   await emitTaskEvent({
     taskId: task.id,
     eventType: "CREATED",
-    recipientUserIds: [session.user.id],
-    actorUserId: session.user.id,
+    recipientUserIds: [user.id],
+    actorUserId: user.id,
   });
   await emitTaskEvent({
     taskId: task.id,
     eventType: "ASSIGNED",
-    recipientUserIds: [session.user.id],
-    actorUserId: session.user.id,
+    recipientUserIds: [user.id],
+    actorUserId: user.id,
   });
 
   let sessionId: string | undefined;
@@ -303,7 +302,7 @@ export async function quickLogTask(formData: FormData) {
   if (shouldBegin) {
     tracksGps = taskType.tracksGpsProgress;
     const beginResult = await beginTask(task.id, {
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
     if ("sessionId" in beginResult && beginResult.sessionId) {
       sessionId = beginResult.sessionId;
@@ -321,10 +320,9 @@ export async function quickLogTask(formData: FormData) {
 }
 
 export async function updateTaskStatus(taskId: string, status: TaskStatus) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:update");
+  if ("error" in authResult) return { error: authResult.error };
+  const user = authResult.user;
 
   const parsed = updateTaskStatusSchema.safeParse({ taskId, status });
   if (!parsed.success) {
@@ -365,7 +363,7 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
       taskId,
       eventType,
       recipientUserIds: [task.assignedToId],
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
   }
 
@@ -375,10 +373,9 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
 }
 
 export async function updateTask(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:update");
+  if ("error" in authResult) return { error: authResult.error };
+  const user = authResult.user;
 
   const parsed = parseUpdateTaskFromForm(formData);
   if (!parsed.success) {
@@ -418,7 +415,7 @@ export async function updateTask(formData: FormData) {
     return { error: "Invalid task type" };
   }
 
-  const nextAssigneeId = assignedToId || session.user.id;
+  const nextAssigneeId = assignedToId || user.id;
 
   await db.$transaction(async (tx) => {
     await tx.task.update({
@@ -442,7 +439,7 @@ export async function updateTask(formData: FormData) {
       taskId,
       eventType: "ASSIGNED",
       recipientUserIds: [nextAssigneeId],
-      actorUserId: session.user.id,
+      actorUserId: user.id,
     });
   }
 
@@ -461,10 +458,8 @@ export async function startTask(taskId: string) {
 }
 
 export async function deleteTask(taskId: string) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:delete");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -488,10 +483,8 @@ export async function deleteTask(taskId: string) {
 }
 
 export async function restoreTask(taskId: string) {
-  const session = await auth();
-  if (!session?.user) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("tasks:delete");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -526,8 +519,9 @@ export async function bulkUpdateTasks(input: {
   dueDate?: string | null;
   clearDueDate?: boolean;
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("tasks:update");
+  if ("error" in authResult) return { error: authResult.error };
+  const user = authResult.user;
 
   const parsed = bulkUpdateTasksSchema.safeParse(input);
   if (!parsed.success) {
@@ -592,7 +586,7 @@ export async function bulkUpdateTasks(input: {
           taskId: task.id,
           eventType,
           recipientUserIds: [task.assignedToId],
-          actorUserId: session.user.id,
+          actorUserId: user.id,
         });
       }
     }
@@ -606,7 +600,7 @@ export async function bulkUpdateTasks(input: {
         taskId: task.id,
         eventType: "ASSIGNED",
         recipientUserIds: [assignedToId],
-        actorUserId: session.user.id,
+        actorUserId: user.id,
       });
     }
   }

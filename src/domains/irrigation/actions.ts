@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import {
   bulkDeleteIrrigationRecordsSchema,
@@ -74,8 +74,8 @@ async function resetAlertDismissalsForBlock(
 }
 
 export async function createIrrigationSchedule(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = createScheduleSchema.safeParse({
     blockId: formData.get("blockId"),
@@ -111,8 +111,8 @@ export async function createIrrigationSchedule(formData: FormData) {
 }
 
 export async function createIrrigationRecord(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:log");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = createRecordSchema.safeParse({
     blockId: formData.get("blockId"),
@@ -155,8 +155,8 @@ export async function createIrrigationRecord(formData: FormData) {
 }
 
 export async function quickLogIrrigation(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:log");
+  if ("error" in authResult) return { error: authResult.error };
 
   const blockIds = parseIrrigationBlockIdsFromForm(
     formData.get("blockIds"),
@@ -219,8 +219,8 @@ export async function quickLogIrrigation(formData: FormData) {
 }
 
 export async function toggleScheduleActive(scheduleId: string, active: boolean) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const existing = await db.irrigationSchedule.findFirst({
     where: { id: scheduleId, ...notDeletedWhere() },
@@ -245,8 +245,8 @@ export async function bulkToggleSchedulesActive(input: {
   scheduleIds: string[];
   active: boolean;
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = bulkToggleSchedulesActiveSchema.safeParse(input);
   if (!parsed.success) {
@@ -284,8 +284,8 @@ export async function bulkToggleSchedulesActive(input: {
 }
 
 export async function updateSchedule(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateScheduleSchema.safeParse({
     scheduleId: formData.get("scheduleId"),
@@ -332,8 +332,8 @@ export async function updateSchedule(formData: FormData) {
 }
 
 export async function updateIrrigationRecord(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:log");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateRecordSchema.safeParse({
     recordId: formData.get("recordId"),
@@ -421,8 +421,8 @@ async function softDeleteIrrigationRecords(recordIds: string[]) {
 }
 
 export async function deleteIrrigationRecord(recordId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -434,8 +434,8 @@ export async function deleteIrrigationRecord(recordId: string) {
 export async function bulkDeleteIrrigationRecords(input: {
   recordIds: string[];
 }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = bulkDeleteIrrigationRecordsSchema.safeParse(input);
   if (!parsed.success) {
@@ -450,8 +450,8 @@ export async function bulkDeleteIrrigationRecords(input: {
 }
 
 export async function restoreIrrigationRecord(recordId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -472,8 +472,8 @@ export async function restoreIrrigationRecord(recordId: string) {
 }
 
 export async function deleteIrrigationSchedule(scheduleId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -494,8 +494,8 @@ export async function deleteIrrigationSchedule(scheduleId: string) {
 }
 
 export async function restoreIrrigationSchedule(scheduleId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   await purgeExpiredSoftDeletes();
 
@@ -516,8 +516,8 @@ export async function restoreIrrigationSchedule(scheduleId: string) {
 }
 
 export async function clearIrrigationAlerts(input?: { blockId?: string }) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = clearIrrigationAlertsSchema.safeParse(input ?? {});
   if (!parsed.success) {
@@ -547,8 +547,8 @@ export async function clearIrrigationAlerts(input?: { blockId?: string }) {
 }
 
 export async function dismissIrrigationAlert(scheduleId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("irrigation:manage");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = dismissIrrigationAlertSchema.safeParse({ scheduleId });
   if (!parsed.success) return { error: "Invalid schedule" };

@@ -1,4 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
+import type { UserRole } from "@/generated/prisma/client";
+import { parseUserRole } from "@/lib/rbac";
 
 export const authConfig = {
   pages: {
@@ -29,14 +31,15 @@ export const authConfig = {
     },
     jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role;
+        const role = (user as { role?: UserRole }).role;
+        token.role = role;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? "";
-        session.user.role = token.role as string | undefined;
+        session.user.role = parseUserRole(token.role as string | undefined) ?? undefined;
       }
       return session;
     },

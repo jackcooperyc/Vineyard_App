@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toggleScheduleActive } from "@/domains/irrigation/actions";
+import { showIrrigationScheduleSavedToast } from "@/lib/submission-toast";
 
 export function ScheduleActiveToggle({
   scheduleId,
@@ -17,7 +18,11 @@ export function ScheduleActiveToggle({
 
   function handleToggle() {
     startTransition(async () => {
-      await toggleScheduleActive(scheduleId, !active);
+      const result = await toggleScheduleActive(scheduleId, !active);
+      if (result.error) return;
+      showIrrigationScheduleSavedToast(active ? "Deactivated" : "Activated", {
+        isEdit: true,
+      });
       router.refresh();
     });
   }

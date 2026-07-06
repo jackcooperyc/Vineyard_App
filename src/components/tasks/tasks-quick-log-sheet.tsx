@@ -3,7 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { BlockMultiPicker } from "@/components/shared/block-multi-picker";
+import {
+  BlockMultiPicker,
+  formatTaskBlockLabel,
+} from "@/components/shared/block-multi-picker";
 import type { BlockPickerItem } from "@/components/shared/block-picker";
 import { TaskTypeChips } from "@/components/shared/task-type-chips";
 import { Button } from "@/components/ui/button";
@@ -18,6 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { quickLogTask } from "@/domains/tasks/actions";
 import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
+import { showTaskLoggedToast } from "@/lib/submission-toast";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
 export function TasksQuickLogSheet({
@@ -66,6 +70,15 @@ export function TasksQuickLogSheet({
         return;
       }
       setOpen(false);
+      const type = quickLogTypes.find((t) => t.id === taskTypeId);
+      const blockLabel = formatTaskBlockLabel(
+        blocks.filter((b) => selectedBlockIds.includes(b.id)),
+        selectedBlock ?? undefined,
+      );
+      showTaskLoggedToast(
+        [type?.label, blockLabel].filter(Boolean).join(" · ") || undefined,
+        { began: withBegin },
+      );
       if (result.taskId) {
         router.push(redirectAfterTaskCreate({ ...result, began: withBegin }));
       }

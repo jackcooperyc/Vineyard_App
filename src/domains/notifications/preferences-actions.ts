@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import { updateNotificationPreferencesSchema } from "@/domains/notifications/validators";
 
@@ -10,10 +10,9 @@ function parseCheckbox(value: FormDataEntryValue | null): boolean {
 }
 
 export async function updateNotificationPreferences(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { error: "Unauthorized" };
-  }
+  const authResult = await requirePermission("notifications:self");
+  if ("error" in authResult) return { error: authResult.error };
+  const userId = authResult.user.id;
 
   const parsed = updateNotificationPreferencesSchema.safeParse({
     emailAssigned: parseCheckbox(formData.get("emailAssigned")),
@@ -37,8 +36,8 @@ export async function updateNotificationPreferences(formData: FormData) {
   const data = parsed.data;
 
   await db.userNotificationPreference.upsert({
-    where: { userId: session.user.id },
-    create: { userId: session.user.id, ...data },
+    where: { userId },
+    create: { userId, ...data },
     update: data,
   });
 

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/sheet";
 import { quickLogIrrigation } from "@/domains/irrigation/actions";
 import { IRRIGATION_METHODS } from "@/domains/irrigation/constants";
+import { formatIrrigationQuickLogDetail } from "@/lib/irrigation-toast-detail";
+import { showIrrigationLoggedToast } from "@/lib/submission-toast";
 
 export function QuickLogIrrigationSheet({
   blockId,
@@ -44,6 +46,13 @@ export function QuickLogIrrigationSheet({
         return;
       }
       setOpen(false);
+      const method = (formData.get("method") as string | null) || "Drip";
+      showIrrigationLoggedToast(
+        formatIrrigationQuickLogDetail({
+          blockLabel: `${blockCode} · ${blockName}`,
+          method,
+        }),
+      );
       router.refresh();
     });
   }

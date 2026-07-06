@@ -14,7 +14,9 @@ import {
   FileSpreadsheet,
   Gauge,
   Bell,
+  Users,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -31,7 +33,7 @@ const mainNav = [
   { href: "/blocks", label: "Blocks", icon: Grape },
 ];
 
-const moreNav = [
+const baseMoreNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/reports", label: "Reports", icon: FileSpreadsheet },
   {
@@ -50,10 +52,18 @@ const moreNav = [
   { href: "/settings/notifications", label: "Notifications", icon: Bell },
 ];
 
-const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];
+const ownerMoreNav = [
+  { href: "/settings/users", label: "Team users", icon: Users },
+];
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const moreNav =
+    session?.user?.role === "OWNER"
+      ? [...baseMoreNav, ...ownerMoreNav]
+      : baseMoreNav;
+  const allNav = [...moreNav.slice(0, 1), ...mainNav, ...moreNav.slice(1)];
 
   return (
     <nav className="hidden md:flex md:w-56 md:flex-col md:border-r md:bg-sidebar md:px-3 md:py-6">
@@ -100,6 +110,11 @@ export function BottomNav({
   irrigationAlertCount?: number;
 }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const moreNav =
+    session?.user?.role === "OWNER"
+      ? [...baseMoreNav, ...ownerMoreNav]
+      : baseMoreNav;
   const showBadge = alertCount > 0;
 
   const itemBadge = (key: "equipment" | "irrigation") => {
@@ -192,7 +207,7 @@ export function BottomNav({
                     <Icon className="size-5" />
                     <span className="flex-1">{item.label}</span>
                     {"badgeKey" in item && item.badgeKey
-                      ? itemBadge(item.badgeKey)
+                      ? itemBadge(item.badgeKey as "equipment" | "irrigation")
                       : null}
                   </DropdownMenuItem>
                 );

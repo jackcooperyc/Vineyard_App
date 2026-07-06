@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BlockMultiPicker } from "@/components/shared/block-multi-picker";
+import { BlockMultiPicker, formatTaskBlockLabel } from "@/components/shared/block-multi-picker";
 import { createTask, updateTask } from "@/domains/tasks/actions";
 import { redirectAfterTaskCreate } from "@/domains/tasks/create-redirect";
+import { showTaskLoggedToast } from "@/lib/submission-toast";
 import { EquipmentSelectField } from "@/components/equipment/equipment-select-field";
 import type { TaskTypeConfig } from "@/domains/tasks/types";
 
@@ -98,6 +99,19 @@ export function TaskForm({
         return;
       }
       if (result.taskId) {
+        if (!isEdit) {
+          const taskTypeId = formData.get("taskTypeId") as string;
+          const taskType = taskTypes.find((t) => t.id === taskTypeId);
+          const title = (formData.get("title") as string | null)?.trim();
+          const blockLabel = formatTaskBlockLabel(
+            blocks.filter((b) => selectedBlockIds.includes(b.id)),
+            blocks.find((b) => b.id === primaryBlockId) ?? undefined,
+          );
+          const detail = [title || taskType?.label, blockLabel]
+            .filter(Boolean)
+            .join(" · ");
+          showTaskLoggedToast(detail || undefined, { began: beginTask });
+        }
         router.push(
           isEdit ? `/tasks/${result.taskId}` : redirectAfterTaskCreate(result),
         );

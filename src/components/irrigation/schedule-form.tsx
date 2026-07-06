@@ -15,6 +15,11 @@ import {
   IRRIGATION_FREQUENCIES,
   IRRIGATION_METHODS,
 } from "@/domains/irrigation/constants";
+import {
+  formatBlockDetail,
+  formatIrrigationScheduleDetail,
+} from "@/lib/irrigation-toast-detail";
+import { showIrrigationScheduleSavedToast } from "@/lib/submission-toast";
 
 type BlockOption = { id: string; code: string; name: string };
 
@@ -61,6 +66,17 @@ export function ScheduleForm({
         return;
       }
       if (result.scheduleId) {
+        const blockId = formData.get("blockId") as string;
+        const frequency = (formData.get("frequency") as string | null) || undefined;
+        const method = (formData.get("method") as string | null) || null;
+        showIrrigationScheduleSavedToast(
+          formatIrrigationScheduleDetail({
+            blockLabel: formatBlockDetail(blocks, blockId),
+            frequency,
+            method,
+          }),
+          { isEdit },
+        );
         router.push(`/irrigation/schedules/${result.scheduleId}`);
         router.refresh();
       }

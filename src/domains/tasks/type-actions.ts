@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { auth } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth-session";
 import { db } from "@/lib/db";
 import {
   createTaskTypeSchema,
@@ -18,8 +18,8 @@ function revalidateTaskTypePaths() {
 }
 
 export async function createTaskType(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("tasks:types");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = createTaskTypeSchema.safeParse({
     label: formData.get("label"),
@@ -71,8 +71,8 @@ export async function createTaskType(formData: FormData) {
 }
 
 export async function updateTaskType(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("tasks:types");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = updateTaskTypeSchema.safeParse({
     taskTypeId: formData.get("taskTypeId"),
@@ -128,8 +128,8 @@ export async function updateTaskType(formData: FormData) {
 }
 
 export async function reorderTaskTypes(orderedIds: string[]) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("tasks:types");
+  if ("error" in authResult) return { error: authResult.error };
 
   const parsed = reorderTaskTypesSchema.safeParse({ orderedIds });
   if (!parsed.success) return { error: "Invalid order" };
@@ -148,8 +148,8 @@ export async function reorderTaskTypes(orderedIds: string[]) {
 }
 
 export async function deactivateTaskType(taskTypeId: string) {
-  const session = await auth();
-  if (!session?.user) return { error: "Unauthorized" };
+  const authResult = await requirePermission("tasks:types");
+  if ("error" in authResult) return { error: authResult.error };
 
   await db.taskTypeDefinition.update({
     where: { id: taskTypeId },

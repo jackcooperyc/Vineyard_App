@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getDashboardStats, getVineyardName } from "@/domains/blocks/queries";
 import { SidebarNav, BottomNav } from "@/components/shared/app-nav";
+import { ReadOnlyBanner } from "@/components/shared/read-only-banner";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 
 export default async function AppLayout({
@@ -42,6 +43,7 @@ export default async function AppLayout({
           </div>
         </header>
         <main className="field-readable flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
+          <ReadOnlyBanner />
           {children}
         </main>
         <BottomNav
