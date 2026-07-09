@@ -14,6 +14,7 @@ import type { UserRole } from "@/generated/prisma/client";
  *   retireEquipment, deleteEquipment, restoreEquipment, createMaintenanceRecord,
  *   updateMaintenanceRecord, deleteMaintenanceRecord, restoreMaintenanceRecord
  * pumps/actions.ts: createIrrigationPump, updateIrrigationPump
+ * tours/actions.ts: createTourPOI, updateTourPOI, relocateTourPOI, deleteTourPOI
  * block-rows/actions.ts: importBlockRows, updateBlockSpacing
  * varieties/actions.ts: updateVarietyColor, updateVineyardMapColorMode
  * task-gps/actions.ts: startGpsSession, switchGpsSessionBlock, pauseGpsSession,
@@ -37,6 +38,7 @@ export const PERMISSIONS = [
   "irrigation:manage",
   "equipment:manage",
   "pumps:manage",
+  "tours:manage",
   "import:data",
   "varieties:manage",
   "gps:manage",

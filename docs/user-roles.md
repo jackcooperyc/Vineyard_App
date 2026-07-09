@@ -24,6 +24,7 @@ Role-based access control is enforced on **all server mutations** via `src/lib/r
 | `irrigation:manage` | yes | yes | — | — |
 | `equipment:manage` | yes | yes | — | — |
 | `pumps:manage` | yes | yes | — | — |
+| `tours:manage` | yes | yes | — | — |
 | `import:data` | yes | yes | — | — |
 | `varieties:manage` | yes | yes | — | — |
 | `gps:manage` | yes | yes | yes | — |

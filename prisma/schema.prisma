@@ -420,6 +420,28 @@ model IrrigationPump {
   updatedAt        DateTime @updatedAt
 }
 
+enum TourPOICategory {
+  MILESTONE
+  FAMILY
+  VARIETAL
+  TERROIR
+  CLUB_STORY
+  HYPE_FUTURE_EXPERIENCE
+  PHOTO_OPPORTUNITY
+  TASTING_BAR
+  BATHROOM_ACCESS
+}
+
+model TourPOI {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  category    TourPOICategory
+  gpsPoint    Json
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
 model EnvironmentalThreshold {
   id                String   @id @default(cuid())
   vineyardId        String   @unique

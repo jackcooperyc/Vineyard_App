@@ -570,6 +570,34 @@ async function main() {
     });
   }
 
+  const existingTourPoi = await prisma.tourPOI.findFirst({
+    where: { title: "Estate welcome" },
+  });
+  if (!existingTourPoi) {
+    await prisma.tourPOI.createMany({
+      data: [
+        {
+          title: "Estate welcome",
+          description: "Opening stop — overview of Cooper Estate and Red Mountain AVA.",
+          category: "MILESTONE",
+          gpsPoint: {
+            type: "Point",
+            coordinates: [ESTATE_CENTER.lng, ESTATE_CENTER.lat],
+          },
+        },
+        {
+          title: "Block 1 terroir",
+          description: "Discuss slope, aspect, and soil for the flagship block.",
+          category: "TERROIR",
+          gpsPoint: {
+            type: "Point",
+            coordinates: [ESTATE_CENTER.lng + 0.001, ESTATE_CENTER.lat + 0.0005],
+          },
+        },
+      ],
+    });
+  }
+
   console.log("Seed complete:");
   console.log(`  Vineyard: ${vineyard.name}`);
   console.log(`  Estate center: ${ESTATE_CENTER.lat}, ${ESTATE_CENTER.lng}`);
