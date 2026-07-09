@@ -73,6 +73,7 @@ type VineyardMapProps = {
   selectedPumpId?: string | null;
   onBlockSelect: (blockId: string) => void;
   onPumpSelect?: (pumpId: string) => void;
+  onMapReady?: (map: mapboxgl.Map) => void;
 };
 
 function highlightFillColor(
@@ -257,6 +258,7 @@ export function VineyardMap({
   selectedPumpId = null,
   onBlockSelect,
   onPumpSelect,
+  onMapReady,
 }: VineyardMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -267,6 +269,11 @@ export function VineyardMap({
   const terrainCleanupRef = useRef<(() => void) | null>(null);
   const onBlockSelectRef = useRef(onBlockSelect);
   const onPumpSelectRef = useRef(onPumpSelect);
+  const onMapReadyRef = useRef(onMapReady);
+
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
 
   useEffect(() => {
     geoJsonRef.current = geoJson;
@@ -408,6 +415,7 @@ export function VineyardMap({
         terrainCleanupRef.current = applyViewMode(map, "3d", geoJsonRef.current) ?? null;
       }
 
+      onMapReadyRef.current?.(map);
       readyRef.current = true;
     });
 

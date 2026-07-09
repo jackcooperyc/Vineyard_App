@@ -21,6 +21,7 @@ import type { UserRole } from "@/generated/prisma/client";
  * notifications/preferences-actions.ts: updateNotificationPreferences (self only)
  * users/actions.ts: createUser, updateUserRole
  * blocks/actions.ts: updateBlock, createPlanting, updatePlanting, deletePlanting
+ * map/actions.ts: createMapSpace, updateMapSpace, deleteMapSpace
  * notes/actions.ts: createBlockNote
  */
 

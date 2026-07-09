@@ -1,16 +1,22 @@
 "use client";
 
-import { useCallback, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type mapboxgl from "mapbox-gl";
 import { BlockMapDrawer } from "@/components/map/block-map-drawer";
 import { MapColorModeToggle } from "@/components/map/map-color-mode-toggle";
+import { MapDrawTool } from "@/components/map/map-draw-tool";
 import { MapLegend } from "@/components/map/map-legend";
+import { MapSpaceFormSheet } from "@/components/map/map-space-form-sheet";
+import { MapSpaceManageSheet } from "@/components/map/map-space-manage-sheet";
+import { MapSpacesToolbar } from "@/components/map/map-spaces-toolbar";
 import { MapViewToggle } from "@/components/map/map-view-toggle";
 import { PumpMapDrawer } from "@/components/map/pump-map-drawer";
 import { VineyardMap } from "@/components/map/vineyard-map";
 import { MapWeatherChip } from "@/components/weather/map-weather-chip";
 import type { MapColorMode, MapViewMode } from "@/domains/map/constants";
-import type { MapBlock, MapBlockFeatureCollection } from "@/domains/map/types";
+import { getUserMapSpaces } from "@/domains/map/constants";
+import type { MapBlock, MapBlockFeatureCollection, MapBlockGeometry } from "@/domains/map/types";
 import {
   getPumpsForBlock,
   mapPumpsToGeoJSON,
@@ -44,6 +50,7 @@ export function MapPageClient({
   varieties,
   defaultMapColorMode,
   token,
+  canEditMapSpaces,
 }: {
   blocks: MapBlock[];
   geoJson: MapBlockFeatureCollection;
@@ -56,10 +63,23 @@ export function MapPageClient({
   varieties: VarietyLegendItem[];
   defaultMapColorMode: PrismaMapColorMode;
   token: string;
+  canEditMapSpaces: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startPersistTransition] = useTransition();
+
+  const [mapInstance, setMapInstance] = useState<mapboxgl.Map | null>(null);
+  const [drawActive, setDrawActive] = useState(false);
+  const [drawTarget, setDrawTarget] = useState<MapBlock | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [formGeometry, setFormGeometry] = useState<MapBlockGeometry | null>(null);
+  const [formBlockId, setFormBlockId] = useState<string | undefined>();
+  const [formDefaults, setFormDefaults] = useState({ name: "", category: "Shop" });
+  const [managingSpace, setManagingSpace] = useState<MapBlock | null>(null);
+
+  const userMapSpaces = getUserMapSpaces(blocks);
 
   const pumpsGeoJson = mapPumpsToGeoJSON(pumps);
 
@@ -140,6 +160,11 @@ export function MapPageClient({
       : [];
 
   function handleBlockSelect(blockId: string) {
+    const block = blocks.find((item) => item.id === blockId);
+    if (block && canEditMapSpaces && userMapSpaces.some((space) => space.id === blockId)) {
+      setManagingSpace(block);
+      return;
+    }
     replaceParams((params) => {
       params.delete("pump");
       params.set("block", blockId);
@@ -165,6 +190,60 @@ export function MapPageClient({
     });
   }
 
+  const handleMapReady = useCallback((map: mapboxgl.Map) => {
+    setMapInstance(map);
+  }, []);
+
+  function startCreateDraw() {
+    setDrawTarget(null);
+    setDrawActive(true);
+    replaceParams((params) => {
+      params.delete("block");
+      params.delete("pump");
+    });
+  }
+
+  function cancelDraw() {
+    setDrawActive(false);
+    setDrawTarget(null);
+  }
+
+  function handleDrawComplete(geometry: MapBlockGeometry) {
+    setDrawActive(false);
+    setFormGeometry(geometry);
+    setFormMode(drawTarget ? "edit" : "create");
+    setFormBlockId(drawTarget?.id);
+    setFormDefaults({
+      name: drawTarget?.name ?? "",
+      category: drawTarget?.infrastructureType ?? "Shop",
+    });
+    setFormOpen(true);
+    setDrawTarget(null);
+  }
+
+  function handleSelectSpace(blockId: string) {
+    replaceParams((params) => {
+      params.delete("pump");
+      params.set("block", blockId);
+    });
+  }
+
+  function handleRedrawSpace(space: MapBlock) {
+    setManagingSpace(null);
+    setDrawTarget(space);
+    setDrawActive(true);
+    replaceParams((params) => {
+      params.delete("pump");
+      params.delete("block");
+    });
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setFormGeometry(null);
+    setFormBlockId(undefined);
+  }
+
   const vineyardBlocks = blocks
     .filter((b) => b.blockType === "VINEYARD")
     .map((b) => ({ id: b.id, code: b.code, name: b.name }));
@@ -185,6 +264,23 @@ export function MapPageClient({
           selectedPumpId={selectedPumpId}
           onBlockSelect={handleBlockSelect}
           onPumpSelect={handlePumpSelect}
+          onMapReady={handleMapReady}
+        />
+        <MapDrawTool
+          map={mapInstance}
+          active={drawActive}
+          initialGeometry={drawTarget?.geometry ?? null}
+          onComplete={handleDrawComplete}
+          onCancel={cancelDraw}
+        />
+        <MapSpacesToolbar
+          spaces={userMapSpaces}
+          canEdit={canEditMapSpaces}
+          drawActive={drawActive}
+          onStartDraw={startCreateDraw}
+          onCancelDraw={cancelDraw}
+          onSelectSpace={handleSelectSpace}
+          onManageSpace={setManagingSpace}
         />
         <MapWeatherChip weather={weather} />
         <div className="pointer-events-auto absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
@@ -209,6 +305,20 @@ export function MapPageClient({
         pump={selectedPump}
         servicedBlocks={servicedBlocks}
         onClose={closePumpDrawer}
+      />
+      <MapSpaceFormSheet
+        open={formOpen}
+        mode={formMode}
+        geometry={formGeometry}
+        blockId={formBlockId}
+        defaultName={formDefaults.name}
+        defaultCategory={formDefaults.category}
+        onClose={closeForm}
+      />
+      <MapSpaceManageSheet
+        space={managingSpace}
+        onClose={() => setManagingSpace(null)}
+        onRedraw={handleRedrawSpace}
       />
     </>
   );

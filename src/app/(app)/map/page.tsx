@@ -11,9 +11,16 @@ import {
   getVineyardMapColorMode,
 } from "@/domains/varieties/queries";
 import { getCurrentWeather } from "@/domains/weather/queries";
+import { auth } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth-session";
+import { parseUserRole } from "@/lib/rbac";
 
 export default async function MapPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
+  const session = await auth();
+  const role = parseUserRole(session?.user?.role);
+  const canEditMapSpaces = hasPermission(role, "blocks:edit");
+
   const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes, varieties, defaultMapColorMode] =
     await Promise.all([
     getMapBlocks(),
@@ -55,6 +62,7 @@ export default async function MapPage() {
             varieties={varieties}
             defaultMapColorMode={defaultMapColorMode}
             token={mapboxToken}
+            canEditMapSpaces={canEditMapSpaces}
           />
         </Suspense>
       ) : (

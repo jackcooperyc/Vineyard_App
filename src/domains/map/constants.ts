@@ -13,3 +13,34 @@ export const BLOCK_EXTRUSION_CAP_M = 3;
 
 export type MapViewMode = "2d" | "3d";
 export type MapColorMode = "status" | "varietal";
+
+/** User-drawn map spaces use this block code prefix (seeded infra uses INF-). */
+export const USER_MAP_SPACE_CODE_PREFIX = "CUS-";
+
+/** Default polygon color for user-drawn spaces — distinct from vineyard blocks. */
+export const USER_MAP_SPACE_COLOR_HEX = "#a855f7";
+
+export const MAP_SPACE_CATEGORIES = [
+  "Shop",
+  "Storage",
+  "Winery",
+  "Garden",
+  "RV Parking",
+  "Lawn & Landscape",
+  "Other",
+] as const;
+
+export type MapSpaceCategory = (typeof MAP_SPACE_CATEGORIES)[number];
+
+export function isUserMapSpace(code: string): boolean {
+  return code.startsWith(USER_MAP_SPACE_CODE_PREFIX);
+}
+
+export function getUserMapSpaces<T extends { blockType: string; code: string }>(
+  blocks: T[],
+): T[] {
+  return blocks.filter(
+    (block) =>
+      block.blockType === "INFRASTRUCTURE" && isUserMapSpace(block.code),
+  );
+}
