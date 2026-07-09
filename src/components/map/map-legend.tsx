@@ -1,4 +1,10 @@
 import type { MapColorMode } from "@/domains/map/constants";
+import { TourPOICategoryIcon } from "@/components/tours/tour-poi-icons";
+import {
+  TOUR_POI_CATEGORIES,
+  TOUR_POI_CATEGORY_LABELS,
+} from "@/domains/tours/constants";
+import type { MapTourPOIGeo } from "@/domains/tours/map-geo";
 import type { VarietyLegendItem } from "@/domains/varieties/queries";
 import type { VarietyColor } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
@@ -100,15 +106,88 @@ function VarietalLegend({
   );
 }
 
+function ToursLegend({
+  pois,
+  selectedPoiId,
+  onPoiSelect,
+  className,
+}: {
+  pois: MapTourPOIGeo[];
+  selectedPoiId?: string | null;
+  onPoiSelect?: (poiId: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "pointer-events-auto absolute bottom-3 left-3 z-10 max-h-56 w-64 overflow-hidden rounded-lg border bg-background/90 text-xs shadow-sm backdrop-blur-sm",
+        className,
+      )}
+    >
+      <p className="border-b px-3 py-2 font-medium text-foreground">Tour points</p>
+      {pois.length === 0 ? (
+        <p className="px-3 py-2 text-muted-foreground">No points of interest yet.</p>
+      ) : (
+        <ul className="max-h-32 space-y-0.5 overflow-y-auto px-2 py-2">
+          {pois.map((poi) => (
+            <li key={poi.id}>
+              <button
+                type="button"
+                onClick={() => onPoiSelect?.(poi.id)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
+                  selectedPoiId === poi.id
+                    ? "bg-amber-100 text-amber-950 dark:bg-amber-950/50 dark:text-amber-50"
+                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                )}
+              >
+                <TourPOICategoryIcon category={poi.category} className="size-4 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{poi.title}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t px-3 py-2">
+        <p className="mb-1.5 font-medium text-foreground">Categories</p>
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+          {TOUR_POI_CATEGORIES.map((category) => (
+            <li key={category} className="inline-flex items-center gap-1">
+              <TourPOICategoryIcon category={category} className="size-3.5" />
+              <span className="truncate">{TOUR_POI_CATEGORY_LABELS[category]}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export function MapLegend({
   colorMode,
   varietyLegendItems,
+  tourPois,
+  selectedTourPoiId,
+  onTourPoiSelect,
   className,
 }: {
   colorMode: MapColorMode;
   varietyLegendItems: VarietyLegendItem[];
+  tourPois?: MapTourPOIGeo[];
+  selectedTourPoiId?: string | null;
+  onTourPoiSelect?: (poiId: string) => void;
   className?: string;
 }) {
+  if (colorMode === "tours") {
+    return (
+      <ToursLegend
+        pois={tourPois ?? []}
+        selectedPoiId={selectedTourPoiId}
+        onPoiSelect={onTourPoiSelect}
+        className={className}
+      />
+    );
+  }
   if (colorMode === "varietal") {
     return <VarietalLegend items={varietyLegendItems} className={className} />;
   }

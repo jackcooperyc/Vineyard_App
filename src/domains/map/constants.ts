@@ -12,7 +12,7 @@ export const TERRAIN_EXAGGERATION = 1.4;
 export const BLOCK_EXTRUSION_CAP_M = 3;
 
 export type MapViewMode = "2d" | "3d";
-export type MapColorMode = "status" | "varietal";
+export type MapColorMode = "status" | "varietal" | "tours";
 
 /** User-drawn map spaces use this block code prefix (seeded infra uses INF-). */
 export const USER_MAP_SPACE_CODE_PREFIX = "CUS-";

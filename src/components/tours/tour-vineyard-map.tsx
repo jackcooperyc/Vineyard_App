@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { ESTATE_CENTER } from "@/domains/map/constants";
+import { ESTATE_CENTER, type MapColorMode } from "@/domains/map/constants";
 import type { MapBlockFeatureCollection } from "@/domains/map/types";
 import {
   createTourPOIMarkerElement,
@@ -23,6 +23,7 @@ type TourVineyardMapProps = {
   bounds: [[number, number], [number, number]] | null;
   token: string;
   pois: MapTourPOIGeo[];
+  colorMode: MapColorMode;
   canManage: boolean;
   selectedPoiId: string | null;
   onMapClick: (lat: number, lng: number) => void;
@@ -35,6 +36,7 @@ export function TourVineyardMap({
   bounds,
   token,
   pois,
+  colorMode,
   canManage,
   selectedPoiId,
   onMapClick,
@@ -48,6 +50,7 @@ export function TourVineyardMap({
   const onPoiSelectRef = useRef(onPoiSelect);
   const onPoiRelocateRef = useRef(onPoiRelocate);
   const canManageRef = useRef(canManage);
+  const colorModeRef = useRef(colorMode);
 
   useEffect(() => {
     onMapClickRef.current = onMapClick;
@@ -65,8 +68,13 @@ export function TourVineyardMap({
     canManageRef.current = canManage;
   }, [canManage]);
 
+  useEffect(() => {
+    colorModeRef.current = colorMode;
+  }, [colorMode]);
+
   const syncMarkers = useCallback(
     (map: mapboxgl.Map, nextPois: MapTourPOIGeo[], selectedId: string | null) => {
+      const emphasized = colorModeRef.current === "tours";
       const existing = markersRef.current;
       const nextIds = new Set(nextPois.map((p) => p.id));
 
@@ -84,7 +92,7 @@ export function TourVineyardMap({
         const isSelected = poi.id === selectedId;
 
         if (!marker) {
-          const element = createTourPOIMarkerElement(poi.category, isSelected);
+          const element = createTourPOIMarkerElement(poi.category, isSelected, emphasized);
           element.addEventListener("click", (event) => {
             event.stopPropagation();
             onPoiSelectRef.current(poi.id);
@@ -117,6 +125,7 @@ export function TourVineyardMap({
             marker.getElement(),
             poi.category,
             isSelected,
+            emphasized,
           );
         }
       }
@@ -154,8 +163,8 @@ export function TourVineyardMap({
         type: "fill",
         source: MAP_SOURCE_ID,
         paint: {
-          "fill-color": buildBlockFillColor("status"),
-          "fill-opacity": 0.45,
+          "fill-color": buildBlockFillColor(colorMode),
+          "fill-opacity": colorMode === "tours" ? 0.28 : 0.45,
         },
       });
 
@@ -164,7 +173,7 @@ export function TourVineyardMap({
         type: "line",
         source: MAP_SOURCE_ID,
         paint: {
-          "line-color": buildBlockOutlineColor("status"),
+          "line-color": buildBlockOutlineColor(colorMode),
           "line-width": 2,
         },
       });
@@ -208,7 +217,22 @@ export function TourVineyardMap({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
     syncMarkers(map, pois, selectedPoiId);
-  }, [pois, selectedPoiId, canManage, syncMarkers]);
+  }, [pois, selectedPoiId, canManage, colorMode, syncMarkers]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    if (!map.getLayer(FILL_LAYER_ID)) return;
+
+    map.setPaintProperty(FILL_LAYER_ID, "fill-color", buildBlockFillColor(colorMode));
+    map.setPaintProperty(
+      FILL_LAYER_ID,
+      "fill-opacity",
+      colorMode === "tours" ? 0.28 : 0.45,
+    );
+    map.setPaintProperty(OUTLINE_LAYER_ID, "line-color", buildBlockOutlineColor(colorMode));
+    syncMarkers(map, pois, selectedPoiId);
+  }, [colorMode, pois, selectedPoiId, syncMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;

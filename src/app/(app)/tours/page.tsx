@@ -5,6 +5,7 @@ import { getMapBlocks, getMapBounds, mapBlocksToGeoJSON } from "@/domains/map/qu
 import { getMapTourPOIs } from "@/domains/tours/queries";
 import { auth } from "@/lib/auth";
 import { hasPermission } from "@/lib/auth-session";
+import { getVarietyLegendItems } from "@/domains/varieties/queries";
 import { parseUserRole } from "@/lib/rbac";
 
 export default async function ToursPage() {
@@ -13,7 +14,11 @@ export default async function ToursPage() {
   const role = parseUserRole(session?.user?.role);
   const canManage = hasPermission(role, "tours:manage");
 
-  const [blocks, pois] = await Promise.all([getMapBlocks(), getMapTourPOIs()]);
+  const [blocks, pois, varieties] = await Promise.all([
+    getMapBlocks(),
+    getMapTourPOIs(),
+    getVarietyLegendItems(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4">
@@ -37,6 +42,7 @@ export default async function ToursPage() {
             bounds={getMapBounds(blocks)}
             token={mapboxToken}
             pois={pois}
+            varieties={varieties}
             canManage={canManage}
           />
         </Suspense>

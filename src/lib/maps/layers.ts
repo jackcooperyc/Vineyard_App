@@ -24,6 +24,8 @@ export const BLOCK_LAYER_IDS = [
 const INFRASTRUCTURE_VARIETAL_COLOR = "#9ca3af";
 const UNKNOWN_VARIETAL_COLOR = "#6b7280";
 const STATUS_FALLBACK_FILL = "#22c55e";
+const TOURS_MODE_FILL = "#64748b";
+const TOURS_MODE_OUTLINE = "#475569";
 
 const statusOverlayFill: ExpressionSpecification = [
   "match",
@@ -60,6 +62,15 @@ const blockColorHexOverride: ExpressionSpecification = [
 export function buildBlockFillColor(
   mode: MapColorMode,
 ): ExpressionSpecification {
+  if (mode === "tours") {
+    return [
+      "case",
+      blockColorHexOverride,
+      ["get", "colorHex"],
+      TOURS_MODE_FILL,
+    ];
+  }
+
   if (mode === "varietal") {
     return [
       "case",
@@ -88,6 +99,15 @@ export function buildBlockFillColor(
 export function buildBlockOutlineColor(
   mode: MapColorMode,
 ): ExpressionSpecification {
+  if (mode === "tours") {
+    return [
+      "case",
+      blockColorHexOverride,
+      ["get", "colorHex"],
+      TOURS_MODE_OUTLINE,
+    ];
+  }
+
   if (mode === "varietal") {
     return [
       "case",

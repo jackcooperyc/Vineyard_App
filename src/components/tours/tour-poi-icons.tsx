@@ -274,14 +274,17 @@ function appendSvgIcon(svg: SVGSVGElement, category: TourPOICategory) {
 export function createTourPOIMarkerElement(
   category: TourPOICategory,
   selected: boolean,
+  emphasized = true,
 ): HTMLDivElement {
   const root = document.createElement("div");
   root.className = cn(
-    "group flex cursor-pointer flex-col items-center transition-transform duration-150",
+    "group flex cursor-pointer flex-col items-center transition-all duration-150",
     selected && "z-10 scale-110",
+    !emphasized && !selected && "scale-90 opacity-70",
   );
   root.dataset.category = category;
   root.dataset.selected = selected ? "true" : "false";
+  root.dataset.emphasized = emphasized ? "true" : "false";
 
   const pin = document.createElement("div");
   pin.className = cn(
@@ -323,9 +326,17 @@ export function updateTourPOIMarkerElement(
   element: HTMLElement,
   category: TourPOICategory,
   selected: boolean,
+  emphasized = true,
 ) {
   const currentCategory = element.dataset.category;
   const currentSelected = element.dataset.selected === "true";
+  const currentEmphasized = element.dataset.emphasized !== "false";
+
+  if (currentEmphasized !== emphasized) {
+    element.dataset.emphasized = emphasized ? "true" : "false";
+    element.classList.toggle("scale-90", !emphasized && !selected);
+    element.classList.toggle("opacity-70", !emphasized && !selected);
+  }
 
   if (currentCategory !== category) {
     const svg = element.querySelector("svg");
@@ -342,6 +353,8 @@ export function updateTourPOIMarkerElement(
     element.dataset.selected = selected ? "true" : "false";
     element.classList.toggle("z-10", selected);
     element.classList.toggle("scale-110", selected);
+    element.classList.toggle("scale-90", !emphasized && !selected);
+    element.classList.toggle("opacity-70", !emphasized && !selected);
 
     const pin = element.firstElementChild as HTMLElement | null;
     const tail = element.lastElementChild as HTMLElement | null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Grape, Layers } from "lucide-react";
+import { Grape, Layers, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MapColorMode } from "@/domains/map/constants";
 import { cn } from "@/lib/utils";
@@ -8,10 +8,13 @@ import { cn } from "@/lib/utils";
 export function MapColorModeToggle({
   mode,
   onChange,
+  includeTours = false,
   className,
 }: {
   mode: MapColorMode;
   onChange: (mode: MapColorMode) => void;
+  /** When true, shows a third "Tours" overlay mode (e.g. on /tours). */
+  includeTours?: boolean;
   className?: string;
 }) {
   return (
@@ -21,7 +24,7 @@ export function MapColorModeToggle({
         className,
       )}
       role="group"
-      aria-label="Map color mode"
+      aria-label="Map overlay mode"
     >
       <Button
         type="button"
@@ -45,6 +48,19 @@ export function MapColorModeToggle({
         <Grape className="size-4" />
         Varietal
       </Button>
+      {includeTours ? (
+        <Button
+          type="button"
+          size="touch"
+          variant={mode === "tours" ? "default" : "ghost"}
+          className="h-11 min-h-11 rounded-full px-4"
+          onClick={() => onChange("tours")}
+          aria-pressed={mode === "tours"}
+        >
+          <MapPin className="size-4" />
+          Tours
+        </Button>
+      ) : null}
     </div>
   );
 }
