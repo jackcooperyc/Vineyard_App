@@ -300,9 +300,16 @@ export function VineyardMap({
 
     mapboxgl.accessToken = token;
 
+    const initialBlocks = blocks;
+    const initialGeoJson = geoJson;
+    const initialPumps = pumpsGeoJson;
+    const initialGpsTracks = gpsTracksGeoJson;
+    const initialBounds = bounds;
+    const initialSelectedPumpId = selectedPumpId;
+
     const defaultCenter: [number, number] =
-      blocks[0] != null
-        ? [blocks[0].centerLng, blocks[0].centerLat]
+      initialBlocks[0] != null
+        ? [initialBlocks[0].centerLng, initialBlocks[0].centerLat]
         : [ESTATE_CENTER.lng, ESTATE_CENTER.lat];
 
     const map = new mapboxgl.Map({
@@ -319,7 +326,7 @@ export function VineyardMap({
     map.on("load", () => {
       map.addSource(MAP_SOURCE_ID, {
         type: "geojson",
-        data: geoJson,
+        data: initialGeoJson,
       });
 
       map.addLayer({
@@ -358,7 +365,7 @@ export function VineyardMap({
 
       map.addSource(PUMP_SOURCE_ID, {
         type: "geojson",
-        data: pumpsGeoJson,
+        data: initialPumps,
       });
 
       map.addLayer({
@@ -368,14 +375,14 @@ export function VineyardMap({
         paint: {
           "circle-radius": [
             "case",
-            ["==", ["get", "pumpId"], selectedPumpId ?? ""],
+            ["==", ["get", "pumpId"], initialSelectedPumpId ?? ""],
             12,
             8,
           ],
           "circle-color": "#0ea5e9",
           "circle-stroke-width": [
             "case",
-            ["==", ["get", "pumpId"], selectedPumpId ?? ""],
+            ["==", ["get", "pumpId"], initialSelectedPumpId ?? ""],
             3,
             2,
           ],
@@ -385,7 +392,7 @@ export function VineyardMap({
 
       map.addSource(GPS_TRACK_SOURCE_ID, {
         type: "geojson",
-        data: gpsTracksGeoJson,
+        data: initialGpsTracks,
       });
 
       map.addLayer({
@@ -407,12 +414,13 @@ export function VineyardMap({
         registerPumpClicks(map, (pumpId) => onPumpSelectRef.current?.(pumpId));
       }
 
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 48, maxZoom: 16, duration: 0 });
+      if (initialBounds) {
+        map.fitBounds(initialBounds, { padding: 48, maxZoom: 16, duration: 0 });
       }
 
       if (viewModeRef.current === "3d") {
-        terrainCleanupRef.current = applyViewMode(map, "3d", geoJsonRef.current) ?? null;
+        terrainCleanupRef.current =
+          applyViewMode(map, "3d", geoJsonRef.current) ?? null;
       }
 
       onMapReadyRef.current?.(map);
@@ -428,28 +436,18 @@ export function VineyardMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [blocks, bounds, geoJson, gpsTracksGeoJson, pumpsGeoJson, token, selectedPumpId]);
+    // Init once per token — data updates are handled by dedicated effects below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid remount flash
+  }, [token]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !readyRef.current) return;
 
-    const apply = () => {
-      readyRef.current = true;
-      terrainCleanupRef.current?.();
-      terrainCleanupRef.current =
-        applyViewMode(map, viewModeRef.current, geoJsonRef.current) ?? null;
-    };
+    terrainCleanupRef.current?.();
+    terrainCleanupRef.current =
+      applyViewMode(map, viewMode, geoJsonRef.current) ?? null;
 
-    if (map.isStyleLoaded()) {
-      apply();
-      return () => {
-        terrainCleanupRef.current?.();
-        terrainCleanupRef.current = null;
-      };
-    }
-
-    map.once("load", apply);
     return () => {
       terrainCleanupRef.current?.();
       terrainCleanupRef.current = null;
@@ -549,7 +547,9 @@ export function VineyardMap({
       zoom: Math.max(map.getZoom(), 15),
       duration: 800,
     });
-  }, [selectedPumpId, pumpsGeoJson]);
+    // Recenter only when the selected pump changes, not when pump data refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [selectedPumpId]);
 
   return (
     <div

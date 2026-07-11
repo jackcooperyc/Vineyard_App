@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type mapboxgl from "mapbox-gl";
 import { BlockMapDrawer } from "@/components/map/block-map-drawer";
@@ -79,9 +79,9 @@ export function MapPageClient({
   const [formDefaults, setFormDefaults] = useState({ name: "", category: "Shop" });
   const [managingSpace, setManagingSpace] = useState<MapBlock | null>(null);
 
-  const userMapSpaces = getUserMapSpaces(blocks);
+  const userMapSpaces = useMemo(() => getUserMapSpaces(blocks), [blocks]);
 
-  const pumpsGeoJson = mapPumpsToGeoJSON(pumps);
+  const pumpsGeoJson = useMemo(() => mapPumpsToGeoJSON(pumps), [pumps]);
 
   const viewMode: MapViewMode =
     searchParams.get("view") === "3d" ? "3d" : "2d";
@@ -147,7 +147,10 @@ export function MapPageClient({
   const selectedBlock = blocks.find((block) => block.id === selectedBlockId) ?? null;
   const selectedPump = pumps.find((p) => p.id === selectedPumpId) ?? null;
 
-  const highlightedBlockIds = selectedPump?.servicedBlockIds ?? [];
+  const highlightedBlockIds = useMemo(
+    () => selectedPump?.servicedBlockIds ?? [],
+    [selectedPump],
+  );
   const blockPumps = selectedBlockId
     ? getPumpsForBlock(pumps, selectedBlockId)
     : [];

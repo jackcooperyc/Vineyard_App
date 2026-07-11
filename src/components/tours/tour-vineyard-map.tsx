@@ -216,12 +216,6 @@ export function TourVineyardMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    syncMarkers(map, pois, selectedPoiId);
-  }, [pois, selectedPoiId, canManage, colorMode, syncMarkers]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
     if (!map.getLayer(FILL_LAYER_ID)) return;
 
     map.setPaintProperty(FILL_LAYER_ID, "fill-color", buildBlockFillColor(colorMode));
@@ -232,7 +226,7 @@ export function TourVineyardMap({
     );
     map.setPaintProperty(OUTLINE_LAYER_ID, "line-color", buildBlockOutlineColor(colorMode));
     syncMarkers(map, pois, selectedPoiId);
-  }, [colorMode, pois, selectedPoiId, syncMarkers]);
+  }, [colorMode, pois, selectedPoiId, canManage, syncMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -244,7 +238,9 @@ export function TourVineyardMap({
       zoom: Math.max(map.getZoom(), 15),
       duration: 600,
     });
-  }, [selectedPoiId, pois]);
+    // Only recenter when selection changes — not when pois array is refreshed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [selectedPoiId]);
 
   return (
     <div
