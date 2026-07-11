@@ -47,15 +47,22 @@ const statusOverlayOutline: ExpressionSpecification = [
   "#15803d",
 ];
 
-const blockColorHexOverride: ExpressionSpecification = [
-  "all",
-  ["has", "colorHex"],
-  ["!=", ["get", "colorHex"], ""],
+/** Only treat real string hex values as colors — null props paint black in Mapbox. */
+const hasBlockColorHex: ExpressionSpecification = [
+  "==",
+  ["typeof", ["get", "colorHex"]],
+  "string",
+];
+
+const hasVarietyColorHex: ExpressionSpecification = [
+  "==",
+  ["typeof", ["get", "varietyColorHex"]],
+  "string",
 ];
 
 /**
  * Block fill color precedence:
- * 1. Block.colorHex manual override (any mode)
+ * 1. Block.colorHex manual override (any mode) when a real string
  * 2. Varietal mode → varietyColorHex (vineyard) or neutral gray (infrastructure)
  * 3. Status mode → overlay match (irrigation / tasks / default green)
  */
@@ -63,74 +70,46 @@ export function buildBlockFillColor(
   mode: MapColorMode,
 ): ExpressionSpecification {
   if (mode === "tours") {
-    return [
-      "case",
-      blockColorHexOverride,
-      ["get", "colorHex"],
-      TOURS_MODE_FILL,
-    ];
+    return ["case", hasBlockColorHex, ["get", "colorHex"], TOURS_MODE_FILL];
   }
 
   if (mode === "varietal") {
     return [
       "case",
-      blockColorHexOverride,
+      hasBlockColorHex,
       ["get", "colorHex"],
       ["==", ["get", "blockType"], "INFRASTRUCTURE"],
       INFRASTRUCTURE_VARIETAL_COLOR,
-      [
-        "all",
-        ["has", "varietyColorHex"],
-        ["!=", ["get", "varietyColorHex"], ""],
-      ],
+      hasVarietyColorHex,
       ["get", "varietyColorHex"],
       UNKNOWN_VARIETAL_COLOR,
     ];
   }
 
-  return [
-    "case",
-    blockColorHexOverride,
-    ["get", "colorHex"],
-    statusOverlayFill,
-  ];
+  return ["case", hasBlockColorHex, ["get", "colorHex"], statusOverlayFill];
 }
 
 export function buildBlockOutlineColor(
   mode: MapColorMode,
 ): ExpressionSpecification {
   if (mode === "tours") {
-    return [
-      "case",
-      blockColorHexOverride,
-      ["get", "colorHex"],
-      TOURS_MODE_OUTLINE,
-    ];
+    return ["case", hasBlockColorHex, ["get", "colorHex"], TOURS_MODE_OUTLINE];
   }
 
   if (mode === "varietal") {
     return [
       "case",
-      blockColorHexOverride,
+      hasBlockColorHex,
       ["get", "colorHex"],
       ["==", ["get", "blockType"], "INFRASTRUCTURE"],
       "#6b7280",
-      [
-        "all",
-        ["has", "varietyColorHex"],
-        ["!=", ["get", "varietyColorHex"], ""],
-      ],
+      hasVarietyColorHex,
       ["get", "varietyColorHex"],
       "#4b5563",
     ];
   }
 
-  return [
-    "case",
-    blockColorHexOverride,
-    ["get", "colorHex"],
-    statusOverlayOutline,
-  ];
+  return ["case", hasBlockColorHex, ["get", "colorHex"], statusOverlayOutline];
 }
 
 /** @deprecated Use buildBlockFillColor("status") */

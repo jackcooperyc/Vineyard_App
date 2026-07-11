@@ -1,4 +1,8 @@
 import { db } from "@/lib/db";
+import {
+  defaultVarietyColorHex,
+  isMapColorHex,
+} from "@/domains/varieties/map-colors";
 import type { MapColorMode, VarietyColor } from "@/generated/prisma/client";
 
 export type VarietySettingsItem = {
@@ -51,7 +55,9 @@ export async function getVarietyLegendItems(): Promise<VarietyLegendItem[]> {
       id: v.id,
       name: v.name,
       color: v.color,
-      colorHex: v.colorHex ?? "#6b7280",
+      colorHex: isMapColorHex(v.colorHex)
+        ? v.colorHex.trim()
+        : defaultVarietyColorHex(v.name),
       plantingCount: v._count.plantings,
     }));
 }
@@ -60,5 +66,5 @@ export async function getVineyardMapColorMode(): Promise<MapColorMode> {
   const vineyard = await db.vineyard.findFirst({
     select: { mapColorMode: true },
   });
-  return vineyard?.mapColorMode ?? "STATUS";
+  return vineyard?.mapColorMode ?? "VARIETAL";
 }

@@ -8,7 +8,6 @@ import { getActiveGpsTracksGeoJson } from "@/domains/task-gps/queries";
 import { getQuickLogTaskTypes } from "@/domains/tasks/type-queries";
 import {
   getVarietyLegendItems,
-  getVineyardMapColorMode,
 } from "@/domains/varieties/queries";
 import { getCurrentWeather } from "@/domains/weather/queries";
 import { auth } from "@/lib/auth";
@@ -21,7 +20,7 @@ export default async function MapPage() {
   const role = parseUserRole(session?.user?.role);
   const canEditMapSpaces = hasPermission(role, "blocks:edit");
 
-  const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes, varieties, defaultMapColorMode] =
+  const [blocks, equipment, pumps, gpsTracks, currentWeather, quickLogTypes, varieties] =
     await Promise.all([
     getMapBlocks(),
     getActiveEquipmentForSelect(),
@@ -30,7 +29,6 @@ export default async function MapPage() {
     getCurrentWeather(),
     getQuickLogTaskTypes(),
     getVarietyLegendItems(),
-    getVineyardMapColorMode(),
   ]);
 
   return (
@@ -60,7 +58,6 @@ export default async function MapPage() {
             weather={currentWeather}
             quickLogTypes={quickLogTypes}
             varieties={varieties}
-            defaultMapColorMode={defaultMapColorMode}
             token={mapboxToken}
             canEditMapSpaces={canEditMapSpaces}
           />

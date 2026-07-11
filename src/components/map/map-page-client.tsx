@@ -27,15 +27,11 @@ import type { TaskTypeConfig } from "@/domains/tasks/types";
 import { updateVineyardMapColorMode } from "@/domains/varieties/actions";
 import type { VarietyLegendItem } from "@/domains/varieties/queries";
 import type { CurrentWeather } from "@/domains/weather/types";
-import type { MapColorMode as PrismaMapColorMode } from "@/generated/prisma/client";
 
-function resolveColorMode(
-  colorParam: string | null,
-  persistedMode: PrismaMapColorMode,
-): MapColorMode {
-  if (colorParam === "varietal") return "varietal";
+function resolveColorMode(colorParam: string | null): MapColorMode {
   if (colorParam === "status") return "status";
-  return persistedMode === "VARIETAL" ? "varietal" : "status";
+  // Default (and explicit varietal) — vineyard polygons use grape variety colors.
+  return "varietal";
 }
 
 export function MapPageClient({
@@ -48,7 +44,6 @@ export function MapPageClient({
   weather,
   quickLogTypes,
   varieties,
-  defaultMapColorMode,
   token,
   canEditMapSpaces,
 }: {
@@ -61,7 +56,6 @@ export function MapPageClient({
   weather: CurrentWeather;
   quickLogTypes: TaskTypeConfig[];
   varieties: VarietyLegendItem[];
-  defaultMapColorMode: PrismaMapColorMode;
   token: string;
   canEditMapSpaces: boolean;
 }) {
@@ -86,10 +80,7 @@ export function MapPageClient({
   const viewMode: MapViewMode =
     searchParams.get("view") === "3d" ? "3d" : "2d";
 
-  const colorMode = resolveColorMode(
-    searchParams.get("color"),
-    defaultMapColorMode,
-  );
+  const colorMode = resolveColorMode(searchParams.get("color"));
 
   const pumpParam = searchParams.get("pump");
   const blockParam = searchParams.get("block");
@@ -117,7 +108,9 @@ export function MapPageClient({
   const setColorMode = useCallback(
     (mode: MapColorMode) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (mode === "varietal") {
+      if (mode === "status") {
+        params.set("color", "status");
+      } else if (mode === "varietal") {
         params.set("color", "varietal");
       } else {
         params.delete("color");
@@ -125,11 +118,13 @@ export function MapPageClient({
       const query = params.toString();
       router.replace(query ? `/map?${query}` : "/map", { scroll: false });
 
-      startPersistTransition(() => {
-        void updateVineyardMapColorMode(
-          mode === "varietal" ? "VARIETAL" : "STATUS",
-        );
-      });
+      if (mode === "status" || mode === "varietal") {
+        startPersistTransition(() => {
+          void updateVineyardMapColorMode(
+            mode === "varietal" ? "VARIETAL" : "STATUS",
+          );
+        });
+      }
     },
     [router, searchParams, startPersistTransition],
   );

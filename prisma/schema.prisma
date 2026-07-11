@@ -99,7 +99,7 @@ model Vineyard {
   id                     String                  @id @default(cuid())
   name                   String
   location               String?
-  mapColorMode           MapColorMode            @default(STATUS)
+  mapColorMode           MapColorMode            @default(VARIETAL)
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   blocks                 Block[]

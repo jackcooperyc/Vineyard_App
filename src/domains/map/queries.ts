@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getIrrigationAlerts } from "@/domains/irrigation/queries";
+import { resolveVarietyMapColor, isMapColorHex } from "@/domains/varieties/map-colors";
 import { notDeletedWhere } from "@/lib/soft-delete";
 import type {
   MapBlock,
@@ -82,6 +83,11 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
       );
 
       const primaryPlanting = block.plantings[0];
+      const varietyName = primaryPlanting?.variety.name ?? null;
+      const varietyColorHex = resolveVarietyMapColor(
+        varietyName,
+        primaryPlanting?.variety.colorHex,
+      );
 
       return {
         id: block.id,
@@ -90,15 +96,15 @@ export async function getMapBlocks(): Promise<MapBlock[]> {
         status: block.status,
         blockType: block.blockType,
         infrastructureType: block.infrastructureType,
-        primaryVariety: primaryPlanting?.variety.name ?? null,
+        primaryVariety: varietyName,
         primaryVarietyId: primaryPlanting?.variety.id ?? null,
-        varietyColorHex: primaryPlanting?.variety.colorHex ?? null,
+        varietyColorHex,
         totalVines,
         acreage: block.acreage,
         elevMin: block.elevMin,
         elevMed: block.elevMed,
         elevMax: block.elevMax,
-        colorHex: block.colorHex,
+        colorHex: isMapColorHex(block.colorHex) ? block.colorHex : null,
         centerLat: feature.centerLat,
         centerLng: feature.centerLng,
         geometry: feature.geometry as MapBlock["geometry"],
@@ -117,7 +123,7 @@ export function mapBlocksToGeoJSON(
   return {
     type: "FeatureCollection",
     features: blocks.map((block) => ({
-      type: "Feature",
+      type: "Feature" as const,
       id: block.id,
       geometry: block.geometry,
       properties: {
@@ -129,9 +135,12 @@ export function mapBlocksToGeoJSON(
         openTasks: block.openTasks,
         irrigationOverdue: block.irrigationOverdue,
         elevMed: block.elevMed,
-        colorHex: block.colorHex,
-        varietyColorHex: block.varietyColorHex,
-        varietyName: block.primaryVariety,
+        // Omit null colors — Mapbox treats null props as present and paints black.
+        ...(block.colorHex ? { colorHex: block.colorHex } : {}),
+        ...(block.varietyColorHex
+          ? { varietyColorHex: block.varietyColorHex }
+          : {}),
+        ...(block.primaryVariety ? { varietyName: block.primaryVariety } : {}),
       },
     })),
   };
