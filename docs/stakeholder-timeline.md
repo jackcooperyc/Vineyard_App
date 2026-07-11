@@ -14,9 +14,10 @@ The app runs in a web browser on phones, tablets, and desktops. Your team signs 
 
 **Who it’s for:**
 
-- **Owners and managers** — see estate status, plan work, run reports
+- **Owners and managers** — see estate status, plan work, manage the team, run reports
 - **Field crew** — log tasks, irrigation, and equipment service quickly from the vineyard
 - **Office staff** — schedules, records, bulk updates, and exports
+- **Read-only guests** — view the estate without changing records (auditor / visitor access)
 
 ---
 
@@ -24,19 +25,21 @@ The app runs in a web browser on phones, tablets, and desktops. Your team signs 
 
 | What your team does | Where in the app | How it helps |
 |---------------------|------------------|--------------|
-| See the whole estate | **Map**, **Blocks** | Satellite view of every block; tap for quick actions |
+| See the whole estate | **Map**, **Blocks** | Satellite view of every block; hover for a quick summary; tap for actions |
 | Log work in the field | **Field**, block quick-log | One-handed logging without driving back to the office |
 | Plan and track jobs | **Tasks** | Due dates, assignments, filters, and bulk updates |
 | Manage watering | **Irrigation** | Schedules, application records, overdue alerts |
-| Maintain tractors and sprayers | **Equipment** | Service history and “needs service” reminders |
+| Maintain tractors and sprayers | **Equipment** | Service history, photos, and “needs service” reminders |
 | Prove field coverage | **Field** (GPS under Tasks) | Track path and % complete while spraying, mowing, or weeding |
+| Host visitors / tell the story | **Tours** | Map pins for milestones, tasting spots, photo ops, and more |
 | Export for records | **Reports** | Download CSV summaries |
+| Manage who can do what | **Settings → Team users** | Owners create accounts and assign roles |
 
 ---
 
 ## Development timeline (oldest to newest)
 
-Each milestone below is **already live** on cev.cupr.app.
+Each milestone below is **already live** on [cev.cupr.app](https://cev.cupr.app).
 
 ### Early 2026 — Digital vineyard directory
 
@@ -48,7 +51,7 @@ Each milestone below is **already live** on cev.cupr.app.
 - Replaces scattered notes with a shared, always-current record
 - Foundation for everything that followed
 
-**Where to find it:** `/dashboard`, `/blocks`, `/blocks/[block code]`
+**Where to find it:** `/dashboard`, `/blocks`
 
 ---
 
@@ -76,7 +79,7 @@ Each milestone below is **already live** on cev.cupr.app.
 - Link equipment to open tasks
 - Avoid missed service intervals
 
-**Where to find it:** `/equipment`, `/equipment/[name]`
+**Where to find it:** `/equipment`
 
 ---
 
@@ -102,7 +105,7 @@ Each milestone below is **already live** on cev.cupr.app.
 
 - See the estate layout at a glance
 - Jump from geography to logging without searching lists
-- Block colors show normal status, open tasks, or overdue irrigation
+- Switch between **Varietal** colors (what’s planted) and **Status** colors (tasks / overdue water)
 
 **Where to find it:** `/map`
 
@@ -146,7 +149,7 @@ Each milestone below is **already live** on cev.cupr.app.
 - Turn irrigation schedules on or off as seasons change
 - Dashboard looks active and purposeful, not empty
 
-**Where to find it:** Task/irrigation/equipment edit pages, `/dashboard`
+**Where to find it:** Task / irrigation / equipment edit pages, `/dashboard`
 
 ---
 
@@ -230,7 +233,7 @@ Each milestone below is **already live** on cev.cupr.app.
 - Coverage shows on task cards, task detail, dashboard, and map tracks
 - Row-level progress when row layout data exists for a block
 
-**Where to find it:** `/field` (GPS under Task tab), `/tasks/[id]`, `/map`
+**Where to find it:** `/field` (GPS under Task tab), task detail pages, `/map`
 
 ---
 
@@ -264,15 +267,72 @@ Each milestone below is **already live** on cev.cupr.app.
 
 ### July 2026 — Recent conveniences
 
-**What we built:** Select-all for tasks and irrigation schedules; varietal filter on the Blocks list; edit pump location on the map.
+**What we built:** Select-all for tasks and irrigation schedules; varietal filter on the Blocks list; edit pump location on the map; equipment photo uploads; mobile hub polish.
 
 **Why it matters:**
 
 - Bulk activate/deactivate irrigation schedules in one action
 - Filter vineyard blocks by grape variety when planning work
 - Correct pump pin placement without developer help
+- Recognize equipment at a glance from photos
 
-**Where to find it:** `/tasks`, `/irrigation`, `/blocks`, `/pumps/[id]/edit`, `/map`
+**Where to find it:** `/tasks`, `/irrigation`, `/blocks`, `/pumps`, `/equipment`, `/map`
+
+---
+
+### July 2026 — Team roles and block master data
+
+**What we built:** Role-based access (Owner, Manager, Field Worker, Read Only), team user creation with temporary passwords, and in-app editing of block details, plantings, and field notes.
+
+**Why it matters:**
+
+- Owners control who can change schedules, retire equipment, or invite crew
+- Field workers can log work without seeing admin-only settings
+- Read-only accounts can tour the estate without risk of edits
+- Managers can update plantings and notes without a developer
+
+**Where to find it:** `/settings/users`, `/blocks/[id]/edit`, block detail notes
+
+---
+
+### July 2026 — Custom map spaces
+
+**What we built:** Draw and name custom areas on the map (shops, storage, parking, and similar) as purple polygons separate from vineyard blocks.
+
+**Why it matters:**
+
+- Capture estate areas that aren’t grape blocks but still matter operationally
+- Owners and managers can add or redraw spaces themselves
+
+**Where to find it:** `/map` → **Add space** / **Spaces** (Owner or Manager)
+
+---
+
+### July 2026 — Vineyard tours map
+
+**What we built:** Dedicated **Tours** page with droppable, draggable points of interest (milestones, family stories, tasting bars, photo ops, bathrooms, and more).
+
+**Why it matters:**
+
+- Plan visitor routes and storytelling stops on the same estate map
+- Category icons make each stop easy to recognize
+- Switch Status / Varietal / Tours overlays while planning
+
+**Where to find it:** `/tours`
+
+---
+
+### July 2026 — Map clarity (varietal colors and hover info)
+
+**What we built:** Vineyard polygons colored by grape variety by default; hover a block for a quick pop-up with name, variety, acreage, and open-task or irrigation cues.
+
+**Why it matters:**
+
+- See what’s planted where without opening every block
+- Hover for a fast status check; tap when you need full actions
+- Switch to **Status** mode when you want task/irrigation overlays instead
+
+**Where to find it:** `/map` (Varietal is the default; Status toggle still available)
 
 ---
 
@@ -280,13 +340,16 @@ Each milestone below is **already live** on cev.cupr.app.
 
 A short checklist for Neil and the team:
 
-1. **Open the map in 3D** — go to `/map` and switch to 3D view to see the hillside layout.
+1. **Open the map** — `/map` shows blocks in varietal colors; hover for a summary; switch to 3D or Status as needed.
 2. **Log irrigation from the field** — `/field` → Irrigation tab → select block → “Irrigation applied today.”
 3. **Create a multi-block spray task** — `/tasks/new` → select multiple blocks → check “Begin task now” for GPS.
-4. **Check overdue irrigation** — `/irrigation` → Alerts view, or watch block colors on the map.
+4. **Check overdue irrigation** — `/irrigation` → Alerts view, or switch the map to **Status**.
 5. **Export a report** — `/reports` → choose dataset → download CSV.
 6. **Recover a deleted task** — `/tasks?trash=1` within 48 hours of deletion.
 7. **Adjust task reminder emails** — `/settings/notifications`.
+8. **Add a crew account** — `/settings/users` (Owner) → create user with a temporary password.
+9. **Drop a tour stop** — `/tours` → tap the map → name and categorize the point.
+10. **Draw a shop or storage area** — `/map` → **Add space** → draw polygon → save.
 
 ---
 
@@ -305,14 +368,19 @@ A short checklist for Neil and the team:
 | Task types admin | `/tasks/settings` | ✓ | — |
 | Notification prefs | `/settings/notifications` | ✓ | ✓ |
 | Irrigation pumps | `/pumps` | ✓ | — |
+| Team users (Owner) | `/settings/users` | Owner | — |
+| Block / planting edit | `/blocks/.../edit` | ✓ | — |
+| Tours POIs | `/tours` | ✓ | View |
+| Custom map spaces | `/map` | ✓ | View |
 
 ---
 
 ## Known gaps (honest limits)
 
-- **Two blocks** (Blake’s House, Cowboy’s Place) do not yet have map polygons— they appear in the directory but not on the satellite map until boundaries are verified in the field.
+- **Two blocks** (Blake’s House, Cowboy’s Place) do not yet have map polygons—they appear in the directory but not on the satellite map until boundaries are verified in the field.
 - **GPS offline mode** is not available—tracking requires a live connection.
-- **Role-based permissions** are planned; today all signed-in users can access operational modules.
+- **Email invites / password reset** are not built yet—owners create accounts and share temporary passwords securely.
+- **Satellite / NDVI metrics** are reserved for a later phase (schema placeholder only).
 
 ---
 

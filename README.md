@@ -6,7 +6,7 @@ Operational command center for Cooper Estate Vineyards — a block-centered vine
 
 ## Features (current)
 
-Live on [cev.cupr.app](https://cev.cupr.app): block directory, interactive 2D/3D map, tasks, irrigation, equipment, field log, GPS progress, reports, and pump management. Full milestone history: [docs/stakeholder-timeline.md](docs/stakeholder-timeline.md).
+Live on [cev.cupr.app](https://cev.cupr.app): block directory, interactive 2D/3D map with varietal colors, tasks, irrigation, equipment, field log, GPS progress, reports, pumps, tours, team roles, and custom map spaces. Full milestone history: [docs/stakeholder-timeline.md](docs/stakeholder-timeline.md).
 
 ## Stack
 

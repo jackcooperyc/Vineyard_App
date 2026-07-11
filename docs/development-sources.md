@@ -12,18 +12,22 @@ This page maps each **shipped milestone** to where the technical record lives in
 | 3 | Equipment records | Early 2026 | `9b49043`; Sprint 3 |
 | 4 | Irrigation logging | Early 2026 | `9b49043`; Sprint 4 |
 | 5 | Interactive map | Early 2026 | `9b49043`; Sprint 5 |
-| 6 | Real Cooper Estate map | Jul 2026 | `038bf91`; [OVERSIGHT.md](../OVERSIGHT.md) Sprint 7 |
-| 7 | Field-friendly mobile | Jul 2026 | `c564561`; Sprint 6 |
-| 8 | Complete the basics (Op 1–4) | Jul 2026 | `373e3cb`; [next-development-plan.md](./next-development-plan.md) Track 1 |
-| 9 | Estate intelligence (Sprint 8) | Jul 2026 | `5980e9f`, `c004712`; [sprint-8-plan.md](./sprint-8-plan.md) |
-| 10 | Professional ops hubs (Op 5–9) | Jul 2026 | `7320da8`; OVERSIGHT Op-5–9 |
-| 11 | Custom task types + bulk | Jul 2026 | `e1b6b6c`; OVERSIGHT task types |
-| 12 | Soft delete recovery | Jul 2026 | `d15683f`; OVERSIGHT soft delete |
-| 13 | Task notifications | Jul 2026 | `d9a53d6`; OVERSIGHT notifications |
-| 14 | GPS field progress | Jul 2026 | `f610e24`; [module-scope.md](./module-scope.md) GPS section |
-| 15 | Field log polish | Jul 2026 | `180ca0c`; OVERSIGHT field log |
-| 16 | Multi-block tasks | Jul 2026 | `05ce760`; [module-scope.md](./module-scope.md) multi-block |
-| 17 | Recent conveniences | Jul 2026 | `a3fae04`; pump edit, select-all, varietal filter |
+| 6 | Real Cooper Estate map | July 2026 | `038bf91`; [OVERSIGHT.md](../OVERSIGHT.md) Sprint 7 |
+| 7 | Field-friendly mobile | July 2026 | `c564561`; Sprint 6 |
+| 8 | Complete the basics (Op 1–4) | July 2026 | `373e3cb`; [next-development-plan.md](./next-development-plan.md) Track 1 |
+| 9 | Estate intelligence (Sprint 8) | July 2026 | `5980e9f`, `c004712`; [sprint-8-plan.md](./sprint-8-plan.md) |
+| 10 | Professional ops hubs (Op 5–9) | July 2026 | `7320da8`; OVERSIGHT Op-5–9 |
+| 11 | Custom task types + bulk | July 2026 | `e1b6b6c`; OVERSIGHT task types |
+| 12 | Soft delete recovery | July 2026 | `d15683f`; OVERSIGHT soft delete |
+| 13 | Task notifications | July 2026 | `d9a53d6`; OVERSIGHT notifications |
+| 14 | GPS field progress | July 2026 | `f610e24`; [module-scope.md](./module-scope.md) GPS section |
+| 15 | Field log polish | July 2026 | `180ca0c`; OVERSIGHT field log |
+| 16 | Multi-block tasks | July 2026 | `05ce760`; [module-scope.md](./module-scope.md) multi-block |
+| 17 | Recent conveniences | July 2026 | `a3fae04`, `602910a`, `b1b2341`; pump edit, select-all, photos, hub polish |
+| 18 | Team roles + block master data | July 2026 | `d57b006`; [user-roles.md](./user-roles.md) |
+| 19 | Custom map spaces | July 2026 | `e1064bb` |
+| 20 | Vineyard tours map | July 2026 | `7ba661f`, `f25b9d1` |
+| 21 | Map clarity (varietal colors + hover) | July 2026 | `2216d0f`, `69aa60b` |
 
 ## Maintainer files
 
@@ -34,6 +38,7 @@ This page maps each **shipped milestone** to where the technical record lives in
 | [module-scope.md](./module-scope.md) | Module-by-module shipped scope |
 | [next-development-plan.md](./next-development-plan.md) | Operational UI audit and Op track |
 | [product-vision.md](./product-vision.md) | Mission and audience |
+| [user-roles.md](./user-roles.md) | RBAC roles and permissions |
 
 ## Updating the stakeholder timeline
 
