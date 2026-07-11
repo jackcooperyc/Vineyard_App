@@ -30,6 +30,7 @@ import {
   extrusionBaseHeight,
 } from "@/lib/maps/layers";
 import { injectTerrainElevations } from "@/lib/maps/terrain-sample";
+import { registerBlockHoverPopups } from "@/components/map/block-hover-popup";
 
 type PumpFeatureCollection = {
   type: "FeatureCollection";
@@ -116,14 +117,6 @@ function registerBlockClicks(
         | undefined;
       const blockId = feature?.properties?.blockId;
       if (typeof blockId === "string") onSelect(blockId);
-    });
-
-    map.on("mouseenter", layerId, () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-
-    map.on("mouseleave", layerId, () => {
-      map.getCanvas().style.cursor = "";
     });
   }
 }
@@ -267,6 +260,7 @@ export function VineyardMap({
   const colorModeRef = useRef(colorMode);
   const geoJsonRef = useRef(geoJson);
   const terrainCleanupRef = useRef<(() => void) | null>(null);
+  const hoverCleanupRef = useRef<(() => void) | null>(null);
   const onBlockSelectRef = useRef(onBlockSelect);
   const onPumpSelectRef = useRef(onPumpSelect);
   const onMapReadyRef = useRef(onMapReady);
@@ -410,6 +404,8 @@ export function VineyardMap({
         onBlockSelectRef.current(blockId),
       );
 
+      hoverCleanupRef.current = registerBlockHoverPopups(map);
+
       if (onPumpSelectRef.current) {
         registerPumpClicks(map, (pumpId) => onPumpSelectRef.current?.(pumpId));
       }
@@ -431,6 +427,8 @@ export function VineyardMap({
 
     return () => {
       readyRef.current = false;
+      hoverCleanupRef.current?.();
+      hoverCleanupRef.current = null;
       terrainCleanupRef.current?.();
       terrainCleanupRef.current = null;
       map.remove();

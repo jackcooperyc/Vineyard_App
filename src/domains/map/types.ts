@@ -47,6 +47,8 @@ export type MapBlockFeatureProperties = {
   colorHex?: string;
   varietyColorHex?: string;
   varietyName?: string;
+  infrastructureType?: string;
+  acreage?: number;
 };
 
 export type MapBlockFeatureCollection = {

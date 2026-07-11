@@ -141,6 +141,10 @@ export function mapBlocksToGeoJSON(
           ? { varietyColorHex: block.varietyColorHex }
           : {}),
         ...(block.primaryVariety ? { varietyName: block.primaryVariety } : {}),
+        ...(block.infrastructureType
+          ? { infrastructureType: block.infrastructureType }
+          : {}),
+        ...(block.acreage != null ? { acreage: block.acreage } : {}),
       },
     })),
   };
